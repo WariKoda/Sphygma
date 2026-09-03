@@ -19,6 +19,7 @@ class BloodPressureRecord {
     required this.timestamp,
     required this.arrhythmiaFlag,
     required this.movementFlag,
+    required this.sequence,
   });
 
   final int systolic;
@@ -27,6 +28,12 @@ class BloodPressureRecord {
   final DateTime timestamp;
   final bool arrhythmiaFlag;
   final bool movementFlag;
+
+  /// Laufende Messungsnummer des Geraets (Bytes 9-11, big-endian). Steigt
+  /// pro gespeicherter Messung um 1 und ist der Dedup-Schluessel - der
+  /// Zeitstempel taugt dafuer nicht, weil die Geraeteuhr falsch gehen kann
+  /// (docs/protocol/hem-6232t.md §6.3, §8.2).
+  final int sequence;
 }
 
 /// Liest [firstBitIdx]..[lastBitIdx] (inklusiv, MSB-first ueber den
@@ -70,6 +77,8 @@ BloodPressureRecord? parseRecord(Uint8List recordBytes) {
   final minute = _bitsToInt(bytes, 52, 57);
   // Das Geraet liefert hier aus ungeklaertem Grund Werte bis 63 statt 59.
   final second = _bitsToInt(bytes, 58, 63).clamp(0, 59);
+  final sequence =
+      (recordBytes[9] << 16) | (recordBytes[10] << 8) | recordBytes[11];
 
   return BloodPressureRecord(
     systolic: systolic,
@@ -78,5 +87,6 @@ BloodPressureRecord? parseRecord(Uint8List recordBytes) {
     timestamp: DateTime(year, month, day, hour, minute, second),
     arrhythmiaFlag: arrhythmiaFlag,
     movementFlag: movementFlag,
+    sequence: sequence,
   );
 }
