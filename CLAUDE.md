@@ -68,10 +68,13 @@ Diese Punkte sind nicht verhandelbar und lassen sich dem Code allein nicht anseh
   vermutlich Kalibrierdaten des Drucksensors; ein Fehlschreiben kann das Messgerät dauerhaft
   verfälschen. Damit entfallen auch „new record counter" und Zeitsynchronisation — stattdessen
   immer Voll-Readout mit Dedup in der App.
-- **`ihb` und `mov` werden nicht nach Health Connect exportiert**, solange die
-  Flag-Zuordnung ungeklärt ist. Die beiden Referenzimplementierungen widersprechen sich hier
-  (Details in `docs/protocol/hem-6232t.md` §6.2). Ein falsch gesetztes Arrhythmie-Flag in der
-  Gesundheitsakte ist schlimmer als ein fehlendes.
+- **Flag-Zuordnung: Bit 32 = Bewegung, Bit 33 = Arrhythmie** — an Hardware per Display-Foto
+  verifiziert (`docs/protocol/hem-6232t.md` §6.2). omblepy hat die beiden für dieses Modell
+  vertauscht; wer dort abschreibt, exportiert falsche Arrhythmie-Flags. Nur `record.dart`
+  ist maßgeblich.
+- **Dedup-Schlüssel ist die Messungsnummer** (Record-Bytes 9–11, §6.3), nicht der
+  Zeitstempel: Die Geräteuhr geht nachweislich falsch und kann weder gestellt noch
+  verlässlich gelesen werden (§8.2). Zeitstempel beim Sync auf Plausibilität prüfen.
 - **Kein Code aus UBPM übernehmen** — das Projekt ist GPL-3.0 und würde Sphygma unter Copyleft
   zwingen. UBPM dient ausschließlich als Gegenprobe fürs Protokollverständnis.
 - **Die Protokollschicht wird aus `docs/protocol/hem-6232t.md` neu implementiert**, nicht aus
@@ -82,6 +85,22 @@ Diese Punkte sind nicht verhandelbar und lassen sich dem Code allein nicht anseh
 - **Fail hard.** Prüfsummenfehler, unvollständige Pakete oder abgebrochene Verbindungen werfen.
   Niemals eine leere Liste zurückgeben, wo ein Fehler vorliegt — leer ist von „keine Messwerte
   vorhanden" nicht unterscheidbar.
+
+## BLE-Eigenheiten des Geräts (an Hardware verifiziert)
+
+Diese Punkte kosten jeweils einen Fehlschlag, wenn man sie nicht kennt
+(`docs/protocol/hem-6232t.md` §2.1, §5.1, §8.1):
+
+- Das Gerät bewirbt im Advertising **nur** den Standard-Service `0x1810`, nicht den
+  proprietären Parent-Service. Scan-Filter nach Service findet es nie — nach Name
+  (`BLEsmart_`/`BLESmart_`) filtern und den Scan beim ersten Treffer sofort beenden.
+- Es sendet nur auf Tastendruck (kurz: normal, lang: Pairing-Modus `-P-`) und trennt nach
+  ~60 s ohne Kommando.
+- Pairing: Notify auf RX 0 löst das Bonding aus; bis `bonded` antwortet das Gerät auf den
+  Programmiermodus mit `82 0f`. Auf den Bond-Status warten, nicht blind wiederholen.
+  Bonding und Key-Write gehören in dieselbe Sitzung.
+- Settings-Bereich nur in den kleinen Abschnitten lesen, die omblepy nutzt; ein 0x38-Byte-Read
+  ab `0x0260` bleibt unbeantwortet.
 
 ## Protokollarbeit
 

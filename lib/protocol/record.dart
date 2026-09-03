@@ -8,11 +8,9 @@ const int recordByteSize = 14;
 
 /// Eine einzelne Blutdruckmessung.
 ///
-/// [arrhythmiaFlag] und [movementFlag] sind roh und folgen der
-/// omblepy-Bitzuordnung. Die beiden Referenzimplementierungen widersprechen
-/// sich hier (docs/protocol/hem-6232t.md §6.2) - bis das an echter Hardware
-/// geklaert ist, duerfen diese Felder NICHT nach Health Connect exportiert
-/// werden (CLAUDE.md "Harte Projektregeln").
+/// Flag-Zuordnung an echter Hardware verifiziert (M1, 2026-09-03; siehe
+/// docs/protocol/hem-6232t.md §6.2): Bit 32 = Bewegung, Bit 33 = Arrhythmie.
+/// Das entspricht UBPM; omblepy hat die beiden fuer dieses Modell vertauscht.
 class BloodPressureRecord {
   BloodPressureRecord({
     required this.systolic,
@@ -64,8 +62,8 @@ BloodPressureRecord? parseRecord(Uint8List recordBytes) {
   final systolic = _bitsToInt(bytes, 8, 15) + 25;
   final year = _bitsToInt(bytes, 18, 23) + 2000;
   final pulse = _bitsToInt(bytes, 24, 31);
-  final arrhythmiaFlag = _bitsToInt(bytes, 32, 32) == 1;
-  final movementFlag = _bitsToInt(bytes, 33, 33) == 1;
+  final movementFlag = _bitsToInt(bytes, 32, 32) == 1;
+  final arrhythmiaFlag = _bitsToInt(bytes, 33, 33) == 1;
   final month = _bitsToInt(bytes, 34, 37);
   final day = _bitsToInt(bytes, 38, 42);
   final hour = _bitsToInt(bytes, 43, 47);

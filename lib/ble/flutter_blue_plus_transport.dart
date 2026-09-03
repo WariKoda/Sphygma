@@ -19,6 +19,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 import '../protocol/ble_transport.dart';
 import '../protocol/channel_reassembler.dart';
+import '../protocol/exceptions.dart';
 import 'frame_mailbox.dart';
 
 class FlutterBluePlusTransport implements BleTransport {
@@ -77,6 +78,16 @@ class FlutterBluePlusTransport implements BleTransport {
     await _tx.write(frame, withoutResponse: false);
   }
 
+  /// Befund M1: Bleibt eine Antwort aus, trennt das Geraet nach ~60 s.
+  /// Ohne Timeout haengt der Aufrufer dann fuer immer - deshalb hart
+  /// scheitern, sobald laenger als [responseTimeout] nichts kommt.
+  static const Duration responseTimeout = Duration(seconds: 10);
+
   @override
-  Future<Uint8List> readResponse() => _mailbox.next();
+  Future<Uint8List> readResponse() => _mailbox.next().timeout(
+        responseTimeout,
+        onTimeout: () => throw ProtocolException(
+          'Keine Antwort vom Geraet binnen $responseTimeout.',
+        ),
+      );
 }
