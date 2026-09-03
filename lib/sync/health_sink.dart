@@ -29,4 +29,9 @@ abstract class HealthSink {
   /// Schreibt Blutdruck und Puls. Wirft bei jedem Fehler - ein stiller
   /// Teilerfolg wuerde die Export-Buchfuehrung verfaelschen.
   Future<void> writeBloodPressure(BloodPressureWrite write);
+
+  /// Loescht Blutdruck und Puls mit dieser [clientRecordId] wieder aus der
+  /// Senke. Health Connect erlaubt das nur fuer eigene Datensaetze - genau
+  /// die, die Sphygma geschrieben hat.
+  Future<void> deleteBloodPressure(String clientRecordId);
 }

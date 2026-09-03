@@ -394,16 +394,24 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
         }
       });
 
+  late final ExportService _exportService = ExportService(
+    repository: _syncService.repository,
+    sink: HealthConnectSink(),
+  );
+
   Future<void> _runProductionExport() => _guarded(() async {
-        _appendLog('[prod] Export Slot 1 -> Health Connect...');
-        final export = ExportService(
-          repository: _syncService.repository,
-          sink: HealthConnectSink(),
-        );
-        final n = await export.exportPending(userSlot: 1);
-        _appendLog('[prod] exportiert: $n Messungen');
+        // Testlauf: bewusst nur EINE Messung, nicht die ganze Historie.
+        _appendLog('[prod] Export Slot 1 -> Health Connect (limit 1)...');
+        final n = await _exportService.exportPending(userSlot: 1, limit: 1);
+        _appendLog('[prod] exportiert: $n Messung(en)');
         final left = await _syncService.repository.pendingExport(1);
         _appendLog('[prod] noch unexportiert Slot 1: ${left.length}');
+      });
+
+  Future<void> _runProductionRetract() => _guarded(() async {
+        _appendLog('[prod] Sphygma-Daten aus Health Connect entfernen...');
+        final n = await _exportService.retractExported(userSlot: 1);
+        _appendLog('[prod] entfernt: $n Messung(en)');
       });
 
   /// Hot-Reload-Helfer fuer den Spike: ein haengender Durchlauf (Geraet
@@ -457,7 +465,11 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
                 ),
                 ElevatedButton(
                   onPressed: _busy ? null : () => _runProductionExport(),
-                  child: const Text('7. Export Slot 1 -> Health Connect'),
+                  child: const Text('7. Export 1 Messung -> Health Connect'),
+                ),
+                ElevatedButton(
+                  onPressed: _busy ? null : () => _runProductionRetract(),
+                  child: const Text('8. Aus Health Connect entfernen'),
                 ),
               ],
             ),

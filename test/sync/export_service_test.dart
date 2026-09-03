@@ -11,6 +11,7 @@ import 'package:sphygma/sync/health_sink.dart';
 
 class FakeHealthSink implements HealthSink {
   final List<BloodPressureWrite> written = [];
+  final List<String> deleted = [];
   bool failNext = false;
 
   @override
@@ -20,6 +21,11 @@ class FakeHealthSink implements HealthSink {
       throw StateError('Health Connect nicht erreichbar');
     }
     written.add(write);
+  }
+
+  @override
+  Future<void> deleteBloodPressure(String clientRecordId) async {
+    deleted.add(clientRecordId);
   }
 }
 
@@ -96,6 +102,30 @@ void main() {
 
     expect(again, 0);
     expect(sink.written, hasLength(1));
+  });
+
+  test('limit begrenzt den Export auf die aeltesten n Messungen', () async {
+    await repository.importAll([_rec(1, 1), _rec(1, 2), _rec(1, 3)]);
+
+    final exported = await service.exportPending(userSlot: 1, limit: 1);
+
+    expect(exported, 1);
+    expect(sink.written.single.clientRecordId, 'sphygma-slot1-seq1');
+    expect(await repository.pendingExport(1), hasLength(2));
+  });
+
+  test('retractExported loescht alles Exportierte des Slots in der Senke '
+      'und setzt die Markierung zurueck', () async {
+    await repository.importAll([_rec(1, 1), _rec(1, 2), _rec(2, 3)]);
+    await service.exportPending(userSlot: 1);
+    await service.exportPending(userSlot: 2);
+
+    final retracted = await service.retractExported(userSlot: 1);
+
+    expect(retracted, 2);
+    expect(sink.deleted, unorderedEquals(['sphygma-slot1-seq1', 'sphygma-slot1-seq2']));
+    expect(await repository.pendingExport(1), hasLength(2));
+    expect(await repository.pendingExport(2), isEmpty);
   });
 
   test('scheitert die Senke, bleibt der Datensatz unexportiert und der '

@@ -99,4 +99,23 @@ class HealthConnectSink implements HealthSink {
       throw HealthConnectWriteException('${write.clientRecordId}-hr');
     }
   }
+
+  @override
+  Future<void> deleteBloodPressure(String clientRecordId) async {
+    await ensureReady();
+    final bpOk = await _health.deleteByClientRecordId(
+      dataTypeKey: HealthDataType.BLOOD_PRESSURE_SYSTOLIC,
+      clientRecordId: clientRecordId,
+    );
+    if (!bpOk) {
+      throw HealthConnectWriteException(clientRecordId);
+    }
+    final hrOk = await _health.deleteByClientRecordId(
+      dataTypeKey: HealthDataType.HEART_RATE,
+      clientRecordId: '$clientRecordId-hr',
+    );
+    if (!hrOk) {
+      throw HealthConnectWriteException('$clientRecordId-hr');
+    }
+  }
 }

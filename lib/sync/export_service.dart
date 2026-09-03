@@ -18,8 +18,11 @@ class ExportService {
   /// jede einzelne erst nach erfolgreichem Schreiben. Liefert die Anzahl.
   /// Scheitert die Senke, bleibt der betroffene Datensatz unexportiert und
   /// der Fehler wird durchgereicht.
-  Future<int> exportPending({required int userSlot}) async {
-    final pending = await repository.pendingExport(userSlot);
+  Future<int> exportPending({required int userSlot, int? limit}) async {
+    var pending = await repository.pendingExport(userSlot);
+    if (limit != null) {
+      pending = pending.take(limit).toList();
+    }
     var exported = 0;
     for (final m in pending) {
       await sink.writeBloodPressure(
@@ -37,5 +40,18 @@ class ExportService {
       exported++;
     }
     return exported;
+  }
+
+  /// Entfernt alle von Sphygma exportierten Messungen des Slots wieder aus
+  /// der Senke und hebt die Markierung auf. Liefert die Anzahl.
+  Future<int> retractExported({required int userSlot}) async {
+    final exported = await repository.exported(userSlot);
+    var retracted = 0;
+    for (final m in exported) {
+      await sink.deleteBloodPressure(clientRecordIdFor(m));
+      await repository.markUnexported([m.id]);
+      retracted++;
+    }
+    return retracted;
   }
 }
