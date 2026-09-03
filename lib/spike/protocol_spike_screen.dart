@@ -50,6 +50,9 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
   }
 
   void _appendLog(String message) {
+    // Auch in die Konsole, damit `flutter run` den Ablauf zeigt - der
+    // Bildschirm allein ist fuer den Beobachter am Rechner unsichtbar.
+    debugPrint('[spike] $message');
     if (!mounted) return;
     setState(() => _log.add(message));
   }
@@ -60,19 +63,50 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
       return existing;
     }
 
-    _appendLog(
-      'Suche nach Geraet (Service ${Hem6232tDevice.parentServiceUuid})...',
-    );
-    await FlutterBluePlus.startScan(
-      withServices: [Guid(Hem6232tDevice.parentServiceUuid)],
-      timeout: const Duration(seconds: 15),
-    );
-    final results = await FlutterBluePlus.scanResults
-        .firstWhere((results) => results.isNotEmpty)
-        .timeout(const Duration(seconds: 16));
-    await FlutterBluePlus.stopScan();
+    // DIAGNOSE (M1): ungefilterter Scan. Ein Scan mit withServices fand
+    // nichts - Hypothese: das Geraet bewirbt den Parent-Service nicht im
+    // Advertising, er ist erst nach dem Verbinden per GATT sichtbar.
+    // omblepy und UBPM filtern beim Scan ebenfalls nicht nach Service.
+    _appendLog('Ungefilterter Scan, 15 s. Jedes gesehene Geraet wird geloggt...');
+    final parentUuid = Guid(Hem6232tDevice.parentServiceUuid);
+    final seen = <String>{};
+    BluetoothDevice? match;
 
-    final device = results.first.device;
+    await FlutterBluePlus.startScan(timeout: const Duration(seconds: 15));
+    final subscription = FlutterBluePlus.scanResults.listen((results) {
+      for (final r in results) {
+        final id = r.device.remoteId.str;
+        if (!seen.add(id)) continue;
+        final name = r.advertisementData.advName;
+        final services = r.advertisementData.serviceUuids;
+        _appendLog(
+          '  seen: $id  rssi=${r.rssi}  name="$name"  services=$services',
+        );
+        final byService = services.contains(parentUuid);
+        final byName = RegExp(r'blesmart|omron|hem', caseSensitive: false)
+            .hasMatch(name);
+        if (match == null && (byService || byName)) {
+          match = r.device;
+          _appendLog('  -> Kandidat (${byService ? 'Service' : 'Name'}): $id');
+          // Befund M1: Wer die vollen 15 s weiterscannt, verliert das
+          // Pairing-Fenster - GATT_CONNECTION_TIMEOUT beim Verbinden.
+          unawaited(FlutterBluePlus.stopScan());
+        }
+      }
+    });
+    await FlutterBluePlus.isScanning
+        .where((scanning) => !scanning)
+        .first
+        .timeout(const Duration(seconds: 20));
+    await subscription.cancel();
+
+    final device = match;
+    if (device == null) {
+      throw StateError(
+        'Kein Omron gefunden. ${seen.length} andere Geraete gesehen. '
+        'War "-P-" waehrend des Scans am Blinken?',
+      );
+    }
     _appendLog('Gefunden: ${device.remoteId}. Verbinde...');
     await device.connect(license: License.nonprofit);
 
@@ -133,6 +167,8 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
         await writeNewPairingKey(
           unlockCharacteristic: chars.unlock,
           key: _pairingKey,
+          rxChannel0: chars.rx.first,
+          log: _appendLog,
         );
         _appendLog('Pairing erfolgreich.');
       });
@@ -179,16 +215,20 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
           for (var offset = 0;
               offset < bytes.length;
               offset += Hem6232tDevice.recordByteSize) {
-            final record = parseRecord(
-              bytes.sublist(offset, offset + Hem6232tDevice.recordByteSize),
+            final raw = bytes.sublist(
+              offset,
+              offset + Hem6232tDevice.recordByteSize,
             );
+            final record = parseRecord(raw);
             if (record == null) continue;
             recordCount++;
+            final hex =
+                raw.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
             _appendLog(
               '  User ${userIndex + 1}: ${record.timestamp} '
               'sys=${record.systolic} dia=${record.diastolic} '
               'bpm=${record.pulse} ihb(roh)=${record.arrhythmiaFlag} '
-              'mov(roh)=${record.movementFlag}',
+              'mov(roh)=${record.movementFlag} raw=$hex',
             );
           }
           _appendLog('User ${userIndex + 1}: $recordCount Messungen.');
@@ -205,6 +245,67 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
         await transport.disableNotifications();
         _appendLog('Fertig.');
       });
+
+  /// DIAGNOSE (M1, nur LESEN): Settings-Bereich 0x0260..0x02A4 dumpen und
+  /// die Geraeteuhr nach omblepys (unbestaetigter) Deutung anzeigen.
+  /// Es wird NICHTS geschrieben - Kalibrierdaten liegen vermutlich hier.
+  Future<void> _runReadClock() => _guarded(() async {
+        final device = await _scanAndConnect();
+        _device = device;
+        final chars = await _findCharacteristics(device);
+        await unlockWithPairingKey(
+          unlockCharacteristic: chars.unlock,
+          key: _pairingKey,
+        );
+        final transport = FlutterBluePlusTransport(
+          txCharacteristic: chars.tx,
+          rxCharacteristics: chars.rx,
+        );
+        await transport.enableNotifications();
+        await transport.writeCommand(startTransmissionFrame);
+        parseResponseFrame(await transport.readResponse());
+
+        // Befund M1: Ein 0x38-Byte-Read ab 0x0260 bleibt unbeantwortet, das
+        // Geraet trennt nach 60 s. omblepy liest den Settings-Bereich nur in
+        // zwei kleinen Abschnitten mit blockSize == Laenge - genau so hier.
+        const settingsBase = 0x0260;
+        final reader = EepromReader(transport);
+        final unread = await reader.readRange(
+          startAddress: settingsBase + 0x00,
+          totalLength: 8,
+          blockSize: 8,
+        );
+        _appendLog(
+          'Settings +0x00 (unread counter, 8 B): '
+          '${unread.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}',
+        );
+        final t = await reader.readRange(
+          startAddress: settingsBase + 0x14,
+          totalLength: 10,
+          blockSize: 10,
+        );
+        // omblepy hem-6232t.py, auskommentiert, "probably not correct":
+        // Slice [0x14:0x1e], darin Bytes [2:8] = month, year, hour, day,
+        // second, minute.
+        _appendLog(
+          'Uhr (omblepy-Deutung, unbestaetigt): '
+          '20${t[3]}-${t[2]}-${t[5]} ${t[4]}:${t[7]}:${t[6]}  '
+          'roh=${t.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}',
+        );
+
+        await transport.writeCommand(endTransmissionFrame);
+        parseResponseFrame(await transport.readResponse());
+        await transport.disableNotifications();
+        _appendLog('Fertig (Uhr).');
+      });
+
+  /// Hot-Reload-Helfer fuer den Spike: ein haengender Durchlauf (Geraet
+  /// trennt, kein Timeout) liess _busy sonst dauerhaft auf true.
+  @override
+  void reassemble() {
+    super.reassemble();
+    _busy = false;
+  }
 
   @override
   void dispose() {
@@ -230,6 +331,10 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
                 ElevatedButton(
                   onPressed: _busy ? null : () => _runFullReadout(),
                   child: const Text('2. Vollauslesen'),
+                ),
+                ElevatedButton(
+                  onPressed: _busy ? null : () => _runReadClock(),
+                  child: const Text('3. Uhr lesen'),
                 ),
               ],
             ),

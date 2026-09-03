@@ -64,3 +64,6 @@ migrate_working_dir/
 *.ipr
 *.iws
 .idea/
+
+# Fotos vom Geraetedisplay fuer M1 - enthalten persoenliche Blutdruckwerte.
+docs/images/

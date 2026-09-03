@@ -3,8 +3,10 @@
 Android-App (Flutter/Dart), die einen **Omron RS7 Intelli IT (HEM-6232T)** per Bluetooth LE
 ausliest und die Messwerte in **Health Connect** schreibt.
 
-> Status: Planung. Es existiert noch kein Produktionscode. Dieses Dokument ist die
-> Entscheidungsgrundlage; die Umsetzung beginnt erst nach Freigabe.
+> Status (2026-09-03): M0, M1 und M2 abgeschlossen. **M1 ist an echter Hardware bestanden** —
+> Pairing, Entsperren und Voll-Readout beider Slots über die eigene Protokollschicht;
+> Befunde in `docs/protocol/hem-6232t.md` §0, §2.1, §5.1, §6.2, §6.3, §8. Die offenen
+> Fragen aus §2.2 und dem Risikoregister sind unten als erledigt markiert.
 
 Recherchestand: 2026-09-03. Alle Protokollaussagen sind gegen den Quellcode zweier
 unabhängiger Referenzimplementierungen verifiziert; die Belege je Aussage stehen in
@@ -70,8 +72,10 @@ Record **gegenteilige** Werte. Welche Zuordnung stimmt, ist aus dem Code allein 
 entscheidbar — beide Projekte führen HEM-6232T als getestet, aber niemand hat die beiden
 Flags gegeneinander geprüft.
 
-**Konsequenz:** Meilenstein 1 klärt das empirisch (§5.2). Bis dahin werden beide Flags
-gelesen, aber **nicht** nach Health Connect geschrieben.
+**Erledigt in M1 (2026-09-03):** Per Display-Foto verifiziert — **UBPM stimmt**, omblepy hat
+die Flags für dieses Modell vertauscht. Bit 32 = Bewegung, Bit 33 = Arrhythmie. `record.dart`
+und die Testvektoren folgen der Hardware (`docs/protocol/hem-6232t.md` §6.2, §7.3). Beide
+Flags dürfen exportiert werden.
 
 ### 2.3 Ablauf einer Sitzung
 
@@ -485,13 +489,14 @@ Bewusst ausgeschlossen — jede Position mit Grund:
 
 | ID | Risiko | Auswirkung | Umgang |
 |---|---|---|---|
-| R-1 | Pairing schlägt auf Android fehl | **Projekt-Blocker** | M1 klärt es als Allererstes; Ausweg Kotlin-Platform-Channel |
-| R-2 | `ihb`/`mov` bleiben unklar | Falsche Flags in der Gesundheitsakte | Beide Flags nicht exportieren, bis empirisch geklärt |
+| R-1 | ~~Pairing schlägt auf Android fehl~~ **erledigt** | — | M1 bestanden ohne Kotlin-Channel; Ablauf in `hem-6232t.md` §5.1 |
+| R-2 | ~~`ihb`/`mov` bleiben unklar~~ **erledigt** | — | Per Display-Foto geklärt (§6.2); omblepy vertauscht, UBPM korrekt |
+| R-9 | Geräteuhr geht falsch, nicht stellbar (kein EEPROM-Write) | Falsche Zeitstempel in Health Connect | Dedup über Messungsnummer (§6.3); Plausibilitätsprüfung und Warnung beim Sync |
 | R-3 | ESC-Klassifikation macht die App zum Medizinprodukt Klasse IIa | Kein legaler Store-Release | Compile-Time-Flag; Entscheidung in M7; ggf. anwaltliche Prüfung |
 | R-4 | Zufallskey geht bei Neuinstallation verloren | Neu-Pairing nötig, omblepy/UBPM verlieren Zugriff | Key in Backup einschließen; Neu-Pairing im UI erklären |
 | R-5 | Kein Play-Organisationskonto | Play-Release unmöglich | In M0 klären, nicht erst in M7 |
 | R-6 | Namenskollision mit „Sphygmo" | Beanstandung im Store | Neutrale Package-ID, damit ein Namenswechsel billig bleibt |
-| R-7 | 2 statt 4 RX-Kanäle nötig | Übertragung hängt | Alle 4 implementieren, in M1 verifizieren |
+| R-7 | ~~2 statt 4 RX-Kanäle nötig~~ **erledigt** | — | Gerät antwortet über alle 4 Kanäle; Reassemblierung verifiziert |
 | R-8 | Gerät bereits mit Omron-App gepairt | Pairing schlägt fehl | Vorher entkoppeln; im Pairing-Flow erklären |
 
 ---
