@@ -15,6 +15,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import '../ble/flutter_blue_plus_transport.dart';
 import '../ble/pairing.dart';
 import '../protocol/eeprom_reader.dart';
+import '../protocol/exceptions.dart';
 import '../protocol/frame.dart';
 import '../protocol/hem6232t_device.dart';
 import '../protocol/record.dart';
@@ -263,7 +264,14 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
         );
         await transport.enableNotifications();
         await transport.writeCommand(startTransmissionFrame);
-        parseResponseFrame(await transport.readResponse());
+        final startRaw = await transport.readResponse();
+        parseResponseFrame(startRaw);
+        // DIAGNOSE: Traegt die Start-Antwort ("read device id") Geraetezustand,
+        // z. B. die Stellung des User-Schalters?
+        _appendLog(
+          'Start-Antwort (${startRaw.length} B): '
+          '${startRaw.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}',
+        );
 
         // Befund M1: Ein 0x38-Byte-Read ab 0x0260 bleibt unbeantwortet, das
         // Geraet trennt nach 60 s. omblepy liest den Settings-Bereich nur in
@@ -297,6 +305,58 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
         parseResponseFrame(await transport.readResponse());
         await transport.disableNotifications();
         _appendLog('Fertig (Uhr).');
+      });
+
+  /// DIAGNOSE (M1, nur LESEN): den Settings-Bereich 0x0260..0x02A4 in
+  /// 8-Byte-Schritten abtasten. Ziel: ein Byte finden, das mit der Stellung
+  /// des User-Schalters kippt. Unbeantwortete Reads (10-s-Timeout) werden
+  /// protokolliert und uebersprungen. Es wird NICHTS geschrieben.
+  Future<void> _runProbeSettings() => _guarded(() async {
+        final device = await _scanAndConnect();
+        _device = device;
+        final chars = await _findCharacteristics(device);
+        await unlockWithPairingKey(
+          unlockCharacteristic: chars.unlock,
+          key: _pairingKey,
+        );
+        final transport = FlutterBluePlusTransport(
+          txCharacteristic: chars.tx,
+          rxCharacteristics: chars.rx,
+        );
+        await transport.enableNotifications();
+        await transport.writeCommand(startTransmissionFrame);
+        parseResponseFrame(await transport.readResponse());
+
+        const base = 0x0260;
+        const end = 0x02a4;
+        final reader = EepromReader(transport);
+        for (var offset = 0; offset < end - base; offset += 8) {
+          final length = (end - base - offset).clamp(1, 8);
+          try {
+            final bytes = await reader.readRange(
+              startAddress: base + offset,
+              totalLength: length,
+              blockSize: length,
+            );
+            _appendLog(
+              'probe +0x${offset.toRadixString(16).padLeft(2, '0')}: '
+              '${bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}',
+            );
+          } on ProtocolException catch (e) {
+            _appendLog(
+              'probe +0x${offset.toRadixString(16).padLeft(2, '0')}: '
+              'UNBEANTWORTET ($e)',
+            );
+            if (!device.isConnected) break;
+          }
+        }
+
+        if (device.isConnected) {
+          await transport.writeCommand(endTransmissionFrame);
+          parseResponseFrame(await transport.readResponse());
+          await transport.disableNotifications();
+        }
+        _appendLog('Fertig (Probe).');
       });
 
   /// Hot-Reload-Helfer fuer den Spike: ein haengender Durchlauf (Geraet
@@ -335,6 +395,10 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
                 ElevatedButton(
                   onPressed: _busy ? null : () => _runReadClock(),
                   child: const Text('3. Uhr lesen'),
+                ),
+                ElevatedButton(
+                  onPressed: _busy ? null : () => _runProbeSettings(),
+                  child: const Text('4. Settings abtasten'),
                 ),
               ],
             ),
