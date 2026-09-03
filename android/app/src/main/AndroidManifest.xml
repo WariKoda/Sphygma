@@ -1,4 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- BLE-Berechtigungen fuer M1/M3 (Omron-Pairing und -Readout).
+         Android 12+ (API 31+, "S"): neues, granulares Modell.
+         minSdk 29 deckt auch Android 10-11 ab, dort gilt noch das alte
+         Standort-basierte Modell - beide Saetze sind daher noetig.
+         Quelle: flutter_blue_plus Beispiel-Manifest (verifiziert 2026-09-03). -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
     <application
         android:label="sphygma"
         android:name="${applicationName}"

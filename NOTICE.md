@@ -23,6 +23,15 @@ Verwendet wurde daraus ausschließlich das Protokollwissen (Kommandobytes, EEPRO
 Bitlayout, Prüfsummenverfahren), das ohnehin nicht als Ausdruck, sondern als Tatsache gilt
 und damit keinem Copyright unterliegt.
 
+## flutter_blue_plus
+
+Sphygma nutzt [flutter_blue_plus](https://github.com/chipweinberger/flutter_blue_plus) als
+BLE-Transport (Begründung: `PLAN.md` Abschnitt 4.1). Das Paket steht unter der
+[FlutterBluePlus License](https://github.com/chipweinberger/flutter_blue_plus/blob/main/LICENSE)
+(nicht BSD-3). Sphygma nutzt es als kostenloses Hobby-Projekt einer Einzelperson unter den
+„Open Use Terms" (Abschnitt 2, `License.nonprofit`). Das Paket sendet laut Lizenz Abschnitt 1.4
+eine Build-Time-Telemetrie (Package-Name, App-Name, Version, Datum) an den Hersteller.
+
 ## UBPM (Universal Blood Pressure Manager)
 
 [UBPM](https://codeberg.org/LazyT/ubpm) (Autor: `LazyT`) steht unter GPL-3.0 und diente

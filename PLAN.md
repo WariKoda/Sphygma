@@ -281,6 +281,11 @@ Request stellt. Ich habe beide Kandidaten im Quellcode geprüft:
   wenn ein Bonding läuft, und enthält eine Retry-Behandlung für bonding-bedingte Fehler. Eine
   Dart-API zum Auslösen oder Abfragen des Bond-Status gibt es nicht.
 
+**Lizenzhinweis, bei der Implementierung entdeckt (nicht in der ursprünglichen Recherche):**
+`flutter_blue_plus` steht seit Version 2.x unter einer eigenen [FlutterBluePlus License](https://github.com/chipweinberger/flutter_blue_plus/blob/main/LICENSE) statt BSD-3. `BluetoothDevice.connect()` verlangt seither einen Pflichtparameter `License license` (`nonprofit` oder `commercial`). Für Sphygma als kostenloses Hobby-/Open-Source-Projekt einer Einzelperson greift `License.nonprofit` (Abschnitt 2 der Lizenz: „personal user"). Zwei Punkte zur Kenntnisnahme:
+- Der Lizenztext nennt „commercial use by individuals" als Auslöser der kommerziellen Stufe — bezieht sich nach Wortlaut und Kontrast zu „personal user" auf gewinnorientierte Nutzung, nicht auf kostenlose Hobby-Veröffentlichung. Bei einer Neubewertung (z. B. Spenden-Buttons, Monetarisierung) ist das neu zu prüfen.
+- Das Paket sendet laut Lizenz Abschnitt 1.4 eine **Build-Time-Telemetrie** (Package-Name, App-Name, Version, Datum) an den Hersteller; das Ausbleiben blockiert den Build nicht. Für die Datenschutzerklärung (M7, Play-Store-Pflicht) gehört das in die Liste der Drittanbieter-Datenflüsse.
+
 Damit ist die Wahl sachlich entschieden. **Ein Platform-Channel zu nativem Kotlin ist nach
 aktuellem Stand nicht nötig** — die kritische Fähigkeit ist in Dart verfügbar. Der Plan hält
 den Ausweg trotzdem offen: Die BLE-Schicht liegt hinter einem eigenen Interface, sodass eine
