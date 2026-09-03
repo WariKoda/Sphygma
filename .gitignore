@@ -1,0 +1,66 @@
+# ─── Niemals veröffentlichen ────────────────────────────────────────────────
+# Signing-Material. Landet sonst dauerhaft im öffentlichen Repo.
+# Siehe https://flutter.dev/to/reference-keystore
+key.properties
+**/*.keystore
+**/*.jks
+**/local.properties
+**/google-services.json
+
+# Sphygma-spezifisch: Gesundheitsdaten und Geräte-Secrets.
+# BLE-Mitschnitte aus dem Protokoll-Spike enthalten Messwerte, Geräte-MACs
+# und den 16-Byte-Pairing-Key im Klartext.
+*.ble.log
+ble-*.log
+*.bpdump
+capture/
+scratch/
+
+# ─── Flutter / Dart ─────────────────────────────────────────────────────────
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication
+app.*.symbols
+
+# Obfuscation
+app.*.map.json
+
+# Android
+gradle-wrapper.jar
+/.gradle
+/captures/
+/gradlew
+/gradlew.bat
+GeneratedPluginRegistrant.java
+.cxx/
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Widget Preview
+.widget_preview/
+
+# ─── Editoren / OS ──────────────────────────────────────────────────────────
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+*.iml
+*.ipr
+*.iws
+.idea/
