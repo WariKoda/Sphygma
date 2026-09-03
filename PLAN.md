@@ -8,8 +8,12 @@ ausliest und die Messwerte in **Health Connect** schreibt.
 > `SyncService`), M4 (drift, Dedup über die Messungsnummer) und M5 (`ExportService`,
 > `HealthConnectSink`) end-to-end am Gerät validiert: Keystore-Key → Pairing → Readout → DB
 > (zweiter Sync 0 neue Datensätze) → Health Connect (Export einer Messung, gezieltes
-> Entfernen per `clientRecordId`). Offen: M6 UI, M7 Release. Die offenen Fragen aus §2.2 und
-> dem Risikoregister sind unten als erledigt markiert.
+> Entfernen per `clientRecordId`). **M6 (UI) ist implementiert und getestet** (Widget-Tests,
+> Debug-APK), der Gerätetest steht aus. **M7 vorbereitet:** Release-Signierung im Build,
+> `docs/RELEASE.md`, `docs/PRIVACY.md`, F-Droid-Metadaten-Entwurf. Offen für M7:
+> stabiler Flutter-Kanal, Keystore (erzeugt der Nutzer), ESC-Flag-Entscheidung,
+> Play-Organisationskonto, F-Droid-Lizenzfrage zu `flutter_blue_plus`. Die offenen Fragen aus
+> §2.2 und dem Risikoregister sind unten als erledigt markiert.
 
 Recherchestand: 2026-09-03. Alle Protokollaussagen sind gegen den Quellcode zweier
 unabhängiger Referenzimplementierungen verifiziert; die Belege je Aussage stehen in

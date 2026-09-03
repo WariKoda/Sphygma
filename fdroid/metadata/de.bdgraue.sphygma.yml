@@ -1,0 +1,55 @@
+# Entwurf fuer fdroiddata (https://gitlab.com/fdroid/fdroiddata), Format laut
+# https://f-droid.org/docs/Build_Metadata_Reference/. Wird dort als
+# Merge-Request eingereicht, nicht in diesem Repo gebaut. Vor dem Einreichen:
+# commit-Hash des Release-Tags, Flutter-Version (stabil, gepinnt) und die
+# Lizenzfrage zu flutter_blue_plus klaeren (docs/RELEASE.md §3).
+Categories:
+  - Science & Education
+License: MIT
+AuthorName: Marc Cheng
+SourceCode: https://github.com/WariKoda/Sphygma
+IssueTracker: https://github.com/WariKoda/Sphygma/issues
+
+AutoName: Sphygma
+Summary: Omron RS7 Intelli IT (HEM-6232T) per Bluetooth auslesen, nach Health Connect exportieren
+Description: |-
+  Sphygma liest die gespeicherten Messungen eines Omron RS7 Intelli IT
+  (HEM-6232T) Blutdruckmessgeraets ueber Bluetooth LE aus, speichert sie
+  lokal und exportiert Blutdruck und Puls auf Wunsch nach Health Connect.
+
+  * Keine Cloud, keine Konten, keine Werbung
+  * Beide Benutzer-Speicherplaetze des Geraets werden gelesen; exportiert
+    wird nur der gewaehlte
+  * Jede Messung kann einzeln nach Health Connect geschrieben und wieder
+    daraus entfernt werden
+  * Schreibt nichts in das Geraet ausser dem Pairing-Schluessel
+
+  Sphygma ist kein Medizinprodukt und ersetzt keine aerztliche Bewertung.
+
+RepoType: git
+Repo: https://github.com/WariKoda/Sphygma
+
+Builds:
+  - versionName: 0.1.0
+    versionCode: 1
+    commit: <Tag v0.1.0 - Hash eintragen>
+    subdir: .
+    sudo:
+      - sysctl fs.inotify.max_user_watches=524288 || true
+    init:
+      - git submodule update --init --recursive || true
+    srclibs:
+      - flutter@<stabile Flutter-Version, z. B. 3.x.y>
+    prebuild:
+      - export PUB_CACHE=$(pwd)/.pub-cache
+      - $$flutter$$/bin/flutter config --no-analytics
+      - $$flutter$$/bin/flutter pub get
+    build:
+      - export PUB_CACHE=$(pwd)/.pub-cache
+      - $$flutter$$/bin/flutter build apk --release
+    output: build/app/outputs/flutter-apk/app-release.apk
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^v[0-9.]+$
+CurrentVersion: 0.1.0
+CurrentVersionCode: 1

@@ -128,6 +128,19 @@ void main() {
     expect(await repository.pendingExport(2), isEmpty);
   });
 
+  test('exportOne / retractOne wirken auf genau eine Messung', () async {
+    await repository.importAll([_rec(1, 1), _rec(1, 2)]);
+    final second = (await repository.allForSlot(1)).last;
+
+    await service.exportOne(second);
+    expect(sink.written.single.clientRecordId, 'sphygma-slot1-seq2');
+    expect(await repository.pendingExport(1), hasLength(1));
+
+    await service.retractOne((await repository.exported(1)).single);
+    expect(sink.deleted, ['sphygma-slot1-seq2']);
+    expect(await repository.pendingExport(1), hasLength(2));
+  });
+
   test('scheitert die Senke, bleibt der Datensatz unexportiert und der '
       'Fehler kommt durch', () async {
     await repository.importAll([_rec(1, 1)]);

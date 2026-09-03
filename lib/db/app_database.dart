@@ -44,10 +44,30 @@ class Measurements extends Table {
       ];
 }
 
-@DriftDatabase(tables: [Measurements])
+/// Schluessel/Wert-Einstellungen der App (z. B. der gewaehlte User-Slot).
+@DataClassName('AppSetting')
+class AppSettings extends Table {
+  TextColumn get key => text()();
+  TextColumn get value => text()();
+
+  @override
+  Set<Column> get primaryKey => {key};
+}
+
+@DriftDatabase(tables: [Measurements, AppSettings])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await m.createTable(appSettings);
+          }
+        },
+      );
 }

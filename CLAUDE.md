@@ -4,15 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Projektzustand
 
-**Hier existiert noch kein Code.** Das Repo enthält ausschließlich `PLAN.md` und
-`docs/protocol/hem-6232t.md`. Es gibt keine `pubspec.yaml`, kein Flutter-Projekt, keine Tests.
-Die unten genannten Befehle greifen erst, nachdem Meilenstein 0 das Projekt angelegt hat.
+**M0–M6 sind implementiert, M1–M5 an echter Hardware validiert** (Fairphone 4, HEM-6232T,
+2026-09-03); M6 (UI) wartet auf den Gerätetest, M7 (Release) ist vorbereitet
+(`docs/RELEASE.md`). Status, Entscheidungen und Risikoregister stehen in `PLAN.md` — vor
+inhaltlicher Arbeit lesen.
 
-Vor inhaltlicher Arbeit **`PLAN.md` lesen** — dort stehen die getroffenen Entscheidungen, die
-Meilensteinreihenfolge und das Risikoregister. Die Reihenfolge der Meilensteine ist bindend:
-**M1 (Protokoll-Spike an echter Hardware) blockiert alles Weitere.** Vor einem erfolgreichen
-Pairing und Voll-Readout auf der Konsole wird weder Persistenz noch Health Connect noch UI
-gebaut.
+Verzeichnisse: `lib/protocol` (rein, ohne Bluetooth), `lib/ble` (flutter_blue_plus-Anbindung,
+Session, Pairing, Key-Store), `lib/db` (drift, generierte `*.g.dart` sind eingecheckt),
+`lib/sync` (Readout→DB, DB→Health Connect), `lib/stats`, `lib/app`, `lib/ui`.
+`lib/spike/` ist die M1-Diagnose-App (eigener Entrypoint `lib/spike_main.dart`,
+`flutter run -t lib/spike_main.dart`) — bewusst behalten, weil sie Settings-Abtastung und
+Rohbyte-Logging kann, die die App nicht hat.
 
 ## Was die App tut
 
@@ -32,8 +34,16 @@ flutter test --plain-name "XOR"              # ein Test per Namensfragment
 flutter test --name "<regexp>"               # ein Test per Regex
 flutter test --coverage
 flutter run                                  # Gerät muss per adb verbunden sein
+flutter run --dart-define=SPHYGMA_ESC=true   # mit ESC-Klassifikation (Standard: aus)
+flutter run -t lib/spike_main.dart           # M1-Diagnose-App
+flutter run --pid-file /tmp/sphygma.pid      # dann: kill -USR1 (Hot Reload) / -USR2 (Restart)
+dart run build_runner build --delete-conflicting-outputs   # nach Änderungen am drift-Schema
+flutter build apk --release --split-per-abi  # Release, siehe docs/RELEASE.md
 flutter devices
 ```
+
+Nach Schema-Änderungen in `lib/db/app_database.dart`: `schemaVersion` erhöhen, Migration in
+`migration` ergänzen, Codegen laufen lassen, generierte Datei mit einchecken.
 
 Der **beta channel** ist für den in `PLAN.md` M7 geplanten reproduzierbaren F-Droid-Build ein
 Problem. Vor dem Release auf einen stabilen Kanal wechseln und die Version pinnen.
