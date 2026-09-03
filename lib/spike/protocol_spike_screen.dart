@@ -18,6 +18,8 @@ import '../ble/pairing.dart';
 import '../ble/pairing_key_store.dart';
 import '../db/app_database.dart';
 import '../db/measurement_repository.dart';
+import '../sync/export_service.dart';
+import '../sync/health_connect_sink.dart';
 import '../sync/sync_service.dart';
 import '../protocol/eeprom_reader.dart';
 import '../protocol/exceptions.dart';
@@ -392,6 +394,26 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
         }
       });
 
+  late final ExportService _exportService = ExportService(
+    repository: _syncService.repository,
+    sink: HealthConnectSink(),
+  );
+
+  Future<void> _runProductionExport() => _guarded(() async {
+        // Testlauf: bewusst nur EINE Messung, nicht die ganze Historie.
+        _appendLog('[prod] Export Slot 1 -> Health Connect (limit 1)...');
+        final n = await _exportService.exportPending(userSlot: 1, limit: 1);
+        _appendLog('[prod] exportiert: $n Messung(en)');
+        final left = await _syncService.repository.pendingExport(1);
+        _appendLog('[prod] noch unexportiert Slot 1: ${left.length}');
+      });
+
+  Future<void> _runProductionRetract() => _guarded(() async {
+        _appendLog('[prod] Sphygma-Daten aus Health Connect entfernen...');
+        final n = await _exportService.retractExported(userSlot: 1);
+        _appendLog('[prod] entfernt: $n Messung(en)');
+      });
+
   /// Hot-Reload-Helfer fuer den Spike: ein haengender Durchlauf (Geraet
   /// trennt, kein Timeout) liess _busy sonst dauerhaft auf true.
   @override
@@ -440,6 +462,14 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
                 ElevatedButton(
                   onPressed: _busy ? null : () => _runProductionSync(),
                   child: const Text('6. Prod-Sync -> DB'),
+                ),
+                ElevatedButton(
+                  onPressed: _busy ? null : () => _runProductionExport(),
+                  child: const Text('7. Export 1 Messung -> Health Connect'),
+                ),
+                ElevatedButton(
+                  onPressed: _busy ? null : () => _runProductionRetract(),
+                  child: const Text('8. Aus Health Connect entfernen'),
                 ),
               ],
             ),

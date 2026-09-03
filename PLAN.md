@@ -3,12 +3,13 @@
 Android-App (Flutter/Dart), die einen **Omron RS7 Intelli IT (HEM-6232T)** per Bluetooth LE
 ausliest und die Messwerte in **Health Connect** schreibt.
 
-> Status (2026-09-03): **M0–M4 abgeschlossen.** M1 an echter Hardware bestanden (Befunde in
+> Status (2026-09-03): **M0–M5 abgeschlossen.** M1 an echter Hardware bestanden (Befunde in
 > `docs/protocol/hem-6232t.md` §0, §2.1, §5.1, §6.2, §6.3, §8); M3 (`OmronSession`,
-> `SyncService`) und M4 (drift, Dedup über die Messungsnummer) end-to-end am Gerät validiert:
-> Keystore-Key → Pairing → Readout → DB, zweiter Sync 0 neue Datensätze. Offen: M5 Health
-> Connect, M6 UI, M7 Release. Die offenen Fragen aus §2.2 und dem Risikoregister sind unten
-> als erledigt markiert.
+> `SyncService`), M4 (drift, Dedup über die Messungsnummer) und M5 (`ExportService`,
+> `HealthConnectSink`) end-to-end am Gerät validiert: Keystore-Key → Pairing → Readout → DB
+> (zweiter Sync 0 neue Datensätze) → Health Connect (Export einer Messung, gezieltes
+> Entfernen per `clientRecordId`). Offen: M6 UI, M7 Release. Die offenen Fragen aus §2.2 und
+> dem Risikoregister sind unten als erledigt markiert.
 
 Recherchestand: 2026-09-03. Alle Protokollaussagen sind gegen den Quellcode zweier
 unabhängiger Referenzimplementierungen verifiziert; die Belege je Aussage stehen in
@@ -455,10 +456,17 @@ die DB bleibt Source of Truth.
 
 Bewusst schmal:
 
-1. **Pairing-Flow** mit klarer Anleitung zum langen Druck auf die Bluetooth-Taste
-2. **„Jetzt synchronisieren"** mit Fortschritt
-3. **Messwertliste**, nach Datum gruppiert, User-Slot erkennbar
+1. **Pairing-Flow** mit klarer Anleitung zum langen Druck auf die Bluetooth-Taste, inklusive
+   Slot-Wahl („Welcher User bin ich am Gerät?") und Neu-Pairing, wenn das Entsperren
+   scheitert (Key nach Neuinstallation verloren, R-4)
+2. **„Jetzt synchronisieren"** mit Fortschritt; Hinweis, die Bluetooth-Taste kurz zu drücken
+3. **Messwertliste**, nach Datum gruppiert, User-Slot und Flags erkennbar, je Messung
+   Export-Status mit **„nach Health Connect senden" / „aus Health Connect entfernen"**
+   einzeln, dazu Sammelaktionen („alle Unexportierten senden", „alle Sphygma-Daten aus
+   Health Connect entfernen"). Beides ist mit `clientRecordId` gezielt möglich — M5.
 4. **Trendansicht:** Morgen-/Abendmittelwerte, 7-Tage-Durchschnitt
+5. **Uhr-Plausibilität:** Weicht die Gerätezeit der neuesten Messung stark von der Handyzeit
+   ab, Hinweis „Uhr am Gerät stellen" (§8.2 der Protokollreferenz)
 
 **Die ESC-Klassifikation kommt hinter ein Compile-Time-Flag** (§3.2). Standardmäßig aus im
 Release-Build. Der Code ist da, die Entscheidung bleibt bis M7 offen und ist dann eine

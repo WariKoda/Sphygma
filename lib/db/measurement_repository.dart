@@ -72,6 +72,25 @@ class MeasurementRepository {
     return query.get();
   }
 
+  /// Bereits nach Health Connect exportierte Messungen eines Slots.
+  Future<List<Measurement>> exported(int userSlot) {
+    final query = _db.select(_db.measurements)
+      ..where((m) => m.userSlot.equals(userSlot) & m.exportedAt.isNotNull())
+      ..orderBy([(m) => OrderingTerm.asc(m.deviceSequence)]);
+    return query.get();
+  }
+
+  /// Hebt die Export-Markierung auf, z. B. nachdem die Datensaetze aus
+  /// Health Connect entfernt wurden.
+  Future<void> markUnexported(List<int> ids) {
+    return _db.transaction(() async {
+      for (final id in ids) {
+        await (_db.update(_db.measurements)..where((m) => m.id.equals(id)))
+            .write(const MeasurementsCompanion(exportedAt: Value(null)));
+      }
+    });
+  }
+
   Future<void> markExported(List<int> ids, DateTime at) {
     return _db.transaction(() async {
       for (final id in ids) {

@@ -117,6 +117,23 @@ void main() {
       expect(await repository.pendingExport(2), hasLength(1));
     });
 
+    test('exported liefert nur exportierte Records; markUnexported hebt es auf',
+        () async {
+      await repository.importAll([
+        _slotRecord(slot: 1, sequence: 1),
+        _slotRecord(slot: 1, sequence: 2),
+      ]);
+      final all = await repository.allForSlot(1);
+      await repository.markExported([all.first.id], DateTime(2026, 9, 4));
+
+      expect(await repository.exported(1), hasLength(1));
+
+      await repository.markUnexported([all.first.id]);
+
+      expect(await repository.exported(1), isEmpty);
+      expect(await repository.pendingExport(1), hasLength(2));
+    });
+
     test('markExported setzt exportedAt', () async {
       await repository.importAll([_slotRecord(slot: 1, sequence: 1)]);
       final m = (await repository.allForSlot(1)).single;
