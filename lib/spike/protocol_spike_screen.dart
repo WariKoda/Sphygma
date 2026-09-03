@@ -9,11 +9,16 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 import '../ble/flutter_blue_plus_transport.dart';
 import '../ble/pairing.dart';
+import '../ble/pairing_key_store.dart';
+import '../db/app_database.dart';
+import '../db/measurement_repository.dart';
+import '../sync/sync_service.dart';
 import '../protocol/eeprom_reader.dart';
 import '../protocol/exceptions.dart';
 import '../protocol/frame.dart';
@@ -359,6 +364,34 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
         _appendLog('Fertig (Probe).');
       });
 
+  // --- Produktionspfad (M3/M4) an Hardware validieren ---------------------
+  // Eigener Key-Store (Android Keystore) und eigene DB - unabhaengig vom
+  // In-Memory-Key des Spikes. Erfordert daher einmal ein neues Pairing.
+  late final SyncService _syncService = SyncService(
+    keyStore: SecureStoragePairingKeyStore(),
+    repository: MeasurementRepository(_database),
+  );
+  late final AppDatabase _database = AppDatabase(driftDatabase(name: 'sphygma'));
+
+  Future<void> _runProductionPairing() => _guarded(() async {
+        _appendLog('[prod] Pairing ueber SyncService (Key -> Keystore)...');
+        await _syncService.pair(log: _appendLog);
+        _appendLog('[prod] Pairing erfolgreich, Key gespeichert.');
+      });
+
+  Future<void> _runProductionSync() => _guarded(() async {
+        _appendLog('[prod] Sync ueber SyncService (Readout -> DB)...');
+        final result = await _syncService.sync(log: _appendLog);
+        _appendLog(
+          '[prod] gelesen: ${result.readFromDevice}, neu gespeichert: '
+          '${result.newlyStored}',
+        );
+        for (final slot in [1, 2]) {
+          final rows = await _syncService.repository.allForSlot(slot);
+          _appendLog('[prod] DB Slot $slot: ${rows.length} Messungen');
+        }
+      });
+
   /// Hot-Reload-Helfer fuer den Spike: ein haengender Durchlauf (Geraet
   /// trennt, kein Timeout) liess _busy sonst dauerhaft auf true.
   @override
@@ -399,6 +432,14 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
                 ElevatedButton(
                   onPressed: _busy ? null : () => _runProbeSettings(),
                   child: const Text('4. Settings abtasten'),
+                ),
+                ElevatedButton(
+                  onPressed: _busy ? null : () => _runProductionPairing(),
+                  child: const Text('5. Prod-Pairing'),
+                ),
+                ElevatedButton(
+                  onPressed: _busy ? null : () => _runProductionSync(),
+                  child: const Text('6. Prod-Sync -> DB'),
                 ),
               ],
             ),
