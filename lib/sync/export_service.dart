@@ -25,18 +25,7 @@ class ExportService {
     }
     var exported = 0;
     for (final m in pending) {
-      await sink.writeBloodPressure(
-        BloodPressureWrite(
-          clientRecordId: clientRecordIdFor(m),
-          systolic: m.systolic,
-          diastolic: m.diastolic,
-          pulse: m.pulse,
-          measuredAt: m.measuredAt,
-          movement: m.movement,
-          arrhythmia: m.arrhythmia,
-        ),
-      );
-      await repository.markExported([m.id], DateTime.now());
+      await exportOne(m);
       exported++;
     }
     return exported;
@@ -48,10 +37,31 @@ class ExportService {
     final exported = await repository.exported(userSlot);
     var retracted = 0;
     for (final m in exported) {
-      await sink.deleteBloodPressure(clientRecordIdFor(m));
-      await repository.markUnexported([m.id]);
+      await retractOne(m);
       retracted++;
     }
     return retracted;
+  }
+
+  /// Exportiert genau diese Messung.
+  Future<void> exportOne(Measurement m) async {
+    await sink.writeBloodPressure(
+      BloodPressureWrite(
+        clientRecordId: clientRecordIdFor(m),
+        systolic: m.systolic,
+        diastolic: m.diastolic,
+        pulse: m.pulse,
+        measuredAt: m.measuredAt,
+        movement: m.movement,
+        arrhythmia: m.arrhythmia,
+      ),
+    );
+    await repository.markExported([m.id], DateTime.now());
+  }
+
+  /// Entfernt genau diese Messung aus der Senke.
+  Future<void> retractOne(Measurement m) async {
+    await sink.deleteBloodPressure(clientRecordIdFor(m));
+    await repository.markUnexported([m.id]);
   }
 }
