@@ -18,6 +18,8 @@ import '../ble/pairing.dart';
 import '../ble/pairing_key_store.dart';
 import '../db/app_database.dart';
 import '../db/measurement_repository.dart';
+import '../sync/export_service.dart';
+import '../sync/health_connect_sink.dart';
 import '../sync/sync_service.dart';
 import '../protocol/eeprom_reader.dart';
 import '../protocol/exceptions.dart';
@@ -392,6 +394,18 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
         }
       });
 
+  Future<void> _runProductionExport() => _guarded(() async {
+        _appendLog('[prod] Export Slot 1 -> Health Connect...');
+        final export = ExportService(
+          repository: _syncService.repository,
+          sink: HealthConnectSink(),
+        );
+        final n = await export.exportPending(userSlot: 1);
+        _appendLog('[prod] exportiert: $n Messungen');
+        final left = await _syncService.repository.pendingExport(1);
+        _appendLog('[prod] noch unexportiert Slot 1: ${left.length}');
+      });
+
   /// Hot-Reload-Helfer fuer den Spike: ein haengender Durchlauf (Geraet
   /// trennt, kein Timeout) liess _busy sonst dauerhaft auf true.
   @override
@@ -440,6 +454,10 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
                 ElevatedButton(
                   onPressed: _busy ? null : () => _runProductionSync(),
                   child: const Text('6. Prod-Sync -> DB'),
+                ),
+                ElevatedButton(
+                  onPressed: _busy ? null : () => _runProductionExport(),
+                  child: const Text('7. Export Slot 1 -> Health Connect'),
                 ),
               ],
             ),
