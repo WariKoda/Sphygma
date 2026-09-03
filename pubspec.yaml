@@ -48,7 +48,7 @@ dependencies:
   # Lokale Persistenz (M4), Source of Truth. drift_flutter ersetzt das
   # inzwischen EOL sqlite3_flutter_libs fuer die native SQLite-Einbindung.
   # Sichere Ablage des Pairing-Keys (M3).
-  flutter_secure_storage: ^11.0.0
+  flutter_secure_storage: ^10.3.1
 
   drift: ^2.34.4
   drift_flutter: ^0.3.1
