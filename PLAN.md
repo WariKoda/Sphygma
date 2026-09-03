@@ -437,7 +437,11 @@ Dedup beim Import. Migrationen von Anfang an.
 - `writeBloodPressure` je Messung, `clientRecordId` deterministisch aus `(timestamp, slot)`
 - Puls als `HealthDataType.HEART_RATE`
 - `RecordingMethod.automatic` — die Werte stammen aus einem Messgerät, nicht aus Handeingabe
-- **`ihb`/`mov` werden nicht exportiert**, solange §2.2 nicht geklärt ist
+- `ihb`/`mov` dürfen exportiert werden — Zuordnung in M1 geklärt (§2.2)
+- **Nur der in der App gewählte User-Slot wird exportiert.** Das Gerät speichert zwei Slots,
+  die Schalterstellung ist nicht auslesbar (`hem-6232t.md` §8.1), und Health Connect ist die
+  Akte *einer* Person — fremde Messungen dürfen dort nicht landen. Beide Slots werden
+  importiert und beschriftet; die Slot-Wahl ist Teil des Pairing-Flows (M6).
 
 **Risiko:** Health Connect kann fehlen oder veraltet sein; der Nutzer kann die Berechtigung
 dauerhaft verweigern. Beides muss die App aushalten, ohne den lokalen Bestand zu gefährden —
