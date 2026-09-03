@@ -39,6 +39,10 @@ class FlutterBluePlusTransport implements BleTransport {
 
   final BluetoothCharacteristic _tx;
   final List<BluetoothCharacteristic> _rx;
+
+  /// RX-Kanal 0 - das Pairing braucht ihn, weil Notify darauf das Bonding
+  /// ausloest (docs/protocol/hem-6232t.md §5.1).
+  BluetoothCharacteristic get rxChannel0 => _rx.first;
   final ChannelReassembler _reassembler = ChannelReassembler();
   final FrameMailbox<Uint8List> _mailbox = FrameMailbox<Uint8List>();
   final List<StreamSubscription<List<int>>> _subscriptions = [];

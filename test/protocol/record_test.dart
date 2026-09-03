@@ -105,6 +105,15 @@ void main() {
       expect(record.arrhythmiaFlag, isFalse);
     });
 
+    test('Messungsnummer aus Bytes 9-11 (big-endian), der Dedup-Schluessel',
+        () {
+      // docs/protocol/hem-6232t.md §6.3: laufende Nummer je Messung.
+      expect(parseRecord(derived('4c5d574892531efa1200020e8679'))!.sequence,
+          0x020e);
+      expect(parseRecord(derived('59705761926214e902000212708f'))!.sequence,
+          0x0212);
+    });
+
     test('kein Symbol am Geraet -> keine Flags', () {
       final record = parseRecord(derived('5263573a11121d340000020c02fd'))!;
 
