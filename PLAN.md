@@ -3,10 +3,12 @@
 Android-App (Flutter/Dart), die einen **Omron RS7 Intelli IT (HEM-6232T)** per Bluetooth LE
 ausliest und die Messwerte in **Health Connect** schreibt.
 
-> Status (2026-09-03): M0, M1 und M2 abgeschlossen. **M1 ist an echter Hardware bestanden** —
-> Pairing, Entsperren und Voll-Readout beider Slots über die eigene Protokollschicht;
-> Befunde in `docs/protocol/hem-6232t.md` §0, §2.1, §5.1, §6.2, §6.3, §8. Die offenen
-> Fragen aus §2.2 und dem Risikoregister sind unten als erledigt markiert.
+> Status (2026-09-03): **M0–M4 abgeschlossen.** M1 an echter Hardware bestanden (Befunde in
+> `docs/protocol/hem-6232t.md` §0, §2.1, §5.1, §6.2, §6.3, §8); M3 (`OmronSession`,
+> `SyncService`) und M4 (drift, Dedup über die Messungsnummer) end-to-end am Gerät validiert:
+> Keystore-Key → Pairing → Readout → DB, zweiter Sync 0 neue Datensätze. Offen: M5 Health
+> Connect, M6 UI, M7 Release. Die offenen Fragen aus §2.2 und dem Risikoregister sind unten
+> als erledigt markiert.
 
 Recherchestand: 2026-09-03. Alle Protokollaussagen sind gegen den Quellcode zweier
 unabhängiger Referenzimplementierungen verifiziert; die Belege je Aussage stehen in
