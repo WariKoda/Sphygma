@@ -1,6 +1,7 @@
 // App-Einstellungen in der DB - ohne zusaetzliche Abhaengigkeit.
 import 'package:drift/drift.dart';
 
+import '../ui/theme/variants.dart';
 import 'app_database.dart';
 
 class SettingsRepository {
@@ -27,6 +28,34 @@ class SettingsRepository {
     }
     await _db.into(_db.appSettings).insert(
           AppSettingsCompanion.insert(key: _userSlotKey, value: '$slot'),
+          mode: InsertMode.insertOrReplace,
+        );
+  }
+
+  static const String _themeVariantKey = 'theme_variant';
+
+  /// Die gewaehlte Gestaltung. Anders als beim User-Slot ist hier ein
+  /// Standard richtig: Eine fehlende Wahl ist kein Zustand, den der
+  /// Nutzer klaeren muss.
+  Future<ThemeVariant> themeVariant() async {
+    final row = await (_db.select(_db.appSettings)
+          ..where((s) => s.key.equals(_themeVariantKey)))
+        .getSingleOrNull();
+    if (row == null) return ThemeVariant.instrument;
+    for (final v in allVariants) {
+      if (v.name == row.value) return v;
+    }
+    return ThemeVariant.instrument;
+  }
+
+  Future<void> setThemeVariant(ThemeVariant variant) =>
+      setRawSetting(_themeVariantKey, variant.name);
+
+  /// Schreibt einen Einstellungswert unmittelbar. Oeffentlich, weil Tests
+  /// ungueltige Zustaende herstellen koennen muessen.
+  Future<void> setRawSetting(String key, String value) async {
+    await _db.into(_db.appSettings).insert(
+          AppSettingsCompanion.insert(key: key, value: value),
           mode: InsertMode.insertOrReplace,
         );
   }
