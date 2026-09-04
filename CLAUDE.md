@@ -23,7 +23,7 @@ schreibt die Messwerte nach Health Connect. Android only, Package-ID `de.bdgraue
 
 ## Befehle
 
-Toolchain ist installiert: Flutter 3.47.0-0.1.pre (**beta channel**), Dart 3.13.0,
+Toolchain ist installiert: **Flutter 3.47.2 (stable, gepinnt für den Release)**, Dart 3.13.2,
 `adb` unter `~/Android/Sdk/platform-tools/`.
 
 ```bash
@@ -45,10 +45,12 @@ flutter devices
 Nach Schema-Änderungen in `lib/db/app_database.dart`: `schemaVersion` erhöhen, Migration in
 `migration` ergänzen, Codegen laufen lassen, generierte Datei mit einchecken.
 
-Der **beta channel** ist für den in `PLAN.md` M7 geplanten reproduzierbaren F-Droid-Build ein
-Problem. Vor dem Release auf einen stabilen Kanal wechseln und die Version pinnen.
+Release-Builds tragen **immer** `--dart-define=SPHYGMA_ESC=true` (Entscheidung 2026-09-04,
+`docs/RELEASE.md` §2). Die Flutter-Version ist in `docs/RELEASE.md` §1.1 und den
+F-Droid-Metadaten gepinnt; beim Upgrade beide Stellen mitziehen.
 
-Health Connect verlangt `minSdk 26` (Untergrenze des `health`-Pakets); der Plan empfiehlt 29.
+Health Connect verlangt `minSdk 26` (Untergrenze des `health`-Pakets); gesetzt ist 29.
+`compileSdk`/`targetSdk` sind auf 36 gepinnt (Play-Anforderung seit 31.08.2026).
 
 ## Architektur
 

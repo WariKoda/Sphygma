@@ -490,6 +490,11 @@ Kein Feature-Creep: kein Export, keine Cloud, keine Benutzerkonten, keine Widget
   Datenschutzerklärung, Begründung je Datentyp, Medical-Device-Labeling
 - Entscheidung über die ESC-Klassifikation im veröffentlichten Build
 
+**Entscheidungen 2026-09-04:** ESC-Klassifikation **an** im Release-Build (MDR-Risiko §3.2
+bleibt, anwaltliche Prüfung vor dem Play-Release); Play-Organisationskonto **vorhanden**;
+Flutter auf **stable** gewechselt und gepinnt (Version in `docs/RELEASE.md`); Play verlangt
+seit 31.08.2026 Target-API 36. Ablauf und Checkliste: `docs/RELEASE.md`.
+
 ---
 
 ## 6. Nicht-Ziele
