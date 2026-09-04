@@ -77,8 +77,25 @@ der Werte betrifft, die gerade angesehen werden.
 3. **Mittelwerte** für den gewählten Zeitraum: gesamt, morgens (vor 12 Uhr),
    abends (ab 18 Uhr).
 4. **Liste** aller Messungen im Zeitraum, nach Tagen gruppiert, mit den
-   Kennzeichen je Messung.
+   Kennzeichen je Messung und einem dezenten Punkt für „nach Health Connect
+   übertragen".
 5. **Bericht erzeugen** → PDF oder CSV für den gewählten Zeitraum.
+
+#### Detail-Blatt je Messung
+
+Antippen einer Zeile öffnet ein Blatt über der Liste. Es trägt alles zu **dieser
+einen** Messung:
+
+* Werte groß, Zeitpunkt, Einordnung
+* Kennzeichen: Bewegung, unregelmäßiger Puls
+* Messungsnummer des Geräts und Zeitpunkt des Imports
+* **Health Connect**: Zustand und Knopf — einzeln übertragen oder einzeln
+  zurücknehmen (`exportOne`, `retractOne`)
+
+Damit bleibt der Einzelexport erhalten, ohne die Liste mit Symbolen zu füllen.
+Er steht dort, wo die einzelne Messung steht, während die Massenaktionen unter
+„Gerät" bleiben. Die Messungsdetails bekommen dadurch überhaupt erst einen Ort;
+heute sind Messungsnummer und Importzeitpunkt nirgends sichtbar.
 
 ### Gerät
 
@@ -89,7 +106,8 @@ Alles Technische an einem Ort.
    letzten Abgleichs, Anzahl gespeicherter Messungen, Knopf für sofortigen
    Abgleich. Kein Schalter zum Abstellen.
 3. **Health Connect**: übertragen von gesamt, alle übertragen, übertragene
-   entfernen. Das einzelne Übertragen je Messung entfällt.
+   entfernen. Die Massenaktionen stehen hier, das Übertragen einer einzelnen
+   Messung im Detail-Blatt.
 
 ## Neue Bausteine
 
@@ -137,7 +155,7 @@ Autosync, Klassifikation, Mittelwerte. Der Umbau betrifft ausschließlich die
 Oberfläche und den Steuerungsteil.
 
 Der Steuerungsteil bekommt: Zeitraumwahl, Gestaltungswahl, Berichtserzeugung.
-Er verliert: `exportOne`, `retractOne` (entfallen mit dem Einzelexport).
+Er verliert nichts — `exportOne` und `retractOne` ziehen ins Detail-Blatt um.
 
 ## Was bewusst fehlt
 
