@@ -45,6 +45,11 @@ Deinstallation der App löscht alle lokal gespeicherten Daten und den Pairing-Sc
 Health Connect geschriebene Daten löschst du vorher über die App oder in Health Connect unter
 „App-Daten löschen".
 
+**Hinweis zum Messgerät:** Das Löschen des Speichers am Omron-Gerät entfernt die Messwerte
+nur aus der Anzeige. Über Bluetooth bleiben sie lesbar, bis sie durch neue Messungen
+überschrieben sind (100 Messungen je Benutzer). Sphygma kann daran nichts ändern, weil die App
+grundsätzlich nichts in das Gerät schreibt. Wer das Gerät weitergibt, sollte das wissen.
+
 ## Verantwortlicher
 
 <Name, Anschrift, E-Mail — vor Veröffentlichung eintragen>

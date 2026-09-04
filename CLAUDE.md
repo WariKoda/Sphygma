@@ -117,6 +117,8 @@ Diese Punkte kosten jeweils einen Fehlschlag, wenn man sie nicht kennt
   Bonding und Key-Write gehören in dieselbe Sitzung.
 - Settings-Bereich nur in den kleinen Abschnitten lesen, die omblepy nutzt; ein 0x38-Byte-Read
   ab `0x0260` bleibt unbeantwortet.
+- „Alle Daten löschen" am Gerät leert den EEPROM nicht: alle Records bleiben lesbar, die
+  Messungsnummer zählt weiter (§8.3). Dedup bleibt gültig; Nutzerhinweis in `docs/PRIVACY.md`.
 
 ## Protokollarbeit
 
