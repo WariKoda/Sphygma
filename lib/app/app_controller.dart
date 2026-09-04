@@ -168,9 +168,12 @@ class AppController extends ChangeNotifier {
   Future<void> sync() => _run('Verbinde…', () async {
         try {
           final result = await syncService.sync(log: _log);
-          status = result.newlyStored == 0
+          // Ueber _log statt nur ueber [status]: Ein automatisch
+          // ausgeloester Abgleich soll im Protokoll nachvollziehbar sein,
+          // auch wenn niemand auf den Bildschirm geschaut hat.
+          _log(result.newlyStored == 0
               ? 'Keine neuen Messungen (${result.readFromDevice} gelesen).'
-              : '${result.newlyStored} neue Messungen.';
+              : '${result.newlyStored} neue Messungen.');
         } on NotPairedException {
           status = 'Noch nicht gepairt.';
           rethrow;
