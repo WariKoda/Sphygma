@@ -6,18 +6,20 @@ Stand: 2026-09-03. Ergänzt `PLAN.md` M7 und §3.3.
 
 ### 1.1 Stabiler Flutter-Kanal
 
-Die Toolchain läuft auf dem **beta**-Kanal (`flutter --version`: 3.47.0-0.1.pre). Für einen
-reproduzierbaren F-Droid-Build muss eine stabile, gepinnte Version verwendet werden:
+**Gepinnte Release-Toolchain (seit 2026-09-04): Flutter 3.47.2 (stable), Dart 3.13.2.**
+Dieselbe Version steht in `fdroid/metadata` (`srclibs: flutter@3.47.2`); beim Wechsel beides
+zusammen anpassen. Der Wechsel vom beta-Kanal lief so (falls er wiederholt werden muss):
 
 ```bash
 flutter channel stable
 flutter upgrade
-flutter --version   # Version in docs/RELEASE.md und fdroid/metadata eintragen
+flutter --version   # Version hier und in fdroid/metadata eintragen
 flutter pub get
 flutter test && flutter analyze
 ```
 
-Danach `environment.sdk` in `pubspec.yaml` auf die stabile Dart-Version anpassen.
+Scheitert `flutter channel` an einer lokal geänderten `pubspec.lock` **im Flutter-SDK**,
+ist das ein Artefakt des Tools: `git -C <flutter-root> checkout -- pubspec.lock`.
 
 ### 1.2 Signierschlüssel — nur auf deinem Rechner
 
@@ -45,16 +47,23 @@ es vor dem ersten Upload aktiviert war).
 
 ## 2. Build
 
-```bash
-# ohne ESC-Klassifikation (Standard, siehe PLAN.md §3.2)
-flutter build apk --release --split-per-abi
+**Entscheidung 2026-09-04: Der veröffentlichte Build enthält die ESC-Klassifikation**
+(`--dart-define=SPHYGMA_ESC=true`). Das MDR-Risiko aus PLAN.md §3.2 bleibt damit bestehen und
+ist vor dem Play-Release anwaltlich zu prüfen; die Release-Notes und die Store-Beschreibung
+tragen den Hinweis „kein Medizinprodukt, ersetzt keine ärztliche Bewertung".
 
-# mit ESC-Klassifikation - nur nach bewusster Entscheidung (Medizinprodukte-Risiko)
+```bash
+# GitHub / F-Droid: signierte Split-APKs
 flutter build apk --release --split-per-abi --dart-define=SPHYGMA_ESC=true
 
 # Play Store: App Bundle
-flutter build appbundle --release
+flutter build appbundle --release --dart-define=SPHYGMA_ESC=true
+
+# Variante ohne Klassifikation (nur falls die Entscheidung revidiert wird)
+flutter build apk --release --split-per-abi
 ```
+
+Das Flag muss bei **jedem** Build-Aufruf mitgegeben werden — es ist kein Projekt-Default.
 
 Artefakte unter `build/app/outputs/`. R8-Shrinking ist im Release-Build immer aktiv.
 
@@ -79,16 +88,27 @@ den Key im Gerät; die Omron-App muss danach neu gepairt werden.
   und ob die Telemetrie als Anti-Feature zu deklarieren ist.
 
 ### Google Play
-Nur mit **verifiziertem Organisationskonto** (PLAN.md §3.3). Dann:
-- Health-Apps-Declaration im Play Console, je Datentyp eine Begründung
-  (Blutdruck: Messgerät-Import; Herzfrequenz: Puls der Messung)
-- Datenschutzerklärung (`docs/PRIVACY.md`) öffentlich erreichbar verlinken; derselbe Text
-  wie in `PermissionsRationaleActivity`
-- Data-Safety-Formular: Gesundheitsdaten werden **nicht** übertragen, nur lokal und in
+Organisationskonto liegt vor (Stand 2026-09-04). Anforderungen:
+
+- **Target-API-Level:** Seit dem 31.08.2026 müssen neue Apps und Updates **Android 16 (API 36)**
+  oder höher als Ziel haben (Quelle: developer.android.com/google/play/requirements/target-sdk,
+  abgerufen 2026-09-04). `targetSdk`/`compileSdk` in `android/app/build.gradle.kts` sind
+  entsprechend gesetzt; Plattform `android-36` ist im SDK installiert.
+- **Health-Apps-Declaration** im Play Console: Erklärungsformular mit Begründung je Datentyp,
+  nur die minimal nötigen Typen (Quelle: support.google.com/googleplay/android-developer/
+  answer/9888170). Sphygma: `WRITE_BLOOD_PRESSURE` (Import der Messwerte des Geräts),
+  `WRITE_HEART_RATE` (Puls derselben Messung). Kein Lesezugriff.
+- **Datenschutzerklärung** (`docs/PRIVACY.md`) öffentlich erreichbar verlinken; die Policy
+  verlangt: App benennen, Datentypen und ihre Funktion, Nutzung/Weitergabe (hier: keine),
+  Anleitung zum Verwalten und Löschen, Angaben zur sicheren Verarbeitung. Derselbe Text wie
+  in `PermissionsRationaleActivity`.
+- **Data-Safety-Formular:** Gesundheitsdaten werden **nicht** übertragen, nur lokal und in
   Health Connect gespeichert; Build-Time-Telemetrie von `flutter_blue_plus` ist keine
-  Nutzerdaten-Übertragung, aber im Zweifel angeben
-- Medical-Device-Labeling: siehe PLAN.md §3.2 — mit ESC-Klassifikation im Build ist die
-  Einstufung anwaltlich zu prüfen
+  Nutzerdaten-Übertragung, aber im Zweifel angeben.
+- **Medical-Device-Labeling / MDR:** ESC-Klassifikation ist im Build (§2) — Einstufung nach
+  PLAN.md §3.2 anwaltlich prüfen lassen, bevor der Play-Release live geht.
+- Upload als App Bundle (`flutter build appbundle`), Play App Signing beim ersten Upload
+  aktivieren.
 
 ## 4. Checkliste vor dem Tag
 
