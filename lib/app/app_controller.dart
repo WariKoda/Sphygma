@@ -1,8 +1,11 @@
 // Zustand und Aktionen der App (M6). Buendelt die Services der unteren
 // Schichten; die UI beobachtet ihn per ListenableBuilder. Bewusst ohne
 // State-Management-Paket - ein ChangeNotifier reicht fuer diese App.
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
+import '../ble/omron_advertising.dart';
 import '../ble/omron_session.dart';
 import '../ble/pairing_key_store.dart';
 import '../db/app_database.dart';
@@ -19,7 +22,24 @@ class AppController extends ChangeNotifier {
     required this.repository,
     required this.syncService,
     required this.exportService,
-  });
+    Stream<OmronAdvertisedStatus> Function()? statusStream,
+  }) : _statusStream = statusStream ?? watchOmronStatus;
+
+  /// Quelle der Advertising-Meldungen. Injizierbar, damit der Autosync
+  /// ohne Bluetooth getestet werden kann.
+  final Stream<OmronAdvertisedStatus> Function() _statusStream;
+  StreamSubscription<OmronAdvertisedStatus>? _watch;
+  bool _disposed = false;
+
+  /// Ob der Autosync gerade lauscht. False heisst: Es kommt nichts von
+  /// selbst, der Sync auf Knopfdruck funktioniert aber weiter.
+  bool get autoSyncActive => _watch != null;
+
+  /// Messungsnummer, fuer die zuletzt ein automatischer Sync versucht
+  /// wurde. Verhindert, dass ein Fehlschlag bei jedem weiteren
+  /// Advertising erneut probiert wird - das Geraet sendet mehrmals je
+  /// Sekunde.
+  int? _lastAutoSyncAttempt;
 
   final SettingsRepository settings;
   final PairingKeyStore keyStore;
@@ -42,11 +62,96 @@ class AppController extends ChangeNotifier {
     userSlot = await settings.userSlot();
     paired = await keyStore.load() != null;
     await _refresh();
+    _startWatching();
+  }
+
+  /// Lauscht auf das Advertising des Geraets und synchronisiert von
+  /// selbst, sobald es eine hoehere Messungsnummer meldet als die
+  /// Datenbank kennt.
+  ///
+  /// Das Geraet sendet nach jeder Messung von sich aus
+  /// (docs/protocol/hem-6232t.md §2.1), es braucht also keinen
+  /// Tastendruck. Verbunden wird nur, wenn es wirklich etwas zu holen
+  /// gibt.
+  void _startWatching() {
+    if (_watch != null || !paired) return;
+    // Meldungen der Reihe nach abarbeiten. Das Geraet sendet mehrmals je
+    // Sekunde; ohne diese Kette starten mehrere Meldungen ihre
+    // DB-Abfrage, bevor die erste den Versuch vermerkt hat, und der Sync
+    // liefe doppelt.
+    //
+    // Jedes Glied faengt seine eigenen Fehler ab. Ohne das wuerde ein
+    // einziger Fehlschlag die Kette dauerhaft vergiften und jede weitere
+    // Meldung stillschweigend uebersprungen (Codex-Review 2026-09-04).
+    var pending = Future<void>.value();
+    _watch = _statusStream().listen(
+      (status) {
+        pending = pending.then((_) async {
+          if (_disposed) return;
+          try {
+            await _onAdvertisedStatus(status);
+          } catch (e) {
+            debugPrint('[Sphygma] Autosync-Meldung verworfen: $e');
+          }
+        });
+      },
+      onError: _onWatchError,
+    );
+  }
+
+  Future<void> _onAdvertisedStatus(OmronAdvertisedStatus status) async {
+    final slot = userSlot;
+    if (slot == null || busy) return;
+
+    final onDevice = status.highestSequence(slot);
+    if (onDevice == _lastAutoSyncAttempt) return;
+
+    final known = await repository.highestSequenceFor(slot);
+    if (!status.hasNewMeasurements(userSlot: slot, knownSequence: known)) {
+      return;
+    }
+
+    _lastAutoSyncAttempt = onDevice;
+    debugPrint(
+      '[Sphygma] Autosync: Geraet meldet $onDevice, bekannt ${known ?? "nichts"}',
+    );
+    try {
+      await sync();
+    } catch (_) {
+      // _run hat den Fehler bereits in [status] hinterlegt und geloggt.
+      // Erneut versucht wird erst bei einer anderen Messungsnummer.
+    }
+  }
+
+  /// Fehler im Advertising-Scan.
+  ///
+  /// Der Strom endet damit, das Lauschen ist also vorbei. Das darf nicht
+  /// stillschweigend passieren: Der Nutzer wuerde sonst auf einen
+  /// Autosync warten, den es nicht mehr gibt. Ein harter Abbruch waere
+  /// aber falsch, denn der Sync auf Knopfdruck traegt weiterhin.
+  void _onWatchError(Object error) {
+    debugPrint('[Sphygma] Autosync-Scan: $error');
+    _watch = null;
+    if (_disposed) return;
+    status = 'Automatischer Abgleich nicht verfuegbar: $error';
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    unawaited(_watch?.cancel());
+    _watch = null;
+    super.dispose();
   }
 
   Future<void> setUserSlot(int slot) async {
     await settings.setUserSlot(slot);
     userSlot = slot;
+    // Der Vermerk gilt je Slot: Slot 2 kann dieselbe Messungsnummer
+    // tragen wie Slot 1, und ohne Ruecksetzen bliebe sein Sync aus
+    // (Codex-Review 2026-09-04).
+    _lastAutoSyncAttempt = null;
     await _refresh();
   }
 
@@ -54,6 +159,10 @@ class AppController extends ChangeNotifier {
         await syncService.pair(log: _log);
         paired = true;
         status = 'Pairing erfolgreich.';
+        // Nach dem Pairing kann ein anderes Geraet mit eigener
+        // Nummernfolge dranhaengen.
+        _lastAutoSyncAttempt = null;
+        _startWatching();
       });
 
   Future<void> sync() => _run('Verbinde…', () async {
