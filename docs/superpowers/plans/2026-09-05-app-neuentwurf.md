@@ -1195,4 +1195,728 @@ git commit -m "feat(ui): Bausteine fuer Wert, Einordnung und Hinweis"
 
 ---
 
-*Die Aufgaben 7 bis 10 — die drei Bereiche, das Detail-Blatt und die Kurve — stehen in `2026-09-05-app-neuentwurf-teil2.md`. Die Berichte haben einen eigenen Plan: `2026-09-05-berichte.md`.*
+## Aufgabe 7: Bereich „Heute"
+
+**Dateien**
+- Neu: `lib/ui/today_screen.dart`
+- Test: `test/ui/today_screen_test.dart`
+
+**Schnittstellen**
+- Nutzt: `ReadingHeadline`, `ClassificationScale`, `NoticeCard` (Aufgabe 6), `SphygmaTheme.of` (Aufgabe 1), `AppController.latest`, `.paired`, `.clockLooksWrong`, `.autoSyncActive`, `.measurements`.
+- Liefert: `TodayScreen({required AppController controller})`.
+- Der Anleitungstext steht als `const String clockInstructions` in derselben Datei, damit ihn auch der Gerätebereich nutzen kann.
+
+- [ ] **Schritt 1: Test schreiben**
+
+```dart
+// test/ui/today_screen_test.dart
+import 'dart:typed_data';
+
+import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:sphygma/app/app_controller.dart';
+import 'package:sphygma/ble/pairing_key_store.dart';
+import 'package:sphygma/db/app_database.dart';
+import 'package:sphygma/db/measurement_repository.dart';
+import 'package:sphygma/db/settings_repository.dart';
+import 'package:sphygma/protocol/readout.dart';
+import 'package:sphygma/protocol/record.dart';
+import 'package:sphygma/sync/export_service.dart';
+import 'package:sphygma/sync/health_sink.dart';
+import 'package:sphygma/sync/sync_service.dart';
+import 'package:sphygma/ui/theme/sphygma_theme.dart';
+import 'package:sphygma/ui/theme/variants.dart';
+import 'package:sphygma/ui/today_screen.dart';
+
+class _NoopSink implements HealthSink {
+  @override
+  Future<void> writeBloodPressure(BloodPressureWrite write) async {}
+  @override
+  Future<void> deleteBloodPressure(String clientRecordId) async {}
+}
+
+SlotRecord _rec(int seq, DateTime at, {int systolic = 128}) => SlotRecord(
+      userSlot: 1,
+      record: BloodPressureRecord(
+        systolic: systolic,
+        diastolic: 87,
+        pulse: 82,
+        timestamp: at,
+        arrhythmiaFlag: false,
+        movementFlag: false,
+        sequence: seq,
+      ),
+      rawBytes: Uint8List(14),
+    );
+
+void main() {
+  late AppDatabase db;
+  late MeasurementRepository repository;
+  late InMemoryPairingKeyStore keyStore;
+  late AppController controller;
+
+  Future<AppController> boot({bool paired = true}) async {
+    if (paired) await keyStore.save(Uint8List(16));
+    final c = AppController(
+      settings: SettingsRepository(db),
+      keyStore: keyStore,
+      repository: repository,
+      syncService: SyncService(keyStore: keyStore, repository: repository),
+      exportService: ExportService(repository: repository, sink: _NoopSink()),
+      statusStream: () => const Stream.empty(),
+    );
+    await c.init();
+    await c.setUserSlot(1);
+    return c;
+  }
+
+  Future<void> pumpWith(WidgetTester tester, ThemeVariant v) =>
+      tester.pumpWidget(MaterialApp(
+        home: SphygmaThemeScope(
+          theme: themeFor(v),
+          child: Scaffold(body: TodayScreen(controller: controller)),
+        ),
+      ));
+
+  setUp(() {
+    db = AppDatabase(NativeDatabase.memory());
+    repository = MeasurementRepository(db);
+    keyStore = InMemoryPairingKeyStore();
+  });
+
+  tearDown(() async {
+    controller.dispose();
+    await db.close();
+  });
+
+  group('in jeder Gestaltung', () {
+    for (final v in allVariants) {
+      testWidgets('zeigt die letzte Messung (${v.name})', (tester) async {
+        controller = await boot();
+        await repository.importAll([_rec(1, DateTime.now())]);
+        await controller.refreshForTest();
+
+        await pumpWith(tester, v);
+
+        expect(find.textContaining('128'), findsWidgets);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  });
+
+  testWidgets('ohne Messungen fordert er zum Messen auf, statt leer zu sein',
+      (tester) async {
+    controller = await boot();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+
+    expect(find.textContaining('Noch keine Messung'), findsOneWidget);
+  });
+
+  testWidgets('ohne Kopplung erscheint ein Hinweis', (tester) async {
+    controller = await boot(paired: false);
+
+    await pumpWith(tester, ThemeVariant.instrument);
+
+    expect(find.textContaining('Nicht gekoppelt'), findsOneWidget);
+  });
+
+  testWidgets('bei falscher Uhr steht der Hinweis samt Anleitung da',
+      (tester) async {
+    controller = await boot();
+    // Ein Datum weit in der Vergangenheit loest die Pruefung aus.
+    await repository.importAll([_rec(1, DateTime(2023, 4, 18))]);
+    await controller.refreshForTest();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+
+    expect(find.textContaining('Geraeteuhr'), findsOneWidget);
+
+    await tester.tap(find.text('Anleitung anzeigen'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Batterien'), findsOneWidget);
+  });
+
+  testWidgets('zeigt hoechstens fuenf der letzten Messungen', (tester) async {
+    controller = await boot();
+    final now = DateTime.now();
+    await repository.importAll([
+      for (var i = 0; i < 9; i++)
+        _rec(i + 1, now.subtract(Duration(hours: i)), systolic: 120 + i),
+    ]);
+    await controller.refreshForTest();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+
+    // Die aelteste (120) darf nicht mehr dabei sein.
+    expect(find.textContaining('/87').evaluate().length, lessThanOrEqualTo(6));
+  });
+}
+```
+
+- [ ] **Schritt 2: Test ausführen, Fehlschlag bestätigen**
+
+Ausführen: `flutter test test/ui/today_screen_test.dart`
+Erwartet: FEHLER, `today_screen.dart` fehlt.
+
+- [ ] **Schritt 3: Umsetzen**
+
+```dart
+// lib/ui/today_screen.dart
+// Der Bildschirm beim Oeffnen. Vorn steht der Wert, nicht die Technik.
+import 'package:flutter/material.dart';
+
+import '../app/app_controller.dart';
+import '../app/feature_flags.dart';
+import '../db/app_database.dart';
+import '../stats/esc_classification.dart';
+import 'theme/sphygma_theme.dart';
+import 'widgets/classification_scale.dart';
+import 'widgets/notice_card.dart';
+import 'widgets/reading_headline.dart';
+
+/// Die Schritte aus dem Handbuch HEM-6232T-E. Die Uhr laesst sich nicht
+/// per Bluetooth stellen (docs/protocol/hem-6232t.md §8.7), also bleibt
+/// nur, sie zu erklaeren.
+const String clockInstructions =
+    'Batterien herausnehmen und wieder einlegen. Dann die Taste gedrueckt '
+    'halten, bis das Jahr blinkt. Jahr, Monat, Tag, Stunde und Minute '
+    'nacheinander mit START/STOP bestaetigen; die andere Taste aendert den '
+    'Wert, gehalten springt sie schnell. Zum Schluss START/STOP druecken, '
+    'um zu speichern.';
+
+/// Wie viele der letzten Messungen unter dem grossen Wert erscheinen.
+const int _recentCount = 5;
+
+class TodayScreen extends StatelessWidget {
+  const TodayScreen({super.key, required this.controller});
+
+  final AppController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+    final latest = controller.latest;
+
+    return Container(
+      color: t.surface,
+      child: ListView(
+        padding: EdgeInsets.all(t.gapLarge),
+        children: [
+          if (latest == null)
+            _EmptyState(paired: controller.paired)
+          else ...[
+            ReadingHeadline(
+              systolic: latest.systolic,
+              diastolic: latest.diastolic,
+              pulse: latest.pulse,
+              measuredAt: latest.measuredAt,
+            ),
+            if (escClassificationEnabled) ...[
+              SizedBox(height: t.gapLarge),
+              ClassificationScale(
+                category: classifyOffice(
+                  systolic: latest.systolic,
+                  diastolic: latest.diastolic,
+                ),
+              ),
+            ],
+          ],
+          ..._notices(),
+          if (controller.measurements.length > 1) ...[
+            SizedBox(height: t.gapLarge),
+            Text(
+              'LETZTE TAGE',
+              style: TextStyle(
+                fontSize: 10,
+                letterSpacing: 1.6,
+                color: t.muted,
+              ),
+            ),
+            for (final m in controller.measurements.skip(1).take(_recentCount))
+              _RecentRow(measurement: m),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Hinweise erscheinen nur, wenn es etwas zu sagen gibt.
+  List<Widget> _notices() => [
+        if (!controller.paired)
+          const NoticeCard(
+            title: 'Nicht gekoppelt',
+            message: 'Ohne Kopplung kann Sphygma keine Messungen holen. '
+                'Unter "Geraet" einrichten.',
+          ),
+        if (controller.clockLooksWrong)
+          const NoticeCard(
+            title: 'Geraeteuhr geht falsch',
+            message: 'Die neueste Messung traegt ein unplausibles Datum. '
+                'Sphygma kann die Uhr nicht stellen, das geht nur am Geraet.',
+            details: clockInstructions,
+          ),
+        if (controller.paired && !controller.autoSyncActive)
+          const NoticeCard(
+            title: 'Kein automatischer Abgleich',
+            message: 'Neue Messungen werden nicht von selbst geholt. '
+                'Unter "Geraet" laesst sich der Abgleich von Hand ausloesen.',
+          ),
+      ];
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.paired});
+
+  final bool paired;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: t.gapLarge * 2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Noch keine Messung',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w300,
+              color: t.onSurface,
+            ),
+          ),
+          SizedBox(height: t.gapSmall),
+          Text(
+            paired
+                ? 'Miss am Geraet - Sphygma holt die Messung von selbst.'
+                : 'Zuerst unter "Geraet" koppeln.',
+            style: TextStyle(fontSize: 13, color: t.muted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecentRow extends StatelessWidget {
+  const _RecentRow({required this.measurement});
+
+  final Measurement measurement;
+
+  static String _two(int n) => n.toString().padLeft(2, '0');
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+    final m = measurement;
+
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: t.gapSmall + 2),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: t.line)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            '${m.systolic}/${m.diastolic} · ${m.pulse}',
+            style: TextStyle(
+              fontSize: 13,
+              color: t.onSurface,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+          Text(
+            '${_two(m.measuredAt.day)}.${_two(m.measuredAt.month)}. '
+            '${_two(m.measuredAt.hour)}:${_two(m.measuredAt.minute)}',
+            style: TextStyle(fontSize: 12, color: t.muted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+- [ ] **Schritt 4: Test ausführen, Erfolg bestätigen**
+
+Ausführen: `flutter test test/ui/today_screen_test.dart`
+Erwartet: alle grün.
+
+- [ ] **Schritt 5: Prüfen und committen**
+
+```bash
+flutter analyze && flutter test
+git add lib/ui/today_screen.dart test/ui/today_screen_test.dart
+git commit -m "feat(ui): Bereich Heute mit Hinweisfeldern"
+```
+
+---
+
+## Aufgabe 8: Bereich „Gerät"
+
+**Dateien**
+- Neu: `lib/ui/device_screen.dart`
+- Test: `test/ui/device_screen_test.dart`
+
+**Schnittstellen**
+- Nutzt: `SphygmaTheme.of`, `allVariants`/`themeFor`, `clockInstructions` (Aufgabe 7), `AppController.paired`, `.userSlot`, `.autoSyncActive`, `.measurements`, `.pendingExport`, `.busy`, `.themeVariant`, `.pair()`, `.sync()`, `.exportAll()`, `.retractAll()`, `.setUserSlot(int)`, `.setThemeVariant(ThemeVariant)`.
+- Liefert: `DeviceScreen({required AppController controller})`.
+
+- [ ] **Schritt 1: Test schreiben**
+
+```dart
+// test/ui/device_screen_test.dart
+import 'dart:typed_data';
+
+import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:sphygma/app/app_controller.dart';
+import 'package:sphygma/ble/pairing_key_store.dart';
+import 'package:sphygma/db/app_database.dart';
+import 'package:sphygma/db/measurement_repository.dart';
+import 'package:sphygma/db/settings_repository.dart';
+import 'package:sphygma/sync/export_service.dart';
+import 'package:sphygma/sync/health_sink.dart';
+import 'package:sphygma/sync/sync_service.dart';
+import 'package:sphygma/ui/device_screen.dart';
+import 'package:sphygma/ui/theme/sphygma_theme.dart';
+import 'package:sphygma/ui/theme/variants.dart';
+
+class _NoopSink implements HealthSink {
+  @override
+  Future<void> writeBloodPressure(BloodPressureWrite write) async {}
+  @override
+  Future<void> deleteBloodPressure(String clientRecordId) async {}
+}
+
+void main() {
+  late AppDatabase db;
+  late InMemoryPairingKeyStore keyStore;
+  late AppController controller;
+
+  Future<void> boot({bool paired = true, bool withSlot = true}) async {
+    if (paired) await keyStore.save(Uint8List(16));
+    final repository = MeasurementRepository(db);
+    controller = AppController(
+      settings: SettingsRepository(db),
+      keyStore: keyStore,
+      repository: repository,
+      syncService: SyncService(keyStore: keyStore, repository: repository),
+      exportService: ExportService(repository: repository, sink: _NoopSink()),
+      statusStream: () => const Stream.empty(),
+    );
+    await controller.init();
+    if (withSlot) await controller.setUserSlot(1);
+  }
+
+  Future<void> pumpWith(WidgetTester tester, ThemeVariant v) =>
+      tester.pumpWidget(MaterialApp(
+        home: SphygmaThemeScope(
+          theme: themeFor(v),
+          child: Scaffold(body: DeviceScreen(controller: controller)),
+        ),
+      ));
+
+  setUp(() {
+    db = AppDatabase(NativeDatabase.memory());
+    keyStore = InMemoryPairingKeyStore();
+  });
+
+  tearDown(() async {
+    controller.dispose();
+    await db.close();
+  });
+
+  group('in jeder Gestaltung', () {
+    for (final v in allVariants) {
+      testWidgets('baut ohne Fehler (${v.name})', (tester) async {
+        await boot();
+
+        await pumpWith(tester, v);
+
+        expect(tester.takeException(), isNull);
+      });
+    }
+  });
+
+  testWidgets('zeigt den Zustand des automatischen Abgleichs',
+      (tester) async {
+    await boot();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+
+    expect(find.textContaining('Automatischer Abgleich'), findsOneWidget);
+  });
+
+  testWidgets('ohne Kopplung fuehrt der Knopf zum Koppeln', (tester) async {
+    await boot(paired: false);
+
+    await pumpWith(tester, ThemeVariant.instrument);
+
+    expect(find.text('Koppeln'), findsOneWidget);
+  });
+
+  testWidgets('die Speicherplatzwahl erscheint nur ohne Kopplung',
+      (tester) async {
+    await boot(paired: false, withSlot: false);
+
+    await pumpWith(tester, ThemeVariant.instrument);
+
+    expect(find.text('Benutzer 1'), findsOneWidget);
+  });
+
+  testWidgets('die Gestaltung laesst sich umschalten', (tester) async {
+    await boot();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+    await tester.tap(find.text('Tagebuch'));
+    await tester.pumpAndSettle();
+
+    expect(controller.themeVariant, ThemeVariant.diary);
+  });
+}
+```
+
+- [ ] **Schritt 2: Test ausführen, Fehlschlag bestätigen**
+
+Ausführen: `flutter test test/ui/device_screen_test.dart`
+Erwartet: FEHLER, `device_screen.dart` fehlt.
+
+- [ ] **Schritt 3: Umsetzen**
+
+```dart
+// lib/ui/device_screen.dart
+// Alles Technische an einem Ort: Geraet, Abgleich, Health Connect,
+// Gestaltung. Vorn auf "Heute" stoert es damit nicht mehr.
+import 'package:flutter/material.dart';
+
+import '../app/app_controller.dart';
+import 'theme/sphygma_theme.dart';
+import 'theme/variants.dart';
+
+class DeviceScreen extends StatelessWidget {
+  const DeviceScreen({super.key, required this.controller});
+
+  final AppController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+    final c = controller;
+
+    return Container(
+      color: t.surface,
+      child: ListView(
+        padding: EdgeInsets.all(t.gapLarge),
+        children: [
+          _Section(title: 'Geraet'),
+          _Row(
+            label: 'RS7 Intelli IT',
+            value: c.paired ? 'gekoppelt' : 'nicht gekoppelt',
+          ),
+          if (c.userSlot != null)
+            _Row(label: 'Speicherplatz', value: 'Benutzer ${c.userSlot}'),
+          if (!c.paired) ...[
+            SizedBox(height: t.gapSmall),
+            Text(
+              'Welcher Speicherplatz gehoert dir am Geraet?',
+              style: TextStyle(fontSize: 12, color: t.muted),
+            ),
+            SizedBox(height: t.gapSmall),
+            SegmentedButton<int>(
+              segments: const [
+                ButtonSegment(value: 1, label: Text('Benutzer 1')),
+                ButtonSegment(value: 2, label: Text('Benutzer 2')),
+              ],
+              selected: {c.userSlot ?? 1},
+              onSelectionChanged: (s) =>
+                  s.isEmpty ? null : c.setUserSlot(s.first),
+            ),
+            SizedBox(height: t.gapSmall),
+            Text(
+              'Zum Koppeln die Bluetooth-Taste am Geraet lange druecken, '
+              'bis "-P-" blinkt.',
+              style: TextStyle(fontSize: 12, color: t.muted),
+            ),
+            _Button(
+              label: 'Koppeln',
+              filled: true,
+              onPressed: c.busy || c.userSlot == null ? null : c.pair,
+            ),
+          ],
+
+          _Section(title: 'Abgleich'),
+          _Row(
+            label: 'Automatischer Abgleich',
+            value: c.autoSyncActive ? 'wartet auf Messungen' : 'aus',
+            dot: c.autoSyncActive,
+          ),
+          _Row(label: 'Gespeichert', value: '${c.measurements.length} Messungen'),
+          _Button(
+            label: 'Jetzt abgleichen',
+            filled: true,
+            onPressed: c.busy || !c.paired ? null : c.sync,
+          ),
+          if (c.status != null) ...[
+            SizedBox(height: t.gapSmall),
+            Text(c.status!, style: TextStyle(fontSize: 12, color: t.muted)),
+          ],
+
+          _Section(title: 'Health Connect'),
+          _Row(
+            label: 'Uebertragen',
+            value: '${c.measurements.length - c.pendingExport} '
+                'von ${c.measurements.length}',
+          ),
+          _Button(
+            label: 'Alle uebertragen',
+            onPressed: c.busy || c.pendingExport == 0 ? null : c.exportAll,
+          ),
+          _Button(
+            label: 'Uebertragene entfernen',
+            onPressed: c.busy ? null : c.retractAll,
+          ),
+
+          _Section(title: 'Gestaltung'),
+          for (final v in allVariants)
+            RadioListTile<ThemeVariant>(
+              value: v,
+              groupValue: c.themeVariant,
+              onChanged: (chosen) =>
+                  chosen == null ? null : c.setThemeVariant(chosen),
+              title: Text(
+                themeFor(v).name,
+                style: TextStyle(fontSize: 14, color: t.onSurface),
+              ),
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Section extends StatelessWidget {
+  const _Section({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+
+    return Padding(
+      padding: EdgeInsets.only(top: t.gapLarge, bottom: t.gapSmall),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(fontSize: 10, letterSpacing: 1.6, color: t.muted),
+      ),
+    );
+  }
+}
+
+class _Row extends StatelessWidget {
+  const _Row({required this.label, required this.value, this.dot = false});
+
+  final String label;
+  final String value;
+
+  /// Gruener Punkt vor dem Text - zeigt einen laufenden Zustand an.
+  final bool dot;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: t.gapSmall + 2),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: t.line)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              if (dot) ...[
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: t.categoryColors.values.first,
+                  ),
+                ),
+                const SizedBox(width: 6),
+              ],
+              Text(label, style: TextStyle(fontSize: 13, color: t.onSurface)),
+            ],
+          ),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: t.onSurface,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Button extends StatelessWidget {
+  const _Button({
+    required this.label,
+    required this.onPressed,
+    this.filled = false,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final bool filled;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+
+    return Padding(
+      padding: EdgeInsets.only(top: t.gapSmall),
+      child: SizedBox(
+        width: double.infinity,
+        child: filled
+            ? FilledButton(onPressed: onPressed, child: Text(label))
+            : OutlinedButton(onPressed: onPressed, child: Text(label)),
+      ),
+    );
+  }
+}
+```
+
+- [ ] **Schritt 4: Test ausführen, Erfolg bestätigen**
+
+Ausführen: `flutter test test/ui/device_screen_test.dart`
+Erwartet: alle grün.
+
+- [ ] **Schritt 5: Prüfen und committen**
+
+```bash
+flutter analyze && flutter test
+git add lib/ui/device_screen.dart test/ui/device_screen_test.dart
+git commit -m "feat(ui): Bereich Geraet mit Abgleich-Zustand und Gestaltungswahl"
+```
+
+---
+
+*Die Aufgaben 9 und 10 — Verlauf mit Kurve und Detail-Blatt — sowie die Berichte folgen. Sie hängen von Aufgabe 7 und 8 ab und werden nach deren Umsetzung ergänzt.*
