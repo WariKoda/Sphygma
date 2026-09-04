@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Projektzustand
 
-**M0–M6 sind implementiert, M1–M5 an echter Hardware validiert** (Fairphone 4, HEM-6232T,
-2026-09-03); M6 (UI) wartet auf den Gerätetest, M7 (Release) ist vorbereitet
-(`docs/RELEASE.md`). Status, Entscheidungen und Risikoregister stehen in `PLAN.md` — vor
+**M0–M6 sind implementiert und an echter Hardware validiert** (Fairphone 4, HEM-6232T,
+2026-09-03/04); M7 (Release) ist vorbereitet (`docs/RELEASE.md`), die Release-Entscheidungen
+stehen in `PLAN.md` M7. Status, Entscheidungen und Risikoregister stehen in `PLAN.md` — vor
 inhaltlicher Arbeit lesen.
 
 Verzeichnisse: `lib/protocol` (rein, ohne Bluetooth), `lib/ble` (flutter_blue_plus-Anbindung,
@@ -92,6 +92,10 @@ Diese Punkte sind nicht verhandelbar und lassen sich dem Code allein nicht anseh
 - **Die ESC-Klassifikation bleibt hinter einem Compile-Time-Flag.** Sie kann die App nach
   MDCG 2019-11 zum Medizinprodukt machen (MDR-Regel 11, Blutdruck = vitaler Parameter →
   Klasse IIa). Begründung in `PLAN.md` §3.2.
+- **Health-Connect-Writes immer mit `clientRecordId` und `clientRecordVersion`.** Das
+  health-Plugin übernimmt die Client-ID nur zusammen mit einer Version in die Metadaten;
+  ohne Version entstehen Duplikate, und das Entfernen per Client-ID trifft nichts, meldet
+  aber Erfolg (am Gerät erlebt, `PLAN.md` R-10).
 - **Fail hard.** Prüfsummenfehler, unvollständige Pakete oder abgebrochene Verbindungen werfen.
   Niemals eine leere Liste zurückgeben, wo ein Fehler vorliegt — leer ist von „keine Messwerte
   vorhanden" nicht unterscheidbar.
