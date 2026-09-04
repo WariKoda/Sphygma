@@ -10,6 +10,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import '../protocol/ble_transport.dart';
 import '../protocol/exceptions.dart';
 import '../protocol/hem6232t_device.dart';
+import '../protocol/readout.dart';
 import 'flutter_blue_plus_transport.dart';
 import 'omron_advertising.dart';
 import 'pairing.dart';
@@ -135,13 +136,21 @@ class OmronSession {
   }
 
   /// Erstmaliges Pairing: Geraet muss im Pairing-Modus sein ("-P-").
-  Future<void> pair(Uint8List key, {void Function(String)? log}) =>
-      writeNewPairingKey(
-        unlockCharacteristic: _unlock,
-        key: key,
-        rxChannel0: transport.rxChannel0,
-        log: log,
-      );
+  /// Nach dem Key-Write folgt in derselben Sitzung einmal Start/Ende
+  /// (Spezifikation §5 Schritt 4) - ohne das uebernimmt ein zuvor nie
+  /// gepaartes Geraet das Pairing nicht.
+  Future<void> pair(Uint8List key, {void Function(String)? log}) async {
+    await writeNewPairingKey(
+      unlockCharacteristic: _unlock,
+      key: key,
+      rxChannel0: transport.rxChannel0,
+      log: log,
+    );
+    log?.call('Key geschrieben. Bestaetige das Pairing mit Start/Ende...');
+    await transport.enableNotifications();
+    await confirmPairing(transport);
+    log?.call('Pairing vom Geraet bestaetigt.');
+  }
 
   /// Entsperren mit dem gespeicherten Key und Notifications aktivieren.
   /// Danach ist [transport] einsatzbereit.
