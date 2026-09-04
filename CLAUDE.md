@@ -23,7 +23,7 @@ schreibt die Messwerte nach Health Connect. Android only, Package-ID `de.bdgraue
 
 ## Befehle
 
-Toolchain ist installiert: Flutter 3.47.0-0.1.pre (**beta channel**), Dart 3.13.0,
+Toolchain ist installiert: **Flutter 3.47.2 (stable, gepinnt für den Release)**, Dart 3.13.2,
 `adb` unter `~/Android/Sdk/platform-tools/`.
 
 ```bash
@@ -45,10 +45,12 @@ flutter devices
 Nach Schema-Änderungen in `lib/db/app_database.dart`: `schemaVersion` erhöhen, Migration in
 `migration` ergänzen, Codegen laufen lassen, generierte Datei mit einchecken.
 
-Der **beta channel** ist für den in `PLAN.md` M7 geplanten reproduzierbaren F-Droid-Build ein
-Problem. Vor dem Release auf einen stabilen Kanal wechseln und die Version pinnen.
+Release-Builds tragen **immer** `--dart-define=SPHYGMA_ESC=true` (Entscheidung 2026-09-04,
+`docs/RELEASE.md` §2). Die Flutter-Version ist in `docs/RELEASE.md` §1.1 und den
+F-Droid-Metadaten gepinnt; beim Upgrade beide Stellen mitziehen.
 
-Health Connect verlangt `minSdk 26` (Untergrenze des `health`-Pakets); der Plan empfiehlt 29.
+Health Connect verlangt `minSdk 26` (Untergrenze des `health`-Pakets); gesetzt ist 29.
+`compileSdk`/`targetSdk` sind auf 36 gepinnt (Play-Anforderung seit 31.08.2026).
 
 ## Architektur
 
@@ -110,13 +112,15 @@ Diese Punkte kosten jeweils einen Fehlschlag, wenn man sie nicht kennt
   (`BLEsmart_`/`BLESmart_`) filtern und den Scan beim ersten Treffer sofort beenden.
 - Es sendet nur auf Tastendruck (kurz: normal, lang: Pairing-Modus `-P-`) und trennt nach
   ~60 s ohne Kommando.
-- Pairing: Notify auf RX 0 löst das Bonding aus; bis `bonded` antwortet das Gerät auf den
-  Programmiermodus mit `82 0f`. Auf den Bond-Status warten, nicht blind wiederholen.
-  Bonding und Key-Write gehören in dieselbe Sitzung — und direkt danach **einmal Start/Ende**
-  (§5 Schritt 4, `confirmPairing`). Ohne das meldet die App Erfolg, aber ein zuvor nie gepaartes
-  Gerät (nach Werksreset) nimmt das Pairing nicht an.
+- Pairing: **erst selbst `createBond()`, dann Notify auf RX 0.** Umgekehrt fragt Android
+  zweimal nach der Kopplung (§5.1). Bis `bonded` antwortet das Gerät auf den Programmiermodus
+  mit `82 0f`. Bonding und Key-Write gehören in dieselbe Sitzung — und direkt danach **einmal
+  Start/Ende** (§5 Schritt 4, `confirmPairing`). Ohne das meldet die App Erfolg, aber ein zuvor
+  nie gepaartes Gerät (nach Werksreset) nimmt das Pairing nicht an.
 - Settings-Bereich nur in den kleinen Abschnitten lesen, die omblepy nutzt; ein 0x38-Byte-Read
   ab `0x0260` bleibt unbeantwortet.
+- „Alle Daten löschen" am Gerät leert den EEPROM nicht: alle Records bleiben lesbar, die
+  Messungsnummer zählt weiter (§8.3). Dedup bleibt gültig; Nutzerhinweis in `docs/PRIVACY.md`.
 
 ## Protokollarbeit
 

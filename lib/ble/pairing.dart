@@ -6,8 +6,9 @@
 // tragen den Antwortcode direkt in den ersten beiden Bytes, siehe omblepy
 // _callbackForUnlockChannel.
 //
-// UNVERIFIZIERT (Meilenstein 1): Diese Sequenz ist aus omblepy
-// uebernommen, aber an diesem Geraet noch nie ausgefuehrt worden.
+// Die Sequenz stammt aus omblepy und ist an der Hardware verifiziert
+// (2026-09-03/04); die Android-spezifischen Abweichungen stehen in
+// docs/protocol/hem-6232t.md §5.1.
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -22,6 +23,43 @@ const int _unlockAcceptedResponse = 0x8100;
 
 int _responseCode(List<int> bytes) => (bytes[0] << 8) | bytes[1];
 
+/// Stoesst das BLE-Bonding selbst an und prueft, dass es steht.
+///
+/// Befund an Hardware (2026-09-04, docs/protocol/hem-6232t.md §5.1): Wer das
+/// Geraet zuerst per Notify auf RX 0 zum Security Request bringt, bekommt am
+/// Handy **zwei** Kopplungsdialoge - einen fuer die Anfrage des Geraets, einen
+/// fuer die Just-Works-Zustimmung. Kommt [BluetoothDevice.createBond] zuerst,
+/// verwirft Android die spaetere Security Request des Geraets ("Discard
+/// security request", AOSP `btif_dm.cc`, `btif_dm_ble_sec_req_evt`), und es
+/// bleibt bei **einem** Dialog.
+///
+/// [BluetoothDevice.createBond] wirft selbst, wenn die Kopplung abgelehnt wird
+/// oder in den Timeout laeuft; war das Geraet schon gebondet, kehrt es sofort
+/// zurueck. Die anschliessende Pruefung ist die Absicherung dagegen, mit einem
+/// nur scheinbar gebondeten Geraet weiterzumachen.
+Future<void> _bond(
+  BluetoothDevice device,
+  void Function(String message)? log,
+) async {
+  log?.call(
+    'Kopplung anstossen - Anfrage auf dem Handy bestaetigen '
+    '(kann als Benachrichtigung erscheinen)...',
+  );
+  await device.createBond();
+
+  final state = await device.bondState.first;
+  if (state != BluetoothBondState.bonded) {
+    throw ProtocolException(
+      'Bonding nicht abgeschlossen (Status $state) - ohne Bond verweigert '
+      'das Geraet den Key-Programmiermodus.',
+    );
+  }
+  log?.call('Geraet ist gebondet.');
+}
+
+String _hex(List<int> bytes) =>
+    bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ');
+
 /// Programmiert [key] (16 Bytes) als neuen Pairing-Key. Das Geraet muss
 /// vorher in den Pairing-Modus versetzt worden sein (Bluetooth-Taste
 /// lange druecken, bis "-P-" blinkt).
@@ -29,50 +67,6 @@ int _responseCode(List<int> bytes) => (bytes[0] << 8) | bytes[1];
 /// Wiederholt Schritt 2 bis zu [maxAttempts] Mal im Abstand [retryDelay],
 /// weil laut omblepy das BLE-Bonding im Hintergrund noch laufen kann,
 /// wenn der erste Versuch eintrifft.
-/// Wartet, bis das Geraet gebondet ist. Kommt binnen [requestWindow] gar
-/// keine Kopplungsanfrage (Status bleibt none), wird das Bonding explizit
-/// per createBond() angestossen. Wird eine laufende Kopplung abgelehnt oder
-/// laeuft in den Timeout, wird geworfen - nie still weitergemacht.
-Future<void> _awaitBonded(
-  BluetoothDevice device,
-  void Function(String message)? log, {
-  Duration requestWindow = const Duration(seconds: 8),
-  Duration confirmWindow = const Duration(seconds: 45),
-}) async {
-  log?.call(
-    'Warte auf Bonding - Kopplungsanfrage auf dem Handy binnen 30 s '
-    'bestaetigen (kann als Benachrichtigung erscheinen)...',
-  );
-  var sawBonding = false;
-  final deadline = DateTime.now().add(confirmWindow);
-  final requestDeadline = DateTime.now().add(requestWindow);
-
-  await for (final state in device.bondState.timeout(confirmWindow)) {
-    log?.call('Bond-Status: $state');
-    if (state == BluetoothBondState.bonded) return;
-    if (state == BluetoothBondState.bonding) {
-      sawBonding = true;
-      continue;
-    }
-    // state == none
-    if (sawBonding) {
-      throw ProtocolException(
-        'Bonding abgebrochen oder abgelehnt (Status wieder none).',
-      );
-    }
-    if (DateTime.now().isAfter(requestDeadline)) {
-      log?.call('Keine Kopplungsanfrage vom Geraet - createBond() explizit.');
-      await device.createBond();
-      return;
-    }
-    if (DateTime.now().isAfter(deadline)) break;
-  }
-  throw ProtocolException('Bonding nicht binnen $confirmWindow abgeschlossen.');
-}
-
-String _hex(List<int> bytes) =>
-    bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ');
-
 Future<void> writeNewPairingKey({
   required BluetoothCharacteristic unlockCharacteristic,
   required Uint8List key,
@@ -92,16 +86,16 @@ Future<void> writeNewPairingKey({
   );
 
   try {
-    // Wie omblepy (writeNewUnlockKey): ZUERST Notify auf RX-Kanal 0 - laut
-    // dortigem Kommentar loest das den SMP Security Request des Geraets
-    // aus, der das BLE-Bonding anstoesst. Erst danach die Unlock-Sequenz.
+    // omblepy aktiviert hier ZUERST Notify auf RX-Kanal 0, damit das Geraet
+    // den SMP Security Request schickt, der das Bonding anstoesst. An Android
+    // kostet das einen zweiten Kopplungsdialog (§5.1), deshalb bonden wir
+    // selbst und aktivieren Notify erst danach.
     if (rxChannel0 != null) {
-      await rxChannel0.setNotifyValue(true);
-      log?.call('Notify auf RX0 aktiviert (soll Bonding ausloesen).');
+      await _bond(unlockCharacteristic.device, log);
       // Befund M1: Ohne abgeschlossenes Bonding antwortet das Geraet auf
-      // 0x02 mit 82 0f (verweigert). Android zeigt die Kopplungsanfrage als
-      // Benachrichtigung und bricht nach 30 s mit SMP_RSP_TIMEOUT ab.
-      await _awaitBonded(unlockCharacteristic.device, log);
+      // 0x02 mit 82 0f (verweigert).
+      await rxChannel0.setNotifyValue(true);
+      log?.call('Notify auf RX0 aktiviert.');
     }
     await unlockCharacteristic.setNotifyValue(true);
 

@@ -20,7 +20,9 @@ if (hasReleaseKeystore) {
 
 android {
     namespace = "de.bdgraue.sphygma"
-    compileSdk = flutter.compileSdkVersion
+    // Google Play verlangt seit 31.08.2026 Target-API 36 fuer neue Apps und
+    // Updates (docs/RELEASE.md §3); explizit statt Flutter-Default gepinnt.
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -37,7 +39,7 @@ android {
         // anders. 29 spart einen Sonderpfad fuer sehr alte Geraete.
         // Begruendung: PLAN.md Abschnitt 4.1.
         minSdk = 29
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 36
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
         // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
         // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
