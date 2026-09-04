@@ -56,6 +56,25 @@ class MeasurementRepository {
     return await query.getSingleOrNull() != null;
   }
 
+  /// Hoechste bekannte Messungsnummer eines Slots, oder null, wenn dort
+  /// noch nichts gespeichert ist.
+  ///
+  /// Gegenstueck zu der Nummer, die das Geraet im Advertising mitsendet
+  /// (docs/protocol/hem-6232t.md §2.1). Liegt die dortige Nummer hoeher,
+  /// gibt es neue Messungen zu holen.
+  ///
+  /// Null statt 0: Ein Slot ohne Messungen ist etwas anderes als ein Slot,
+  /// dessen hoechste Nummer 0 ist, und ein Ersatzwert wuerde einen Sync
+  /// ausloesen, der nichts findet.
+  Future<int?> highestSequenceFor(int userSlot) async {
+    final sequence = _db.measurements.deviceSequence;
+    final query = _db.selectOnly(_db.measurements)
+      ..addColumns([sequence.max()])
+      ..where(_db.measurements.userSlot.equals(userSlot));
+    final row = await query.getSingleOrNull();
+    return row?.read(sequence.max());
+  }
+
   /// Alle Messungen eines Slots, aelteste zuerst.
   Future<List<Measurement>> allForSlot(int userSlot) {
     final query = _db.select(_db.measurements)
