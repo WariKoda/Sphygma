@@ -5,6 +5,7 @@
 // writeBloodPressure() nimmt nur Systole, Diastole und Zeit. Die Flags
 // bleiben deshalb in der lokalen DB (Source of Truth) und werden dort
 // angezeigt, nicht exportiert.
+import 'package:flutter/foundation.dart';
 import 'package:health/health.dart';
 
 import 'health_sink.dart';
@@ -43,6 +44,17 @@ class HealthConnectSink implements HealthSink {
 
   final Health _health;
   bool _configured = false;
+
+  /// Das health-Plugin (HealthDataWriter.buildMetadata) uebernimmt die
+  /// clientRecordId nur zusammen mit einer clientRecordVersion in die
+  /// Metadaten. Ohne Version speichert Health Connect den Datensatz ohne
+  /// Client-ID: jeder Export wird ein neuer Eintrag, und das Loeschen per
+  /// Client-ID trifft nichts (Geraetetest 2026-09-04). Der Inhalt einer
+  /// Messung aendert sich nie, daher reicht eine konstante Version; ein
+  /// erneuter Export ersetzt den vorhandenen Eintrag oder wird ignoriert
+  /// (androidx Metadata: "single entry for any type of data with same client
+  /// provided identifier").
+  static const double _clientRecordVersion = 1;
 
   static const List<HealthDataType> _types = [
     HealthDataType.BLOOD_PRESSURE_SYSTOLIC,
@@ -83,8 +95,10 @@ class HealthConnectSink implements HealthSink {
       diastolic: write.diastolic,
       startTime: write.measuredAt,
       clientRecordId: write.clientRecordId,
+      clientRecordVersion: _clientRecordVersion,
       recordingMethod: RecordingMethod.automatic,
     );
+    debugPrint('[Sphygma] HC write ${write.clientRecordId}: $bpOk');
     if (!bpOk) {
       throw HealthConnectWriteException(write.clientRecordId);
     }
@@ -93,6 +107,7 @@ class HealthConnectSink implements HealthSink {
       type: HealthDataType.HEART_RATE,
       startTime: write.measuredAt,
       clientRecordId: '${write.clientRecordId}-hr',
+      clientRecordVersion: _clientRecordVersion,
       recordingMethod: RecordingMethod.automatic,
     );
     if (!hrOk) {
@@ -107,6 +122,7 @@ class HealthConnectSink implements HealthSink {
       dataTypeKey: HealthDataType.BLOOD_PRESSURE_SYSTOLIC,
       clientRecordId: clientRecordId,
     );
+    debugPrint('[Sphygma] HC delete $clientRecordId: $bpOk');
     if (!bpOk) {
       throw HealthConnectWriteException(clientRecordId);
     }
@@ -114,6 +130,7 @@ class HealthConnectSink implements HealthSink {
       dataTypeKey: HealthDataType.HEART_RATE,
       clientRecordId: '$clientRecordId-hr',
     );
+    debugPrint('[Sphygma] HC delete $clientRecordId-hr: $hrOk');
     if (!hrOk) {
       throw HealthConnectWriteException('$clientRecordId-hr');
     }
