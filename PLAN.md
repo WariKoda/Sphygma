@@ -8,8 +8,10 @@ ausliest und die Messwerte in **Health Connect** schreibt.
 > `SyncService`), M4 (drift, Dedup über die Messungsnummer) und M5 (`ExportService`,
 > `HealthConnectSink`) end-to-end am Gerät validiert: Keystore-Key → Pairing → Readout → DB
 > (zweiter Sync 0 neue Datensätze) → Health Connect (Export einer Messung, gezieltes
-> Entfernen per `clientRecordId`). **M6 (UI) ist implementiert und getestet** (Widget-Tests,
-> Debug-APK), der Gerätetest steht aus. **M7 vorbereitet:** Release-Signierung im Build,
+> Entfernen per `clientRecordId`). **M6 (UI) ist am Gerät validiert** (2026-09-04: Pairing
+> mit Slot-Wahl, Sync, Liste, Einzel-Export und -Entfernen, Trend). Dabei gefunden und
+> behoben: das health-Plugin verwirft die `clientRecordId` ohne `clientRecordVersion`
+> (R-10). **M7 vorbereitet:** Release-Signierung im Build,
 > `docs/RELEASE.md`, `docs/PRIVACY.md`, F-Droid-Metadaten-Entwurf. Offen für M7:
 > stabiler Flutter-Kanal, Keystore (erzeugt der Nutzer), ESC-Flag-Entscheidung,
 > Play-Organisationskonto, F-Droid-Lizenzfrage zu `flutter_blue_plus`. Die offenen Fragen aus
@@ -441,7 +443,9 @@ Dedup beim Import. Migrationen von Anfang an.
 ### M5 — Health Connect
 
 - Verfügbarkeitsprüfung, Berechtigungsdialog, Umgang mit Verweigerung
-- `writeBloodPressure` je Messung, `clientRecordId` deterministisch aus `(timestamp, slot)`
+- `writeBloodPressure` je Messung, `clientRecordId` deterministisch aus `(slot,
+  Messungsnummer)` — **immer zusammen mit `clientRecordVersion`**, sonst speichert das
+  health-Plugin den Datensatz ohne Client-ID (R-10)
 - Puls als `HealthDataType.HEART_RATE`
 - `RecordingMethod.automatic` — die Werte stammen aus einem Messgerät, nicht aus Handeingabe
 - `ihb`/`mov` dürfen exportiert werden — Zuordnung in M1 geklärt (§2.2)
@@ -516,6 +520,7 @@ Bewusst ausgeschlossen — jede Position mit Grund:
 | R-6 | Namenskollision mit „Sphygmo" | Beanstandung im Store | Neutrale Package-ID, damit ein Namenswechsel billig bleibt |
 | R-7 | ~~2 statt 4 RX-Kanäle nötig~~ **erledigt** | — | Gerät antwortet über alle 4 Kanäle; Reassemblierung verifiziert |
 | R-8 | Gerät bereits mit Omron-App gepairt | Pairing schlägt fehl | Vorher entkoppeln; im Pairing-Flow erklären |
+| R-10 | ~~health-Plugin verwirft `clientRecordId` ohne `clientRecordVersion`~~ **erledigt** | Export nicht rücknehmbar, Duplikate je Export; Löschen meldet trotzdem Erfolg | Am Gerät gefunden (2026-09-04), Ursache in `HealthDataWriter.buildMetadata`; Version wird jetzt immer mitgegeben, Regressionstest `test/sync/health_connect_sink_test.dart` |
 
 ---
 
