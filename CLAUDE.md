@@ -5,7 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Projektzustand
 
 **M0–M6 sind implementiert und an echter Hardware validiert** (Fairphone 4, HEM-6232T,
-2026-09-03/04); M7 (Release) ist vorbereitet (`docs/RELEASE.md`), die Release-Entscheidungen
+2026-09-03/04). **Der automatische Abgleich ist am Gerät bestätigt** (2026-09-05): Eine
+Messung ohne jeden Tastendruck löste den Sync aus, die Messung landete in der DB. M7 (Release) ist vorbereitet (`docs/RELEASE.md`), die Release-Entscheidungen
 stehen in `PLAN.md` M7. Status, Entscheidungen und Risikoregister stehen in `PLAN.md` — vor
 inhaltlicher Arbeit lesen.
 
