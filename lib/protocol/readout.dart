@@ -35,13 +35,7 @@ class SlotRecord {
 /// jeder Abweichung vom erwarteten Ablauf; eine leere Liste bedeutet
 /// ausschliesslich "Geraet ohne gespeicherte Messungen".
 Future<List<SlotRecord>> readAllRecords(BleTransport transport) async {
-  await transport.writeCommand(startTransmissionFrame);
-  final start = parseResponseFrame(await transport.readResponse());
-  if (start.type != responseTypeStart) {
-    throw ProtocolException(
-      'Unerwartete Antwort auf Start: 0x${start.type.toRadixString(16)}',
-    );
-  }
+  await startTransmission(transport);
 
   final reader = EepromReader(transport);
   final result = <SlotRecord>[];
@@ -65,6 +59,38 @@ Future<List<SlotRecord>> readAllRecords(BleTransport transport) async {
     }
   }
 
+  await endTransmission(transport);
+  return result;
+}
+
+/// Schritt 4 des Pairings (docs/protocol/hem-6232t.md §5): direkt nach dem
+/// Key-Write, in derselben Sitzung, einmal Start und Ende fahren. Ein
+/// Geraet, das zuvor mit keinem Partner gepairt war (etwa nach dem
+/// Werksreset laut Handbuch §6.3), uebernimmt das Pairing sonst nicht.
+/// Quelle [O] (omblepy, main(): startTransmission/endTransmission direkt
+/// nach writeNewUnlockKey, "necessary when the device has not been paired
+/// to any device"). Symptom ohne diesen Schritt, 2026-09-04 nach Werksreset:
+/// App meldet Erfolg, das Geraet reagiert danach nicht mehr auf kurzen
+/// Tastendruck.
+Future<void> confirmPairing(BleTransport transport) async {
+  await startTransmission(transport);
+  await endTransmission(transport);
+}
+
+/// Start-Frame senden und die Bestaetigung `0x8000` verlangen.
+Future<void> startTransmission(BleTransport transport) async {
+  await transport.writeCommand(startTransmissionFrame);
+  final start = parseResponseFrame(await transport.readResponse());
+  if (start.type != responseTypeStart) {
+    throw ProtocolException(
+      'Unerwartete Antwort auf Start: 0x${start.type.toRadixString(16)}',
+    );
+  }
+}
+
+/// Ende-Frame senden, `0x8f00` verlangen und den Fehlercode des Geraets
+/// pruefen.
+Future<void> endTransmission(BleTransport transport) async {
   await transport.writeCommand(endTransmissionFrame);
   final end = parseResponseFrame(await transport.readResponse());
   if (end.type != responseTypeEnd) {
@@ -77,5 +103,4 @@ Future<List<SlotRecord>> readAllRecords(BleTransport transport) async {
       'Geraet meldet Fehlercode ${end.data[0]} beim Beenden der Uebertragung',
     );
   }
-  return result;
 }
