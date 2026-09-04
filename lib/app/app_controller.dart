@@ -12,8 +12,10 @@ import '../db/app_database.dart';
 import '../db/measurement_repository.dart';
 import '../db/settings_repository.dart';
 import '../protocol/exceptions.dart';
+import '../stats/period.dart';
 import '../sync/export_service.dart';
 import '../sync/sync_service.dart';
+import '../ui/theme/variants.dart';
 
 class AppController extends ChangeNotifier {
   AppController({
@@ -54,6 +56,35 @@ class AppController extends ChangeNotifier {
   List<Measurement> measurements = const [];
   int pendingExport = 0;
 
+  /// Gewaehlter Zeitraum im Verlauf.
+  Period period = Period.week;
+
+  /// Gewaehlte Gestaltung. Wird in [init] aus der DB geladen.
+  ThemeVariant themeVariant = ThemeVariant.instrument;
+
+  /// Die neueste Messung, unabhaengig vom Zeitraum. Null heisst: noch
+  /// keine Messung gespeichert - ein echter Zustand, kein Fehler.
+  Measurement? get latest => measurements.isEmpty ? null : measurements.first;
+
+  /// Messungen im gewaehlten Zeitraum, aelteste zuerst.
+  List<Measurement> get measurementsInPeriod =>
+      filterByPeriod(measurements, period, DateTime.now());
+
+  Future<void> setPeriod(Period value) async {
+    period = value;
+    notifyListeners();
+  }
+
+  Future<void> setThemeVariant(ThemeVariant value) async {
+    await settings.setThemeVariant(value);
+    themeVariant = value;
+    notifyListeners();
+  }
+
+  /// Nur fuer Tests: erzwingt das Neuladen aus der DB.
+  @visibleForTesting
+  Future<void> refreshForTest() => _refresh();
+
   /// Deutet auf eine falsch gehende Geraeteuhr hin (Protokollreferenz §8.2):
   /// die neueste Messung liegt weit in der Vergangenheit oder in der Zukunft.
   bool clockLooksWrong = false;
@@ -61,6 +92,7 @@ class AppController extends ChangeNotifier {
   Future<void> init() async {
     userSlot = await settings.userSlot();
     paired = await keyStore.load() != null;
+    themeVariant = await settings.themeVariant();
     await _refresh();
     _startWatching();
   }
