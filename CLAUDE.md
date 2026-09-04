@@ -120,7 +120,15 @@ Diese Punkte kosten jeweils einen Fehlschlag, wenn man sie nicht kennt
 - Settings-Bereich nur in den kleinen Abschnitten lesen, die omblepy nutzt; ein 0x38-Byte-Read
   ab `0x0260` bleibt unbeantwortet.
 - „Alle Daten löschen" am Gerät leert den EEPROM nicht: alle Records bleiben lesbar, die
-  Messungsnummer zählt weiter (§8.3). Dedup bleibt gültig; Nutzerhinweis in `docs/PRIVACY.md`.
+  Messungsnummer zählt weiter (§8.3). Es setzt aber den **Platzzeiger auf 0**, wodurch neue
+  Messungen die mittelalten statt der ältesten überschreiben. Dedup bleibt gültig;
+  Nutzerhinweis in `docs/PRIVACY.md`.
+- **Der Record-Bereich ist schreibgeschützt** (§8.4, sieben Versuche): Das Gerät bestätigt
+  jeden Schreibbefehl mit `81c0` und verwirft ihn. Eine „Daten am Gerät löschen"-Funktion ist
+  nicht baubar. Die Bestätigung ist generell kein Beleg für einen erfolgten Schreibvorgang.
+- **Das Advertising trägt Messungsnummer und Platzzeiger beider Slots** (§2.1). Damit lässt
+  sich ohne Verbindung erkennen, ob es neue Messungen gibt, und gezielt nur diese lesen —
+  ohne einen einzigen EEPROM-Write.
 
 ## Protokollarbeit
 

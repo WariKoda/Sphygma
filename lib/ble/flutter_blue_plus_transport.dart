@@ -4,14 +4,11 @@
 // dort ohne Hardware getestet. Dieser Adapter selbst ist NICHT an
 // echter Hardware verifiziert - das ist Meilenstein 1.
 //
-// UNVERIFIZIERT, an Hardware zu pruefen (M1):
-// - ob withoutResponse:false fuer TX-Writes korrekt ist. omblepy nutzt
-//   auf diesem Geraet effektiv einen einzelnen TX-Kanal mit dem
-//   bleak-Default; welches GATT-Write-Mode das Omron-Geraet erwartet,
-//   ist aus den Referenzimplementierungen nicht eindeutig ableitbar.
-//   Bei Fehlschlag withoutResponse:true probieren.
-// - ob wirklich alle 4 RX-Kanaele noetig sind oder 2 reichen (siehe
-//   docs/protocol/hem-6232t.md §2, Abweichung zwischen omblepy und UBPM).
+// Schreibrichtung, belegt durch den Mitschnitt der Hersteller-App
+// (2026-09-04, docs/protocol/hem-6232t.md §2.2): Ein Kommando bis 16 Bytes
+// geht auf TX-Kanal 0, ein laengeres wird in 16-Byte-Stuecke auf die
+// folgenden Kanaele verteilt. Kanal 0 wird mit Response geschrieben, die
+// Folgekanaele ohne - genau so macht es die Hersteller-App.
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -20,14 +17,22 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import '../protocol/ble_transport.dart';
 import '../protocol/channel_reassembler.dart';
 import '../protocol/exceptions.dart';
+import '../protocol/frame.dart';
 import 'frame_mailbox.dart';
 
 class FlutterBluePlusTransport implements BleTransport {
   FlutterBluePlusTransport({
-    required BluetoothCharacteristic txCharacteristic,
+    required List<BluetoothCharacteristic> txCharacteristics,
     required List<BluetoothCharacteristic> rxCharacteristics,
-  })  : _tx = txCharacteristic,
+  })  : _tx = txCharacteristics,
         _rx = rxCharacteristics {
+    if (_tx.length != txChannelCount) {
+      throw ArgumentError.value(
+        _tx.length,
+        'txCharacteristics',
+        'Hem6232tDevice.txCharacteristicUuids hat $txChannelCount Eintraege',
+      );
+    }
     if (_rx.length != 4) {
       throw ArgumentError.value(
         _rx.length,
@@ -37,7 +42,7 @@ class FlutterBluePlusTransport implements BleTransport {
     }
   }
 
-  final BluetoothCharacteristic _tx;
+  final List<BluetoothCharacteristic> _tx;
   final List<BluetoothCharacteristic> _rx;
 
   /// RX-Kanal 0 - das Pairing braucht ihn, weil Notify darauf das Bonding
@@ -79,7 +84,18 @@ class FlutterBluePlusTransport implements BleTransport {
 
   @override
   Future<void> writeCommand(Uint8List frame) async {
-    await _tx.write(frame, withoutResponse: false);
+    final parts = splitIntoTxChannels(frame);
+    for (var channel = 0; channel < parts.length; channel++) {
+      // Folgekanaele ohne Response - so schreibt die Hersteller-App
+      // (Mitschnitt 2026-09-04).
+      //
+      // Kanal 0 geht hier immer MIT Response, waehrend die Hersteller-App
+      // kurze Kommandos (Start, Lesen, Ende) ohne sendet. Beides
+      // funktioniert an der Hardware (M1 und alle Laeufe seither); mit
+      // Response meldet der Stack zusaetzlich, wenn ein Write nicht
+      // ankommt, und das ist uns lieber als die exakte Nachbildung.
+      await _tx[channel].write(parts[channel], withoutResponse: channel > 0);
+    }
   }
 
   /// Befund M1: Bleibt eine Antwort aus, trennt das Geraet nach ~60 s.

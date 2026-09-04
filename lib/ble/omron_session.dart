@@ -28,12 +28,68 @@ class DeviceNotFoundException implements Exception {
       'Geraete gesehen). Bluetooth-Taste am Geraet kurz druecken.';
 }
 
+/// Was ein Scan ueber das Geraet herausgefunden hat.
+///
+/// [status] ist null, wenn das Advertising keine deutbaren Omron-Daten
+/// trug - das kommt vor und ist kein Fehler (docs/protocol/hem-6232t.md
+/// §2.1). Das Geraet selbst wurde in dem Fall trotzdem gefunden.
+class OmronScanResult {
+  const OmronScanResult({required this.device, required this.status});
+
+  final BluetoothDevice device;
+  final OmronAdvertisedStatus? status;
+}
+
+/// Lauscht dauerhaft auf das Advertising des Geraets und meldet jede
+/// Aenderung des Gerätestands.
+///
+/// Das HEM-6232T sendet nach jeder Messung von selbst (§2.1) - genau
+/// darauf reagiert auch die Hersteller-App. Der Datenstrom liefert nur
+/// dann etwas, wenn sich Messungsnummer oder Platzzeiger gegenueber der
+/// letzten Meldung geaendert haben; das dauernde Wiederholen desselben
+/// Advertisings wird verschluckt.
+///
+/// Der Aufrufer muss das Abo beenden - sonst laeuft der Scan weiter und
+/// kostet Akku.
+Stream<OmronAdvertisedStatus> watchOmronStatus({
+  Duration? removeIfGone,
+}) async* {
+  await FlutterBluePlus.startScan(
+    continuousUpdates: true,
+    // Ein Bruchteil der Advertising-Pakete genuegt: Das Geraet sendet
+    // mehrmals je Sekunde, wir wollen nur mitbekommen, dass sich etwas
+    // geaendert hat.
+    continuousDivisor: 8,
+    removeIfGone: removeIfGone,
+  );
+  try {
+    OmronAdvertisedStatus? last;
+    await for (final results in FlutterBluePlus.scanResults) {
+      for (final r in results) {
+        if (!isOmronAdvertisingName(r.advertisementData.advName)) continue;
+        final status = parseOmronStatus(r.advertisementData.manufacturerData);
+        if (status == null) continue;
+        if (last != null && status.sameAs(last)) continue;
+        last = status;
+        yield status;
+      }
+    }
+  } finally {
+    await FlutterBluePlus.stopScan();
+  }
+}
+
 class OmronSession {
   OmronSession._(this._device, this._unlock, this.transport);
 
   final BluetoothDevice _device;
   final BluetoothCharacteristic _unlock;
   final FlutterBluePlusTransport transport;
+
+  /// Das verbundene Geraet. Wird gebraucht, um neben dem proprietaeren
+  /// Protokoll auch die genormten GATT-Dienste anzusprechen
+  /// (docs/protocol/hem-6232t.md §2.2).
+  BluetoothDevice get device => _device;
 
   static const Duration scanTimeout = Duration(seconds: 15);
 
@@ -44,7 +100,7 @@ class OmronSession {
     Duration scanTimeout = scanTimeout,
     void Function(String message)? log,
   }) async {
-    final device = await _scan(scanTimeout, log);
+    final device = (await scan(timeout: scanTimeout, log: log)).device;
     log?.call('Gefunden: ${device.remoteId}. Verbinde...');
 
     for (var attempt = 1; ; attempt++) {
@@ -53,7 +109,7 @@ class OmronSession {
         await device.discoverServices();
         final chars = _findCharacteristics(device);
         final transport = FlutterBluePlusTransport(
-          txCharacteristic: chars.tx,
+          txCharacteristics: chars.tx,
           rxCharacteristics: chars.rx,
         );
         return OmronSession._(device, chars.unlock, transport);
@@ -72,20 +128,45 @@ class OmronSession {
     }
   }
 
-  static Future<BluetoothDevice> _scan(
-    Duration timeout,
+  /// Sucht das Geraet und gibt zurueck, was das Advertising verraet.
+  ///
+  /// Die Herstellerdaten tragen Messungsnummer und Platzzeiger beider
+  /// Slots (§2.1); damit laesst sich ohne Verbindung entscheiden, ob es
+  /// ueberhaupt etwas zu holen gibt.
+  /// [waitForStatus] entscheidet, worauf der Scan wartet:
+  ///
+  /// * `false` (Standard): beim ersten Treffer sofort beenden. So braucht
+  ///   es [open], denn im Pairing-Modus verfaellt das Fenster, wenn man
+  ///   die volle Scan-Dauer abwartet (§2.1).
+  /// * `true`: weiterscannen, bis auch die Herstellerdaten eingetroffen
+  ///   sind - fuer den reinen Statuscheck, wo genau die gebraucht werden.
+  ///   Kommen keine, endet der Scan im Timeout und liefert das Geraet
+  ///   ohne Status.
+  static Future<OmronScanResult> scan({
+    Duration timeout = scanTimeout,
+    bool waitForStatus = false,
     void Function(String message)? log,
-  ) async {
+  }) async {
     final seen = <String>{};
     BluetoothDevice? match;
+    OmronAdvertisedStatus? status;
 
     await FlutterBluePlus.startScan(timeout: timeout);
     final subscription = FlutterBluePlus.scanResults.listen((results) {
       for (final r in results) {
-        if (!seen.add(r.device.remoteId.str)) continue;
-        if (match == null && isOmronAdvertisingName(r.advertisementData.advName)) {
-          match = r.device;
-          // Scan sofort beenden, sonst verfaellt das Pairing-Fenster.
+        seen.add(r.device.remoteId.str);
+        if (!isOmronAdvertisingName(r.advertisementData.advName)) continue;
+
+        // Name und Herstellerdaten koennen in getrennten Paketen kommen -
+        // im Mitschnitt vom 2026-09-04 trug das Scan-Response nur den
+        // Namen, die Herstellerdaten steckten im Advertising davor. Wer
+        // beim ersten Treffer aufhoert, bekommt womoeglich nie einen
+        // Status. Deshalb: Geraet merken, Status nachtragen, sobald er
+        // auftaucht.
+        match ??= r.device;
+        status ??= parseOmronStatus(r.advertisementData.manufacturerData);
+
+        if (!waitForStatus || status != null) {
           unawaited(FlutterBluePlus.stopScan());
         }
       }
@@ -103,12 +184,12 @@ class OmronSession {
     if (device == null) {
       throw DeviceNotFoundException(seen.length);
     }
-    return device;
+    return OmronScanResult(device: device, status: status);
   }
 
   static ({
     BluetoothCharacteristic unlock,
-    BluetoothCharacteristic tx,
+    List<BluetoothCharacteristic> tx,
     List<BluetoothCharacteristic> rx,
   }) _findCharacteristics(BluetoothDevice device) {
     final parentUuid = Guid(Hem6232tDevice.parentServiceUuid);
@@ -130,7 +211,7 @@ class OmronSession {
 
     return (
       unlock: byUuid(Hem6232tDevice.unlockCharacteristicUuid),
-      tx: byUuid(Hem6232tDevice.txCharacteristicUuids.first),
+      tx: Hem6232tDevice.txCharacteristicUuids.map(byUuid).toList(),
       rx: Hem6232tDevice.rxCharacteristicUuids.map(byUuid).toList(),
     );
   }

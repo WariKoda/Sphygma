@@ -38,6 +38,32 @@ void main() {
 
   tearDown(() => db.close());
 
+  group('highestSequenceFor', () {
+    // Grundlage fuer den Autosync: Der Wert wird mit der Messungsnummer
+    // aus dem Advertising verglichen (docs/protocol/hem-6232t.md §2.1).
+    test('liefert die hoechste bekannte Nummer eines Slots', () async {
+      await repository.importAll([
+        _slotRecord(slot: 1, sequence: 0x0210),
+        _slotRecord(slot: 1, sequence: 0x021d),
+        _slotRecord(slot: 1, sequence: 0x0215),
+        _slotRecord(slot: 2, sequence: 0x000e),
+      ]);
+
+      expect(await repository.highestSequenceFor(1), 0x021d);
+      expect(await repository.highestSequenceFor(2), 0x000e);
+    });
+
+    test('null bei einem Slot ohne Messungen - kein Ersatzwert', () async {
+      // 0 waere hier falsch: Es ist von "Messung mit Nummer 0" nicht zu
+      // unterscheiden und wuerde einen Sync ausloesen, der nichts findet.
+      expect(await repository.highestSequenceFor(1), isNull);
+
+      await repository.importAll([_slotRecord(slot: 1, sequence: 5)]);
+
+      expect(await repository.highestSequenceFor(2), isNull);
+    });
+  });
+
   group('importAll', () {
     test('legt neue Records an und meldet, wie viele neu waren', () async {
       final inserted = await repository.importAll([
