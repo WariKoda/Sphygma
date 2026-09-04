@@ -46,9 +46,12 @@ Health Connect geschriebene Daten löschst du vorher über die App oder in Healt
 „App-Daten löschen".
 
 **Hinweis zum Messgerät:** Das Löschen des Speichers am Omron-Gerät entfernt die Messwerte
-nur aus der Anzeige. Über Bluetooth bleiben sie lesbar, bis sie durch neue Messungen
-überschrieben sind (100 Messungen je Benutzer). Sphygma kann daran nichts ändern, weil die App
-grundsätzlich nichts in das Gerät schreibt. Wer das Gerät weitergibt, sollte das wissen.
+nur aus der Anzeige. Auch das Zurücksetzen auf die Werkseinstellungen löscht sie nicht — es
+entfernt die Bluetooth-Kopplung, nicht die Messwerte. Über Bluetooth bleiben sie lesbar, bis
+sie durch neue Messungen überschrieben sind (100 Messungen je Benutzer, also bis zu 200
+insgesamt). Sphygma kann daran nichts ändern, weil die App grundsätzlich nichts in das Gerät
+schreibt. Wer das Gerät weitergibt, sollte das wissen; sicher entfernt sind die Werte erst,
+wenn genügend neue Messungen sie überschrieben haben.
 
 ## Verantwortlicher
 

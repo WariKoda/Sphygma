@@ -112,11 +112,11 @@ Diese Punkte kosten jeweils einen Fehlschlag, wenn man sie nicht kennt
   (`BLEsmart_`/`BLESmart_`) filtern und den Scan beim ersten Treffer sofort beenden.
 - Es sendet nur auf Tastendruck (kurz: normal, lang: Pairing-Modus `-P-`) und trennt nach
   ~60 s ohne Kommando.
-- Pairing: Notify auf RX 0 löst das Bonding aus; bis `bonded` antwortet das Gerät auf den
-  Programmiermodus mit `82 0f`. Auf den Bond-Status warten, nicht blind wiederholen.
-  Bonding und Key-Write gehören in dieselbe Sitzung — und direkt danach **einmal Start/Ende**
-  (§5 Schritt 4, `confirmPairing`). Ohne das meldet die App Erfolg, aber ein zuvor nie gepaartes
-  Gerät (nach Werksreset) nimmt das Pairing nicht an.
+- Pairing: **erst selbst `createBond()`, dann Notify auf RX 0.** Umgekehrt fragt Android
+  zweimal nach der Kopplung (§5.1). Bis `bonded` antwortet das Gerät auf den Programmiermodus
+  mit `82 0f`. Bonding und Key-Write gehören in dieselbe Sitzung — und direkt danach **einmal
+  Start/Ende** (§5 Schritt 4, `confirmPairing`). Ohne das meldet die App Erfolg, aber ein zuvor
+  nie gepaartes Gerät (nach Werksreset) nimmt das Pairing nicht an.
 - Settings-Bereich nur in den kleinen Abschnitten lesen, die omblepy nutzt; ein 0x38-Byte-Read
   ab `0x0260` bleibt unbeantwortet.
 - „Alle Daten löschen" am Gerät leert den EEPROM nicht: alle Records bleiben lesbar, die
