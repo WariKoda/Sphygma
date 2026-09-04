@@ -67,3 +67,6 @@ migrate_working_dir/
 
 # Fotos vom Geraetedisplay fuer M1 - enthalten persoenliche Blutdruckwerte.
 docs/images/
+
+# Visueller Begleiter des brainstorming-Skills
+.superpowers/

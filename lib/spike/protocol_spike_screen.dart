@@ -1360,6 +1360,316 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
     _appendLog('[watch] ${parts.join('  ')}');
   }
 
+  /// SCHREIBT die Uhrzeit ueber den genormten Zeitdienst.
+  ///
+  /// Bisher wurde 0x2A2B nur gelesen (zehn Nullen) und daraus geschlossen,
+  /// der Dienst sei tot. Das war ein Fehlschluss: Die Charakteristik hat
+  /// Schreibrecht, und viele Geraete liefern beim Lesen Nullen, solange
+  /// die Zeit nie gesetzt wurde.
+  ///
+  /// Format laut GATT-Definition (org.bluetooth.characteristic.current_time),
+  /// zehn Bytes: Jahr uint16 little-endian, Monat, Tag, Stunde, Minute,
+  /// Sekunde, Wochentag, Sekundenbruchteil, Aenderungsgrund.
+  ///
+  /// Risiko gering: Trifft nur die Uhr. Schlimmstenfalls geht sie danach
+  /// falsch - was sie laut Referenz ohnehin zeitweise tat.
+  /// Schreibt einen Befehl an einen der genormten Kontrollpunkte.
+  ///
+  /// Standard ist der Record Access Control Point (0x2A52) mit Befehl 2
+  /// ("Delete stored records") und Zusatz 1 ("All records") laut
+  /// GATT-Definition. Bisher wurde dort nur Befehl 4 gesendet und
+  /// abgelehnt; daraus folgt nicht zwingend, dass auch Befehl 2 scheitert.
+  ///
+  /// ACHTUNG: Kann Messungen auf dem Geraet entfernen. Sie liegen in der
+  /// App-Datenbank, auf dem Geraet waeren sie weg.
+  ///
+  /// [userDataPoint] schaltet auf den User Control Point (0x2A9F). Dessen
+  /// Befehlswerte stehen nur in der kostenpflichtigen Spezifikation, sind
+  /// also nicht belegt. Deshalb wird dort **nichts geraten**: Gesendet
+  /// wird der Wert 0, der in Kontrollpunkten reserviert ist. Die Frage
+  /// lautet allein, ob die Charakteristik ueberhaupt antwortet.
+  Future<void> _runControlPointWrite({bool userDataPoint = false}) =>
+      _guarded(() async {
+        final key = await _syncService.keyStore.load();
+        if (key == null) {
+          throw StateError('Kein gespeicherter Pairing-Key.');
+        }
+        final session = await OmronSession.open(log: _appendLog);
+        try {
+          final device = session.device;
+          await session.unlock(key);
+
+          final target = userDataPoint
+              ? _findChar(device, _userDataService, '2a9f')
+              : _findChar(device, _racpService, _racpChar);
+          final label = userDataPoint ? 'ucp' : 'racp2';
+          if (target == null) {
+            _appendLog('[$label] Characteristic nicht gefunden.');
+            return;
+          }
+
+          final payload = userDataPoint
+              ? Uint8List.fromList([0x00])
+              : Uint8List.fromList([0x02, 0x01]);
+
+          final answers = FrameMailbox<Uint8List>();
+          final sub = target.onValueReceived
+              .listen((b) => answers.deliver(Uint8List.fromList(b)));
+          try {
+            await target.setNotifyValue(true);
+            _appendLog('[$label] sende ${_hexBytes(payload)}...');
+            await target.write(payload, withoutResponse: false);
+            _appendLog('[$label] Schreibbefehl angenommen.');
+            final a = await answers.next().timeout(const Duration(seconds: 10));
+            _appendLog('[$label] Antwort: ${_hexBytes(a)}');
+            _appendLog('[$label] ERGEBNIS: Der Kontrollpunkt antwortet.');
+          } on TimeoutException {
+            _appendLog(
+              '[$label] ERGEBNIS: angenommen, aber keine Antwort binnen 10 s.',
+            );
+          } catch (e) {
+            _appendLog('[$label] ERGEBNIS: abgelehnt - $e');
+          } finally {
+            await sub.cancel();
+            try {
+              await target.setNotifyValue(false);
+            } catch (_) {}
+          }
+        } finally {
+          await session.close();
+        }
+      });
+
+  /// Versucht die Kette Anlegen -> Zustimmen -> Benutzerdaten loeschen am
+  /// User Control Point (0x2A9F).
+  ///
+  /// Der Scan vom 2026-09-05 sandte die Befehle **ohne Parameter** und
+  /// bekam durchweg Ergebnis `04`, bei Befehl 3 dagegen `05`. Die Norm
+  /// verlangt fuer das Anlegen einen Zugangscode als Argument und fuer
+  /// das Zustimmen zusaetzlich den Benutzerindex; das Fehlen erklaert die
+  /// Ablehnung. Hier werden die Parameter mitgesendet.
+  ///
+  /// Der Zugangscode ist frei waehlbar (uint16, little-endian). Antworten
+  /// werden roh protokolliert; welcher Ergebniswert Erfolg bedeutet,
+  /// zeigt der Vergleich.
+  ///
+  /// ACHTUNG: Legt bei Erfolg einen zusaetzlichen Benutzer auf dem Geraet
+  /// an und versucht danach, dessen Daten zu loeschen.
+  Future<void> _runUserRegisterChain() => _guarded(() async {
+        const consentCode = 1234;
+        final key = await _syncService.keyStore.load();
+        if (key == null) {
+          throw StateError('Kein gespeicherter Pairing-Key.');
+        }
+        final session = await OmronSession.open(log: _appendLog);
+        try {
+          await session.unlock(key);
+          final ucp = _findChar(session.device, _userDataService, '2a9f');
+          final userIndex = _findChar(session.device, _userDataService, '2a9a');
+          if (ucp == null) {
+            _appendLog('[reg] Characteristic nicht gefunden.');
+            return;
+          }
+
+          final answers = FrameMailbox<Uint8List>();
+          final sub = ucp.onValueReceived
+              .listen((b) => answers.deliver(Uint8List.fromList(b)));
+          try {
+            await ucp.setNotifyValue(true);
+
+            Future<Uint8List?> send(String was, List<int> bytes) async {
+              try {
+                await ucp.write(
+                  Uint8List.fromList(bytes),
+                  withoutResponse: false,
+                );
+                final a =
+                    await answers.next().timeout(const Duration(seconds: 8));
+                _appendLog('[reg] $was ${_hexBytes(Uint8List.fromList(bytes))}'
+                    ' -> ${_hexBytes(a)}');
+                return a;
+              } on TimeoutException {
+                _appendLog('[reg] $was -> keine Antwort');
+              } catch (e) {
+                _appendLog('[reg] $was -> Schreibfehler: $e');
+              }
+              return null;
+            }
+
+            // 1: Anlegen, mit Zugangscode als uint16 little-endian.
+            final reg = await send('anlegen', [
+              0x01,
+              consentCode & 0xff,
+              (consentCode >> 8) & 0xff,
+            ]);
+
+            // Der Benutzerindex steht danach in 0x2A9A.
+            var index = 0xff;
+            if (userIndex != null) {
+              final v = await userIndex.read();
+              if (v.isNotEmpty) index = v.first;
+              _appendLog('[reg] Benutzerindex jetzt: $index');
+            }
+            if (reg != null && reg.length > 3) {
+              _appendLog('[reg] Antwort traegt Zusatzbytes - moeglicher Index');
+            }
+
+            // 2: Zustimmen, mit Index und Zugangscode.
+            await send('zustimmen', [
+              0x02,
+              index,
+              consentCode & 0xff,
+              (consentCode >> 8) & 0xff,
+            ]);
+
+            // 3: Benutzerdaten loeschen.
+            await send('loeschen', [0x03]);
+
+            _appendLog('[reg] Fertig.');
+          } finally {
+            await sub.cancel();
+            try {
+              await ucp.setNotifyValue(false);
+            } catch (_) {}
+          }
+        } finally {
+          await session.close();
+        }
+      });
+
+  /// Tastet die Befehlswerte des User Control Point (0x2A9F) ab.
+  ///
+  /// Der Punkt antwortet strukturiert (Befund 2026-09-05: auf `00` kam
+  /// `20 00 04`), ist also bedient. Seine Befehlswerte stehen aber nur in
+  /// der kostenpflichtigen Spezifikation. Statt zu raten wird gemessen:
+  /// Jeder Wert von 1 bis 8 wird gesendet, die Antwort protokolliert.
+  ///
+  /// Antwortaufbau, aus der Beobachtung abgeleitet: Byte 0 kennzeichnet
+  /// die Antwort (`0x20`), Byte 1 spiegelt den gesendeten Befehl, Byte 2
+  /// traegt das Ergebnis. Welcher Ergebniswert Erfolg bedeutet, zeigt der
+  /// Vergleich ueber alle Befehle.
+  ///
+  /// ACHTUNG: Ein unterstuetzter Befehl wird auch ausgefuehrt. Nach den
+  /// Namen der Norm sind darunter das Anlegen eines Benutzers, das
+  /// Loeschen von Benutzerdaten und das Loeschen eines Benutzers. Welche
+  /// Zahl welchen Befehl traegt, ist vorher unbekannt.
+  Future<void> _runUserControlPointScan() => _guarded(() async {
+        final key = await _syncService.keyStore.load();
+        if (key == null) {
+          throw StateError('Kein gespeicherter Pairing-Key.');
+        }
+        final session = await OmronSession.open(log: _appendLog);
+        try {
+          await session.unlock(key);
+          final ucp = _findChar(session.device, _userDataService, '2a9f');
+          if (ucp == null) {
+            _appendLog('[scan] Characteristic nicht gefunden.');
+            return;
+          }
+
+          final answers = FrameMailbox<Uint8List>();
+          final sub = ucp.onValueReceived
+              .listen((b) => answers.deliver(Uint8List.fromList(b)));
+          try {
+            await ucp.setNotifyValue(true);
+            for (var op = 1; op <= 8; op++) {
+              try {
+                await ucp.write(
+                  Uint8List.fromList([op]),
+                  withoutResponse: false,
+                );
+                final a =
+                    await answers.next().timeout(const Duration(seconds: 6));
+                final ergebnis = a.length > 2 ? a[2] : -1;
+                _appendLog(
+                  '[scan] Befehl $op -> ${_hexBytes(a)}'
+                  '${ergebnis == 0x04 ? "" : "   <-- ABWEICHEND"}',
+                );
+              } on TimeoutException {
+                _appendLog('[scan] Befehl $op -> keine Antwort');
+              } catch (e) {
+                _appendLog('[scan] Befehl $op -> Schreibfehler: $e');
+              }
+            }
+            _appendLog(
+              '[scan] Fertig. Abweichende Ergebniswerte sind die Kandidaten.',
+            );
+          } finally {
+            await sub.cancel();
+            try {
+              await ucp.setNotifyValue(false);
+            } catch (_) {}
+          }
+        } finally {
+          await session.close();
+        }
+      });
+
+  /// Erster Versuch scheiterte zweimal mit GATT_NO_RESOURCES (0x80) - das
+  /// ist ein Fehler des Android-Stacks, keine Ablehnung des Geraets.
+  /// Deshalb dieselbe Schreiboperation in vier Varianten: mit und ohne
+  /// vorheriges Entsperren, jeweils mit und ohne Antwort.
+  Future<void> _runSetClock() => _guarded(() async {
+        final key = await _syncService.keyStore.load();
+
+        Future<void> attempt({
+          required bool unlock,
+          required bool withoutResponse,
+        }) async {
+          final name = '${unlock ? "entsperrt" : "roh"}/'
+              '${withoutResponse ? "ohne Antwort" : "mit Antwort"}';
+          final session = await OmronSession.open(log: (_) {});
+          try {
+            if (unlock) {
+              if (key == null) {
+                _appendLog('[clock] $name: kein Key gespeichert, uebersprungen.');
+                return;
+              }
+              await session.unlock(key);
+            }
+            final ct = _findChar(session.device, _cts, _ctsCurrentTime);
+            if (ct == null) {
+              _appendLog('[clock] Characteristic nicht gefunden.');
+              return;
+            }
+
+            final now = DateTime.now();
+            final value = Uint8List.fromList([
+              now.year & 0xff, (now.year >> 8) & 0xff,
+              now.month, now.day, now.hour, now.minute, now.second,
+              now.weekday, // 1 = Montag, wie in der Norm
+              0x00, // Sekundenbruchteil
+              0x01, // Aenderungsgrund: manuelle Zeitaktualisierung
+            ]);
+            try {
+              await ct.write(value, withoutResponse: withoutResponse);
+              final after = Uint8List.fromList(await ct.read());
+              _appendLog(
+                '[clock] $name: angenommen, danach ${_hexBytes(after)}'
+                '${after.any((b) => b != 0) ? "  <-- GESETZT" : ""}',
+              );
+            } catch (e) {
+              _appendLog('[clock] $name: abgelehnt - $e');
+            }
+          } finally {
+            await session.close();
+          }
+        }
+
+        _appendLog('[clock] vier Varianten, Taste zwischendurch druecken...');
+        for (final unlock in [false, true]) {
+          for (final wor in [false, true]) {
+            try {
+              await attempt(unlock: unlock, withoutResponse: wor);
+            } on DeviceNotFoundException {
+              _appendLog('[clock] Geraet sendet nicht mehr - Taste druecken.');
+              return;
+            }
+          }
+        }
+        _appendLog('[clock] Fertig.');
+      });
+
   /// Hot-Reload-Helfer fuer den Spike: ein haengender Durchlauf (Geraet
   /// trennt, kein Timeout) liess _busy sonst dauerhaft auf true.
   @override
@@ -1430,6 +1740,33 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
                   style: _compact,
                   onPressed: _busy ? null : () => _runRacpAfterUnlock(),
                   child: const Text('RACP+Unlock'),
+                ),
+                ElevatedButton(
+                  style: _compact,
+                  onPressed: _busy ? null : () => _runSetClock(),
+                  child: const Text('Uhr stellen'),
+                ),
+                ElevatedButton(
+                  style: _compact,
+                  onPressed: _busy ? null : () => _runControlPointWrite(),
+                  child: const Text('RACP Befehl 2'),
+                ),
+                ElevatedButton(
+                  style: _compact,
+                  onPressed: _busy
+                      ? null
+                      : () => _runControlPointWrite(userDataPoint: true),
+                  child: const Text('UCP Probe'),
+                ),
+                ElevatedButton(
+                  style: _compact,
+                  onPressed: _busy ? null : () => _runUserControlPointScan(),
+                  child: const Text('UCP Scan 1-8'),
+                ),
+                ElevatedButton(
+                  style: _compact,
+                  onPressed: _busy ? null : () => _runUserRegisterChain(),
+                  child: const Text('UCP Kette'),
                 ),
                 ElevatedButton(
                   style: _compact,
