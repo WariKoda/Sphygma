@@ -3,6 +3,10 @@
 Stand 2026-09-05. Ersetzt das gewachsene Gerüst aus M6, das als Rohentwurf taugte,
 aber keinen Schwerpunkt hatte.
 
+**Entwürfe:** `docs/design/entwuerfe.html` — die drei Gestaltungen und die drei
+Bereiche als Bild, im Browser zu öffnen. Die Farbwerte daraus stehen im
+Umsetzungsplan.
+
 ## Zweck
 
 Sphygma ist ein **Blutdruck-Tagebuch**. Beim Öffnen steht vorn, wie es um den

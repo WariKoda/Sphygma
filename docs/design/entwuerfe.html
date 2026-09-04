@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sphygma — Entwürfe vom 2026-09-05</title>
+<style>
+  body { margin:0; padding:32px 24px; background:#16161a; color:#e8e6e1;
+         font-family: ui-sans-serif, system-ui, sans-serif; line-height:1.6; }
+  main { max-width:1100px; margin:0 auto }
+  h1 { font-size:26px; font-weight:600; margin:0 0 6px }
+  h2 { font-size:20px; margin:44px 0 4px; padding-top:28px; border-top:1px solid #2e2e34 }
+  h3 { font-size:15px; margin:26px 0 8px }
+  .subtitle { opacity:.62; font-size:14px; margin:0 0 18px }
+  .lead { opacity:.72; margin:0 0 34px; font-size:14px }
+  .options { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:12px; margin:14px 0 24px }
+  .option { display:flex; gap:12px; padding:14px; border:1px solid #2e2e34; border-radius:9px; background:#1c1c21 }
+  .option .letter { font-weight:600; opacity:.5; min-width:18px }
+  .option h3 { margin:0 0 5px; font-size:14px }
+  .option p { margin:0; font-size:13px; opacity:.72 }
+  table { border-collapse:collapse; width:100%; font-size:14px; margin:10px 0 24px }
+  th,td { text-align:left; padding:9px 10px; border-bottom:1px solid #2e2e34; vertical-align:top }
+  th { font-size:12px; text-transform:uppercase; letter-spacing:.05em; opacity:.55 }
+  code { background:#26262c; padding:1px 5px; border-radius:3px; font-size:.9em }
+</style>
+</head>
+<body>
+<main>
+<h1>Sphygma — Entwürfe</h1>
+<p class="lead">Aus dem Entwurfsgespräch vom 2026-09-05. Gehört zur Spezifikation
+<code>docs/superpowers/specs/2026-09-05-app-neuentwurf-design.html</code> und hält fest,
+wie die Bildschirme aussehen sollen. Die Zahlen stammen aus echten Messungen.</p>
+<h2>Gestaltungsvarianten</h2>
+<h2>Drei Handschriften für denselben Bildschirm</h2>
+<p class="subtitle">Gleicher Inhalt, gleiche Anordnung — nur die Gestaltung unterscheidet sich. Es ist der Startbildschirm mit deiner echten Messung 545.</p>
+
+<style>
+  .phones { display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; margin: 8px 0 28px; }
+  .phone { width: 300px; border-radius: 26px; overflow: hidden; box-shadow: 0 10px 34px rgba(0,0,0,.28); }
+  .screen { min-height: 520px; padding: 20px 18px; box-sizing: border-box; }
+  .cap { text-align:center; margin-top:10px; font-size:13px; opacity:.75 }
+
+  /* ---------- A: Messinstrument ---------- */
+  .a { background:#faf9f7; color:#1b1b1a; font-family: ui-sans-serif, system-ui, sans-serif; }
+  .a .eyebrow { font-size:11px; letter-spacing:.14em; text-transform:uppercase; opacity:.5; margin-bottom:22px }
+  .a .big { font-size:62px; line-height:.95; font-weight:300; letter-spacing:-.03em; font-variant-numeric: tabular-nums; }
+  .a .big small { font-size:26px; font-weight:300; opacity:.4; margin-left:6px }
+  .a .unit { font-size:12px; opacity:.45; margin-top:8px; letter-spacing:.06em }
+  .a .band { margin:22px 0 6px; height:3px; background:linear-gradient(90deg,#7ea77e 0 38%,#c9b45e 38% 62%,#c07d5a 62% 100%); position:relative }
+  .a .band i { position:absolute; top:-4px; left:58%; width:2px; height:11px; background:#1b1b1a }
+  .a .verdict { font-size:13px; margin-top:14px; padding-bottom:20px; border-bottom:1px solid #e4e1db }
+  .a .row { display:flex; justify-content:space-between; font-size:13px; padding:13px 0; border-bottom:1px solid #efede8; font-variant-numeric: tabular-nums }
+  .a .row span:last-child { opacity:.45 }
+  .a .foot { margin-top:22px; font-size:11px; opacity:.4 }
+
+  /* ---------- B: Tagebuch ---------- */
+  .b { background:#f2f5fb; color:#182034; font-family: ui-rounded, ui-sans-serif, system-ui, sans-serif; }
+  .b .hi { font-size:15px; font-weight:600; margin-bottom:16px }
+  .b .hero { background:linear-gradient(145deg,#4f7fd8,#7d5fd0); border-radius:22px; padding:22px 20px; color:#fff; box-shadow:0 8px 20px rgba(79,127,216,.32) }
+  .b .hero .lbl { font-size:12px; opacity:.85 }
+  .b .hero .big { font-size:52px; font-weight:700; line-height:1.05; letter-spacing:-.02em; margin:4px 0 2px; font-variant-numeric: tabular-nums }
+  .b .pill { display:inline-block; margin-top:10px; background:rgba(255,255,255,.24); border-radius:999px; padding:5px 13px; font-size:12px; font-weight:600 }
+  .b .duo { display:flex; gap:11px; margin-top:14px }
+  .b .mini { flex:1; background:#fff; border-radius:16px; padding:14px; box-shadow:0 2px 8px rgba(24,32,52,.07) }
+  .b .mini .k { font-size:11px; opacity:.55 }
+  .b .mini .v { font-size:21px; font-weight:700; margin-top:3px; font-variant-numeric: tabular-nums }
+  .b .list { background:#fff; border-radius:18px; margin-top:14px; padding:6px 15px; box-shadow:0 2px 8px rgba(24,32,52,.07) }
+  .b .li { display:flex; justify-content:space-between; padding:12px 0; font-size:14px; border-bottom:1px solid #eef1f7; font-variant-numeric: tabular-nums }
+  .b .li:last-child { border:0 }
+  .b .li span:last-child { opacity:.5; font-size:12px }
+
+  /* ---------- C: Material 3 ---------- */
+  .c { background:#fef7ff; color:#1d1b20; font-family: ui-sans-serif, Roboto, system-ui, sans-serif; }
+  .c .top { font-size:21px; font-weight:400; margin-bottom:18px }
+  .c .card { background:#e8def8; border-radius:12px; padding:18px }
+  .c .card .lbl { font-size:12px; color:#4a4458 }
+  .c .card .big { font-size:44px; font-weight:400; line-height:1.1; margin:6px 0; font-variant-numeric: tabular-nums }
+  .c .chip { display:inline-block; border:1px solid #79747e; border-radius:8px; padding:5px 12px; font-size:12px; margin-top:6px }
+  .c .card2 { background:#f7f2fa; border-radius:12px; padding:16px; margin-top:12px }
+  .c .li { display:flex; justify-content:space-between; padding:11px 0; font-size:14px; border-bottom:1px solid #e7e0ec; font-variant-numeric: tabular-nums }
+  .c .li:last-child { border:0 }
+  .c .li span:last-child { color:#49454f; font-size:12px }
+  .c .fab { margin-top:16px; background:#6750a4; color:#fff; border-radius:16px; padding:14px; text-align:center; font-size:14px }
+</style>
+
+<div class="phones">
+
+  <div>
+    <div class="phone">
+      <div class="screen a">
+        <div class="eyebrow">Heute, 23:57</div>
+        <div class="big">128<small>/</small>87</div>
+        <div class="unit">mmHg &nbsp;·&nbsp; Puls 82</div>
+        <div class="band"><i></i></div>
+        <div class="verdict">Hochnormal &nbsp;·&nbsp; über deinem Schnitt der letzten Woche</div>
+        <div class="row"><span>544 &nbsp; 126/90</span><span>gestern</span></div>
+        <div class="row"><span>543 &nbsp; 126/84</span><span>gestern</span></div>
+        <div class="row"><span>542 &nbsp; 133/91</span><span>vorgestern</span></div>
+        <div class="foot">114 Messungen &nbsp;·&nbsp; 100 nicht exportiert</div>
+      </div>
+    </div>
+    <div class="cap">A — Ruhiges Messinstrument</div>
+  </div>
+
+  <div>
+    <div class="phone">
+      <div class="screen b">
+        <div class="hi">Guten Abend</div>
+        <div class="hero">
+          <div class="lbl">Zuletzt gemessen · 23:57</div>
+          <div class="big">128/87</div>
+          <div class="lbl">Puls 82 · mmHg</div>
+          <div class="pill">Hochnormal</div>
+        </div>
+        <div class="duo">
+          <div class="mini"><div class="k">7-Tage-Schnitt</div><div class="v">124/85</div></div>
+          <div class="mini"><div class="k">Messungen</div><div class="v">114</div></div>
+        </div>
+        <div class="list">
+          <div class="li"><span>126/90 · 95</span><span>gestern</span></div>
+          <div class="li"><span>126/84 · 84</span><span>gestern</span></div>
+          <div class="li"><span>133/91 · 78</span><span>vorgestern</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="cap">B — Freundliches Tagebuch</div>
+  </div>
+
+  <div>
+    <div class="phone">
+      <div class="screen c">
+        <div class="top">Sphygma</div>
+        <div class="card">
+          <div class="lbl">Zuletzt gemessen · heute 23:57</div>
+          <div class="big">128/87</div>
+          <div class="lbl">mmHg · Puls 82</div>
+          <div class="chip">Hochnormal</div>
+        </div>
+        <div class="card2">
+          <div class="li"><span>126/90</span><span>gestern</span></div>
+          <div class="li"><span>126/84</span><span>gestern</span></div>
+          <div class="li"><span>133/91</span><span>vorgestern</span></div>
+        </div>
+        <div class="fab">Alle Messungen ansehen</div>
+      </div>
+    </div>
+    <div class="cap">C — Material 3, sauber ausgeführt</div>
+  </div>
+
+</div>
+
+<h3>Was jede Variante kostet</h3>
+<div class="options" data-multiselect>
+  <div class="option" data-choice="a">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Ruhiges Messinstrument</h3>
+      <p>Eigene Handschrift, altert gut, Farbe nur wo sie etwas bedeutet. Der Wert steht ganz vorn, die Einordnung als Skala darunter. Aufwand mittel: eigene Farb- und Schriftskala statt Systemvorgaben.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Freundliches Tagebuch</h3>
+      <p>Wärmer, näher an dem was man von Gesundheits-Apps kennt. Der Farbverlauf trägt Stimmung, nicht Bedeutung — das kann bei Messwerten in die Irre führen. Aufwand mittel bis hoch.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="c">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Material 3</h3>
+      <p>Schnellste Umsetzung, fügt sich ins System, übernimmt auf Wunsch die Farben aus deinem Hintergrundbild. Dafür ohne eigenes Gesicht. Das ist ungefähr der heutige Stand, nur aufgeräumt.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="switch">
+    <div class="letter">+</div>
+    <div class="content">
+      <h3>Umschaltbar in den Einstellungen</h3>
+      <p>Alle drei bauen und den Nutzer wählen lassen. Machbar, wenn die Gestaltung von Anfang an über austauschbare Farb- und Maßtabellen läuft statt über feste Werte im Code. Kostet etwa ein Drittel mehr Aufwand und muss dreifach geprüft werden — dafür ist die Entscheidung nicht endgültig.</p>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle">Mehrfachauswahl möglich. Sag mir im Terminal, was dich anspricht und was stört — auch Details wie Schriftgröße, Abstände oder die farbige Skala.</p>
+
+<h2>Die drei Bereiche</h2>
+<h2>Die drei Bereiche im Entwurf</h2>
+<p class="subtitle">Inhalt und Anordnung, noch ohne Gestaltung. Echte Werte aus deiner Datenbank.</p>
+
+<style>
+  .row { display:flex; gap:26px; flex-wrap:wrap; justify-content:center; margin:6px 0 24px }
+  .p { width:300px }
+  .sc { min-height:530px; padding:18px 16px; box-sizing:border-box; border-radius:22px;
+        background:#faf9f7; color:#1b1b1a; font-family:ui-sans-serif,system-ui,sans-serif;
+        box-shadow:0 8px 26px rgba(0,0,0,.22); font-size:13px }
+  .cap { text-align:center; margin-top:9px; font-size:13px; opacity:.75 }
+  .eyebrow { font-size:10px; letter-spacing:.14em; text-transform:uppercase; opacity:.5 }
+  .big { font-size:52px; line-height:.95; font-weight:300; letter-spacing:-.03em; margin:8px 0 2px; font-variant-numeric:tabular-nums }
+  .big small { font-size:22px; opacity:.4 }
+  .band { margin:16px 0 4px; height:3px; background:linear-gradient(90deg,#7ea77e 0 38%,#c9b45e 38% 62%,#c07d5a 62% 100%); position:relative }
+  .band i { position:absolute; top:-4px; left:58%; width:2px; height:11px; background:#1b1b1a }
+  .note { border-left:3px solid #c4703f; background:#fdf6f1; padding:10px 12px; margin:14px 0; font-size:12px; line-height:1.5 }
+  .note b { display:block; margin-bottom:3px }
+  .li { display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid #efede8; font-variant-numeric:tabular-nums }
+  .li span:last-child { opacity:.45 }
+  .sec { margin-top:18px; font-size:10px; letter-spacing:.12em; text-transform:uppercase; opacity:.45 }
+  .chart { height:104px; margin:10px 0 4px; position:relative; border-bottom:1px solid #e4e1db; border-left:1px solid #e4e1db }
+  .chart svg { display:block }
+  .seg { display:flex; gap:5px; margin:12px 0 4px }
+  .seg div { flex:1; text-align:center; font-size:11px; padding:5px 0; border:1px solid #ddd9d2; border-radius:5px }
+  .seg .on { background:#1b1b1a; color:#faf9f7; border-color:#1b1b1a }
+  .kv { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #efede8 }
+  .kv b { font-weight:600 }
+  .btn { border:1px solid #1b1b1a; border-radius:6px; padding:9px; text-align:center; margin-top:12px; font-size:12px }
+  .btn.f { background:#1b1b1a; color:#faf9f7 }
+  .dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:#5c9c5c; margin-right:6px }
+  .tabs { display:flex; gap:0; margin-top:18px; border-top:1px solid #e4e1db; padding-top:9px; font-size:10px; text-align:center }
+  .tabs div { flex:1; opacity:.4 }
+  .tabs .a { opacity:1; font-weight:600 }
+</style>
+
+<div class="row">
+
+  <div class="p">
+    <div class="sc">
+      <div class="eyebrow">Heute, 23:57</div>
+      <div class="big">128<small>/</small>87</div>
+      <div class="eyebrow" style="letter-spacing:.04em">mmHg · Puls 82</div>
+      <div class="band"><i></i></div>
+      <div style="font-size:12px;margin-top:11px">Hochnormal · über deinem Wochenschnitt</div>
+
+      <div class="note">
+        <b>Geräteuhr geht falsch</b>
+        Die letzte Messung trägt den 18.04.2023. So stellst du sie: Batterien
+        herausnehmen und wieder einlegen, Taste halten bis das Jahr blinkt …
+        <span style="opacity:.6">Anleitung öffnen</span>
+      </div>
+
+      <div class="sec">Letzte Tage</div>
+      <div class="li"><span>126/90 · 95</span><span>gestern</span></div>
+      <div class="li"><span>126/84 · 84</span><span>gestern</span></div>
+      <div class="li"><span>133/91 · 78</span><span>vorgestern</span></div>
+      <div class="tabs"><div class="a">Heute</div><div>Verlauf</div><div>Gerät</div></div>
+    </div>
+    <div class="cap">Heute</div>
+  </div>
+
+  <div class="p">
+    <div class="sc">
+      <div class="seg"><div class="on">Woche</div><div>Monat</div><div>Jahr</div><div>Alles</div></div>
+      <div class="chart">
+        <svg width="264" height="104" viewBox="0 0 264 104">
+          <polyline points="6,26 44,34 82,20 120,40 158,30 196,44 234,24" fill="none" stroke="#1b1b1a" stroke-width="1.6"/>
+          <polyline points="6,72 44,66 82,76 120,64 158,70 196,60 234,68" fill="none" stroke="#8a8a8a" stroke-width="1.6"/>
+          <line x1="0" y1="52" x2="264" y2="52" stroke="#e4e1db" stroke-dasharray="3 4"/>
+          <circle cx="234" cy="24" r="3" fill="#1b1b1a"/>
+        </svg>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;opacity:.45">
+        <span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span>
+      </div>
+
+      <div class="sec">Mittelwerte, letzte 7 Tage</div>
+      <div class="kv"><span>Gesamt</span><b>124/85 · 81</b></div>
+      <div class="kv"><span>Morgens</span><b>121/83 · 79</b></div>
+      <div class="kv"><span>Abends</span><b>127/87 · 83</b></div>
+
+      <div class="sec">Messungen</div>
+      <div class="li"><span>128/87 · 82</span><span>23:57</span></div>
+      <div class="li"><span>126/90 · 95</span><span>gestern</span></div>
+      <div class="btn">Bericht für die Praxis</div>
+      <div class="tabs"><div>Heute</div><div class="a">Verlauf</div><div>Gerät</div></div>
+    </div>
+    <div class="cap">Verlauf</div>
+  </div>
+
+  <div class="p">
+    <div class="sc">
+      <div class="sec" style="margin-top:0">Gerät</div>
+      <div class="kv"><span>RS7 Intelli IT</span><b>gekoppelt</b></div>
+      <div class="kv"><span>Speicherplatz</span><b>Benutzer 1</b></div>
+      <div class="kv"><span>Firmware</span><b>D.00.7FB-12</b></div>
+
+      <div class="sec">Abgleich</div>
+      <div class="kv"><span><span class="dot"></span>Wartet auf Messungen</span><b>an</b></div>
+      <div class="kv"><span>Zuletzt</span><b>heute 23:57</b></div>
+      <div class="kv"><span>Gespeichert</span><b>114 Messungen</b></div>
+      <div class="btn f">Jetzt abgleichen</div>
+
+      <div class="sec">Health Connect</div>
+      <div class="kv"><span>Übertragen</span><b>14 von 114</b></div>
+      <div class="btn">Alle übertragen</div>
+      <div class="btn">Übertragene entfernen</div>
+
+      <div class="tabs"><div>Heute</div><div>Verlauf</div><div class="a">Gerät</div></div>
+    </div>
+    <div class="cap">Gerät</div>
+  </div>
+
+</div>
+
+<h3>Vier Entscheidungen stecken darin</h3>
+<div class="options" data-multiselect>
+  <div class="option" data-choice="uhr">
+    <div class="letter">1</div>
+    <div class="content">
+      <h3>Der Uhr-Hinweis steht auf „Heute", nicht unter „Gerät"</h3>
+      <p>Er betrifft die Glaubwürdigkeit der Werte, die du gerade ansiehst, und verschwindet, sobald die Uhr stimmt. Unter „Gerät" würde ihn niemand finden.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="kurve">
+    <div class="letter">2</div>
+    <div class="content">
+      <h3>Zwei Linien, keine Flächen, ein gestrichelter Schwellwert</h3>
+      <p>Oben systolisch, unten diastolisch, dazwischen die Leitlinien-Schwelle als gestrichelte Linie. Der Puls fehlt in der Kurve bewusst — drei Linien werden unlesbar. Zeitraum oben umschaltbar.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="sync">
+    <div class="letter">3</div>
+    <div class="content">
+      <h3>Der Abgleich zeigt seinen Zustand als Zeile, nicht als Schalter</h3>
+      <p>„Wartet auf Messungen" mit grünem Punkt heißt: Es lauscht. Bricht der Scan ab, steht dort der Grund. Ein Schalter zum Abstellen fehlt bewusst — wozu?</p>
+    </div>
+  </div>
+  <div class="option" data-choice="export">
+    <div class="letter">4</div>
+    <div class="content">
+      <h3>Health Connect wandert komplett unter „Gerät"</h3>
+      <p>Heute klebt der Export an der Messungsliste, einzeln je Messung. Das ist Technik und gehört zur Technik. Einzelnes Übertragen entfällt damit — Frage: brauchst du das je?</p>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle">Klick was passt, und sag mir im Terminal, was fehlt oder stört.</p>
+
+<h2>Funktionslandkarte</h2>
+<h2>Was die App kann, was fehlt, was ungenutzt herumliegt</h2>
+<p class="subtitle">Aus dem Quelltext erhoben, nicht aus dem Gedächtnis. Erst wenn das steht, entscheiden wir über Aufteilung und Gestaltung.</p>
+
+<style>
+  .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap:16px; margin:18px 0 26px }
+  .box { border-radius:12px; padding:16px 18px; border:1px solid rgba(128,128,128,.28) }
+  .box h4 { margin:0 0 10px; font-size:14px; letter-spacing:.04em; text-transform:uppercase; opacity:.7 }
+  .box ul { margin:0; padding-left:18px; font-size:14px; line-height:1.75 }
+  .have { border-left:3px solid #5c9c5c }
+  .gap  { border-left:3px solid #c4703f }
+  .idle { border-left:3px solid #8a8a8a }
+  .tag { font-size:11px; opacity:.55; margin-left:5px }
+  table { width:100%; border-collapse:collapse; font-size:14px; margin:10px 0 26px }
+  th,td { text-align:left; padding:9px 10px; border-bottom:1px solid rgba(128,128,128,.2); vertical-align:top }
+  th { font-size:12px; text-transform:uppercase; letter-spacing:.05em; opacity:.6; font-weight:600 }
+  td.q { opacity:.6 }
+</style>
+
+<div class="grid">
+  <div class="box have">
+    <h4>Vorhanden und benutzt</h4>
+    <ul>
+      <li>Koppeln, auch neu koppeln</li>
+      <li>Abgleich auf Knopfdruck</li>
+      <li><b>Abgleich von selbst</b>, nach jeder Messung</li>
+      <li>Benutzerplatz 1 oder 2 wählen</li>
+      <li>Liste aller Messungen, nach Tagen</li>
+      <li>Einzeln nach Health&nbsp;Connect, einzeln zurücknehmen</li>
+      <li>Alle exportieren, alle zurücknehmen</li>
+      <li>Mittelwerte: sieben Tage, morgens, abends</li>
+      <li>Einordnung nach Leitlinie <span class="tag">hinter Schalter</span></li>
+      <li>Warnung bei unplausibler Geräteuhr</li>
+      <li>Bewegung und unregelmäßiger Puls je Messung</li>
+    </ul>
+  </div>
+
+  <div class="box gap">
+    <h4>Fehlt</h4>
+    <ul>
+      <li><b>Anzeige, ob der Abgleich lauscht</b> — der Zustand wird geführt, aber nirgends gezeigt</li>
+      <li><b>Messungen löschen</b> — gibt es in der Datenbank überhaupt nicht</li>
+      <li><b>Datum richtigstellen</b> — von dir gewünscht</li>
+      <li><b>Kurvendarstellung</b> — heute nur Zahlen in Karten</li>
+      <li><b>Einstellungen als eigener Ort</b> — der Benutzerplatz versteckt sich im Kopplungsdialog</li>
+      <li>Notiz oder Kennzeichnung je Messung</li>
+      <li>Ausgabe für die Arztpraxis</li>
+    </ul>
+  </div>
+
+  <div class="box idle">
+    <h4>Da, aber ungenutzt</h4>
+    <ul>
+      <li><b>Messungsnummer</b> — verlässlicher als jedes Datum, könnte die Zeitachse tragen</li>
+      <li><b>Rohbytes</b> je Messung — für Nachvollziehbarkeit gespeichert</li>
+      <li><b>Importzeitpunkt</b> — wüsste, wann ein Wert ankam, auch wenn die Geräteuhr lügt</li>
+      <li><b>Platzzeiger</b> aus dem Advertising — könnte gezielt nur Neues holen</li>
+      <li>Zweiter Benutzerplatz wird gelesen, aber nie gezeigt</li>
+    </ul>
+  </div>
+</div>
+
+<h3>Die Fragen, die die Aufteilung entscheiden</h3>
+<table>
+  <tr><th style="width:34%">Frage</th><th>Warum sie zählt</th></tr>
+  <tr>
+    <td>Löschen: nur in der App oder gar nicht?</td>
+    <td>Auf dem Gerät geht es nachweislich nicht. In der App ginge es — dann fehlt der Wert bis zum nächsten Abgleich, und danach ist er wieder da, weil das Gerät ihn erneut liefert. Ein Löschen muss sich also merken, dass es gelöscht wurde.</td>
+  </tr>
+  <tr>
+    <td>Zwei Benutzerplätze zeigen oder einen?</td>
+    <td>Das Gerät führt zwei. Heute liest die App beide, zeigt aber nur einen. Ein Umschalter kostet wenig und macht das Gerät zu zweit nutzbar.</td>
+  </tr>
+  <tr>
+    <td>Kurve: worüber?</td>
+    <td>Über die Zeit ist die gewohnte Darstellung, hängt aber an der Geräteuhr. Über die Messungsnummer ist immer korrekt, aber ungewohnt. Beides ginge, umschaltbar.</td>
+  </tr>
+  <tr>
+    <td>Wie sichtbar soll die Technik sein?</td>
+    <td>Du wolltest das Blutdruck-Tagebuch. Kopplung, Abgleich und Export sind dann nicht Hauptsache, müssen aber auffindbar bleiben, wenn etwas klemmt.</td>
+  </tr>
+  <tr>
+    <td>Arztausgabe: jetzt oder später?</td>
+    <td>Ein Ausdruck oder eine Datei für die Praxis ist der häufigste Grund, so eine App überhaupt zu führen. Es ist aber ein eigenes Stück Arbeit.</td>
+  </tr>
+</table>
+
+<h3>Wie viele Bereiche soll die App haben?</h3>
+<div class="options">
+  <div class="option" data-choice="drei">
+    <div class="letter">3</div>
+    <div class="content">
+      <h3>Heute &nbsp;·&nbsp; Verlauf &nbsp;·&nbsp; Einstellungen</h3>
+      <p><b>Heute</b> zeigt die letzte Messung groß, ihre Einordnung, die letzten Tage und einen Hinweis wenn etwas klemmt. <b>Verlauf</b> trägt Kurve, Liste, Mittelwerte und Filter in einem Bereich. <b>Einstellungen</b> sammelt Gerät, Kopplung, Abgleich, Export und Benutzerplatz. Die Technik ist damit an einem Ort und stört vorn nicht.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="vier">
+    <div class="letter">4</div>
+    <div class="content">
+      <h3>Heute &nbsp;·&nbsp; Liste &nbsp;·&nbsp; Auswertung &nbsp;·&nbsp; Einstellungen</h3>
+      <p>Wie oben, aber Liste und Auswertung getrennt. Die Liste bleibt zum Nachschlagen und Bearbeiten, die Auswertung zeigt Kurve und Mittelwerte ohne Ablenkung. Mehr Platz für beides, dafür ein Reiter mehr und die Frage, wo man Werte bearbeitet.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="zwei">
+    <div class="letter">2</div>
+    <div class="content">
+      <h3>Werte &nbsp;·&nbsp; Einstellungen</h3>
+      <p>Ein einziger Bereich für alles rund um die Messungen: oben die letzte, darunter Kurve, darunter die Liste. Alles Technische in den Einstellungen. Am ruhigsten, aber der eine Bereich wird lang, und die Kurve konkurriert mit der Liste um Aufmerksamkeit.</p>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle">Klick was passt und sag mir im Terminal, wie du es mit dem Löschen, dem zweiten Benutzerplatz und der Arztausgabe halten willst.</p>
+
+</main>
+</body>
+</html>
