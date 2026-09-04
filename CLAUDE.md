@@ -127,6 +127,12 @@ Diese Punkte kosten jeweils einen Fehlschlag, wenn man sie nicht kennt
 - **Der Record-Bereich ist schreibgeschützt** (§8.4, sieben Versuche): Das Gerät bestätigt
   jeden Schreibbefehl mit `81c0` und verwirft ihn. Eine „Daten am Gerät löschen"-Funktion ist
   nicht baubar. Die Bestätigung ist generell kein Beleg für einen erfolgten Schreibvorgang.
+- **Weder Löschen noch Uhrstellen ist möglich** (§8.4, §8.6, §8.7): Der Record-Bereich ist
+  schreibgeschützt, die genormten Dienste (Record Access Control Point, User Control Point,
+  Current Time) weisen jeden Schreibvorgang ab, und die Hersteller-App nutzt keinen davon.
+  Alles geprüft, nicht vermutet — nicht erneut anfangen.
+- **Abweichende Geräteuhr meldet die App und zeigt die Einstellschritte** (§8.7). Stellen kann
+  sie nur der Nutzer am Gerät.
 - **Das Advertising trägt Messungsnummer und Platzzeiger beider Slots** (§2.1). Damit lässt
   sich ohne Verbindung erkennen, ob es neue Messungen gibt, und gezielt nur diese lesen —
   ohne einen einzigen EEPROM-Write.
