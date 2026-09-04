@@ -107,6 +107,7 @@ class AppController extends ChangeNotifier {
   }
 
   void _log(String message) {
+    debugPrint('[Sphygma] $message');
     status = message;
     notifyListeners();
   }
@@ -119,6 +120,7 @@ class AppController extends ChangeNotifier {
     try {
       await action();
     } catch (e) {
+      debugPrint('[Sphygma] Fehler: $e');
       status = 'Fehler: $e';
       rethrow;
     } finally {
