@@ -2402,3 +2402,1550 @@ git commit -m "feat(ui): Kurve, selbst gezeichnet"
 ---
 
 *Aufgabe 11 (Bereich „Verlauf" samt Detail-Blatt) und Aufgabe 12 (neue Navigation) folgen. Die Berichte bekommen einen eigenen Plan.*
+
+---
+
+## Aufgabe 11: Mittelwerte im Zeitraum, Tagesgruppen, Datumsformat
+
+Drei kleine reine Bausteine, die der Verlauf braucht. Alle ohne Flutter prüfbar
+bis auf nichts — auch das Format ist reine Zeichenkettenarbeit.
+
+`TrendStats` bleibt unangetastet: Es rechnet fest über sieben Tage und wird von
+„Heute" genutzt. Der Verlauf braucht dieselben drei Kennzahlen über einen frei
+gewählten Zeitraum, deshalb ein eigener Baustein statt eines Parameters, der
+`TrendStats` seine Bedeutung nähme.
+
+**Dateien**
+- Neu: `lib/stats/period_averages.dart`
+- Neu: `lib/ui/format.dart`
+- Test: `test/stats/period_averages_test.dart`
+- Test: `test/ui/format_test.dart`
+
+**Schnittstellen**
+- Nutzt: `Average`, `Reading` (`lib/stats/trend_stats.dart`), `Measurement` (`lib/db/app_database.dart`).
+- Liefert:
+  - `PeriodAverages.of(List<Measurement>)` → `PeriodAverages` mit `Average? overall`, `Average? morning`, `Average? evening`.
+  - `DayGroup` mit `DateTime day` (auf Mitternacht gesetzt) und `List<Measurement> measurements` (neueste zuerst).
+  - `groupByDay(List<Measurement>)` → `List<DayGroup>`, neuester Tag zuerst.
+  - `formatDay(DateTime)` → `'05.09.2026'`, `formatTime(DateTime)` → `'23:57'`, `formatDayAndTime(DateTime)` → `'05.09.2026, 23:57'`.
+
+- [ ] **Schritt 1: Test schreiben**
+
+```dart
+// test/stats/period_averages_test.dart
+import 'dart:typed_data';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:sphygma/db/app_database.dart';
+import 'package:sphygma/stats/period_averages.dart';
+
+Measurement _m(int sys, int dia, int pulse, DateTime at) => Measurement(
+      id: at.millisecondsSinceEpoch,
+      userSlot: 1,
+      deviceSequence: at.millisecondsSinceEpoch,
+      systolic: sys,
+      diastolic: dia,
+      pulse: pulse,
+      measuredAt: at,
+      movement: false,
+      arrhythmia: false,
+      rawBytes: Uint8List(14),
+      importedAt: at,
+      exportedAt: null,
+    );
+
+void main() {
+  group('PeriodAverages', () {
+    test('teilt nach morgens (vor 12) und abends (ab 18)', () {
+      final averages = PeriodAverages.of([
+        _m(120, 80, 70, DateTime(2026, 9, 1, 7)),
+        _m(130, 90, 80, DateTime(2026, 9, 1, 20)),
+      ]);
+
+      expect(averages.overall!.systolic, 125);
+      expect(averages.overall!.count, 2);
+      expect(averages.morning!.systolic, 120);
+      expect(averages.evening!.systolic, 130);
+    });
+
+    test('der Nachmittag zaehlt nur in den Gesamtwert', () {
+      final averages = PeriodAverages.of([
+        _m(140, 95, 85, DateTime(2026, 9, 1, 15)),
+      ]);
+
+      expect(averages.overall!.count, 1);
+      expect(averages.morning, isNull);
+      expect(averages.evening, isNull);
+    });
+
+    test('ohne Messungen gibt es kein Objekt, keine Nullen', () {
+      final averages = PeriodAverages.of(const []);
+
+      expect(averages.overall, isNull);
+      expect(averages.morning, isNull);
+      expect(averages.evening, isNull);
+    });
+  });
+
+  group('groupByDay', () {
+    test('gruppiert nach Kalendertag, neuester Tag zuerst', () {
+      final groups = groupByDay([
+        _m(120, 80, 70, DateTime(2026, 9, 1, 7)),
+        _m(121, 81, 71, DateTime(2026, 9, 1, 20)),
+        _m(122, 82, 72, DateTime(2026, 9, 3, 9)),
+      ]);
+
+      expect(groups.length, 2);
+      expect(groups.first.day, DateTime(2026, 9, 3));
+      expect(groups.last.day, DateTime(2026, 9, 1));
+    });
+
+    test('innerhalb eines Tages steht die neueste Messung oben', () {
+      final groups = groupByDay([
+        _m(120, 80, 70, DateTime(2026, 9, 1, 7)),
+        _m(121, 81, 71, DateTime(2026, 9, 1, 20)),
+      ]);
+
+      expect(groups.single.measurements.first.systolic, 121);
+      expect(groups.single.measurements.last.systolic, 120);
+    });
+
+    test('leer bleibt leer', () {
+      expect(groupByDay(const []), isEmpty);
+    });
+  });
+}
+```
+
+```dart
+// test/ui/format_test.dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:sphygma/ui/format.dart';
+
+void main() {
+  test('Tag mit fuehrenden Nullen', () {
+    expect(formatDay(DateTime(2026, 9, 5)), '05.09.2026');
+  });
+
+  test('Uhrzeit mit fuehrenden Nullen', () {
+    expect(formatTime(DateTime(2026, 9, 5, 7, 4)), '07:04');
+  });
+
+  test('Tag und Uhrzeit zusammen', () {
+    expect(
+      formatDayAndTime(DateTime(2026, 9, 5, 23, 57)),
+      '05.09.2026, 23:57',
+    );
+  });
+}
+```
+
+- [ ] **Schritt 2: Tests laufen lassen, Scheitern bestätigen**
+
+Run: `flutter test test/stats/period_averages_test.dart test/ui/format_test.dart`
+Erwartet: FAIL, `period_averages.dart` und `format.dart` existieren nicht.
+
+- [ ] **Schritt 3: Umsetzen**
+
+```dart
+// lib/stats/period_averages.dart
+// Mittelwerte und Tagesgruppen ueber eine bereits gefilterte Messliste.
+// Der Zeitraum steckt in der Liste, nicht in dieser Rechnung - so bleibt
+// sie unabhaengig von der Zeitraumwahl der Oberflaeche.
+import '../db/app_database.dart';
+import 'trend_stats.dart';
+
+class PeriodAverages {
+  const PeriodAverages._({
+    required this.overall,
+    required this.morning,
+    required this.evening,
+  });
+
+  /// Alle Messungen des Zeitraums.
+  final Average? overall;
+
+  /// Messungen vor 12:00 Uhr.
+  final Average? morning;
+
+  /// Messungen ab 18:00 Uhr.
+  final Average? evening;
+
+  static PeriodAverages of(List<Measurement> measurements) {
+    Reading toReading(Measurement m) => Reading(
+          measuredAt: m.measuredAt,
+          systolic: m.systolic,
+          diastolic: m.diastolic,
+          pulse: m.pulse,
+        );
+
+    final readings = measurements.map(toReading).toList();
+    return PeriodAverages._(
+      overall: Average.of(readings),
+      morning: Average.of(
+        readings.where((r) => r.measuredAt.hour < 12).toList(),
+      ),
+      evening: Average.of(
+        readings.where((r) => r.measuredAt.hour >= 18).toList(),
+      ),
+    );
+  }
+}
+
+/// Ein Kalendertag mit seinen Messungen, neueste zuerst.
+class DayGroup {
+  const DayGroup({required this.day, required this.measurements});
+
+  final DateTime day;
+  final List<Measurement> measurements;
+}
+
+/// Messungen nach Kalendertag, neuester Tag zuerst.
+List<DayGroup> groupByDay(List<Measurement> measurements) {
+  final byDay = <DateTime, List<Measurement>>{};
+  for (final m in measurements) {
+    final day = DateTime(m.measuredAt.year, m.measuredAt.month, m.measuredAt.day);
+    byDay.putIfAbsent(day, () => []).add(m);
+  }
+
+  final days = byDay.keys.toList()..sort((a, b) => b.compareTo(a));
+  return [
+    for (final day in days)
+      DayGroup(
+        day: day,
+        measurements: byDay[day]!
+          ..sort((a, b) => b.measuredAt.compareTo(a.measuredAt)),
+      ),
+  ];
+}
+```
+
+```dart
+// lib/ui/format.dart
+// Datums- und Zeitformat an einer Stelle. Deutsche Schreibweise, ohne
+// intl-Abhaengigkeit: Die App zeigt nur diese eine Sprache.
+String _two(int n) => n.toString().padLeft(2, '0');
+
+String formatDay(DateTime d) => '${_two(d.day)}.${_two(d.month)}.${d.year}';
+
+String formatTime(DateTime d) => '${_two(d.hour)}:${_two(d.minute)}';
+
+String formatDayAndTime(DateTime d) => '${formatDay(d)}, ${formatTime(d)}';
+```
+
+- [ ] **Schritt 4: Tests laufen lassen, Erfolg bestätigen**
+
+Run: `flutter test test/stats/period_averages_test.dart test/ui/format_test.dart`
+Erwartet: alle grün.
+
+- [ ] **Schritt 5: Analyse und Übernahme**
+
+```bash
+flutter analyze
+git add lib/stats/period_averages.dart lib/ui/format.dart test/stats/period_averages_test.dart test/ui/format_test.dart
+git commit -m "feat(stats): Mittelwerte und Tagesgruppen fuer den Verlauf"
+```
+
+---
+
+## Aufgabe 12: Detail-Blatt je Messung
+
+Das Blatt trägt alles zu **einer** Messung: Werte, Einordnung, Kennzeichen,
+Messungsnummer, Importzeitpunkt — und den Einzelexport nach Health Connect.
+Messungsnummer und Importzeitpunkt sind heute nirgends sichtbar; hier bekommen
+sie ihren Ort.
+
+Das Blatt hält **nicht** die Messung fest, sondern ihre `id`. Nach
+`exportOne` schreibt der Steuerungsteil die Liste neu; ein festgehaltenes
+`Measurement`-Objekt zeigte danach weiter den alten Zustand. Findet sich die
+`id` nicht mehr, wird geworfen statt ein leeres Blatt zu zeigen.
+
+**Dateien**
+- Neu: `lib/ui/measurement_sheet.dart`
+- Test: `test/ui/measurement_sheet_test.dart`
+
+**Schnittstellen**
+- Nutzt: `SphygmaTheme.of` (Aufgabe 1), `ReadingHeadline`, `ClassificationScale` (Aufgabe 6), `formatDayAndTime` (Aufgabe 11), `classifyOffice`, `escClassificationEnabled`, `AppController.measurements`, `.busy`, `.exportOne(Measurement)`, `.retractOne(Measurement)`.
+- Liefert:
+  - `MeasurementSheet({required AppController controller, required int measurementId})`
+  - `Future<void> showMeasurementSheet(BuildContext context, {required AppController controller, required int measurementId})`
+
+- [ ] **Schritt 1: Test schreiben**
+
+```dart
+// test/ui/measurement_sheet_test.dart
+import 'dart:typed_data';
+
+import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:sphygma/app/app_controller.dart';
+import 'package:sphygma/ble/pairing_key_store.dart';
+import 'package:sphygma/db/app_database.dart';
+import 'package:sphygma/db/measurement_repository.dart';
+import 'package:sphygma/db/settings_repository.dart';
+import 'package:sphygma/protocol/readout.dart';
+import 'package:sphygma/protocol/record.dart';
+import 'package:sphygma/sync/export_service.dart';
+import 'package:sphygma/sync/health_sink.dart';
+import 'package:sphygma/sync/sync_service.dart';
+import 'package:sphygma/ui/measurement_sheet.dart';
+import 'package:sphygma/ui/theme/sphygma_theme.dart';
+import 'package:sphygma/ui/theme/variants.dart';
+
+class _RecordingSink implements HealthSink {
+  final written = <String>[];
+  final removed = <String>[];
+
+  @override
+  Future<void> writeBloodPressure(BloodPressureWrite write) async {
+    written.add(write.clientRecordId);
+  }
+
+  @override
+  Future<void> deleteBloodPressure(String clientRecordId) async {
+    removed.add(clientRecordId);
+  }
+}
+
+SlotRecord _rec(
+  int seq,
+  DateTime at, {
+  bool movement = false,
+  bool arrhythmia = false,
+}) =>
+    SlotRecord(
+      userSlot: 1,
+      record: BloodPressureRecord(
+        systolic: 128,
+        diastolic: 87,
+        pulse: 82,
+        timestamp: at,
+        arrhythmiaFlag: arrhythmia,
+        movementFlag: movement,
+        sequence: seq,
+      ),
+      rawBytes: Uint8List(14),
+    );
+
+void main() {
+  late AppDatabase db;
+  late MeasurementRepository repository;
+  late InMemoryPairingKeyStore keyStore;
+  late _RecordingSink sink;
+  late AppController controller;
+
+  Future<AppController> boot() async {
+    await keyStore.save(Uint8List(16));
+    final c = AppController(
+      settings: SettingsRepository(db),
+      keyStore: keyStore,
+      repository: repository,
+      syncService: SyncService(keyStore: keyStore, repository: repository),
+      exportService: ExportService(repository: repository, sink: sink),
+      statusStream: () => const Stream.empty(),
+    );
+    await c.init();
+    await c.setUserSlot(1);
+    return c;
+  }
+
+  Future<int> firstId() async {
+    await controller.refreshForTest();
+    return controller.measurements.first.id;
+  }
+
+  Future<void> pumpWith(WidgetTester tester, ThemeVariant v, int id) =>
+      tester.pumpWidget(MaterialApp(
+        home: SphygmaThemeScope(
+          theme: themeFor(v),
+          child: Scaffold(
+            body: MeasurementSheet(controller: controller, measurementId: id),
+          ),
+        ),
+      ));
+
+  setUp(() {
+    db = AppDatabase(NativeDatabase.memory());
+    repository = MeasurementRepository(db);
+    keyStore = InMemoryPairingKeyStore();
+    sink = _RecordingSink();
+  });
+
+  tearDown(() async {
+    controller.dispose();
+    await db.close();
+  });
+
+  group('in jeder Gestaltung', () {
+    for (final v in allVariants) {
+      testWidgets('zeigt Werte, Nummer und Import (${v.name})', (tester) async {
+        controller = await boot();
+        await repository.importAll([_rec(545, DateTime(2026, 9, 5, 23, 57))]);
+        final id = await firstId();
+
+        await pumpWith(tester, v, id);
+
+        expect(find.textContaining('128'), findsWidgets);
+        expect(find.textContaining('545'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  });
+
+  testWidgets('nennt Bewegung und unregelmäßigen Puls', (tester) async {
+    controller = await boot();
+    await repository.importAll([
+      _rec(1, DateTime(2026, 9, 5, 8), movement: true, arrhythmia: true),
+    ]);
+    final id = await firstId();
+
+    await pumpWith(tester, ThemeVariant.instrument, id);
+
+    expect(find.textContaining('Bewegung'), findsOneWidget);
+    expect(find.textContaining('Unregelmäßiger Puls'), findsOneWidget);
+  });
+
+  testWidgets('ohne Kennzeichen steht nichts davon da', (tester) async {
+    controller = await boot();
+    await repository.importAll([_rec(1, DateTime(2026, 9, 5, 8))]);
+    final id = await firstId();
+
+    await pumpWith(tester, ThemeVariant.instrument, id);
+
+    expect(find.textContaining('Bewegung'), findsNothing);
+  });
+
+  testWidgets('überträgt einzeln und zeigt den neuen Zustand',
+      (tester) async {
+    controller = await boot();
+    await repository.importAll([_rec(1, DateTime(2026, 9, 5, 8))]);
+    final id = await firstId();
+
+    await pumpWith(tester, ThemeVariant.instrument, id);
+    expect(find.text('Nach Health Connect übertragen'), findsOneWidget);
+
+    await tester.tap(find.text('Nach Health Connect übertragen'));
+    await tester.pumpAndSettle();
+
+    expect(sink.written, hasLength(1));
+    expect(find.text('Aus Health Connect entfernen'), findsOneWidget);
+  });
+
+  testWidgets('nimmt einzeln zurück', (tester) async {
+    controller = await boot();
+    await repository.importAll([_rec(1, DateTime(2026, 9, 5, 8))]);
+    final id = await firstId();
+    await controller.exportOne(controller.measurements.first);
+
+    await pumpWith(tester, ThemeVariant.instrument, id);
+    await tester.tap(find.text('Aus Health Connect entfernen'));
+    await tester.pumpAndSettle();
+
+    expect(sink.removed, hasLength(1));
+    expect(find.text('Nach Health Connect übertragen'), findsOneWidget);
+  });
+
+  testWidgets('eine unbekannte Nummer wirft, statt leer zu bleiben',
+      (tester) async {
+    controller = await boot();
+
+    await pumpWith(tester, ThemeVariant.instrument, 999);
+
+    expect(tester.takeException(), isA<StateError>());
+  });
+
+  testWidgets('showMeasurementSheet öffnet das Blatt', (tester) async {
+    controller = await boot();
+    await repository.importAll([_rec(1, DateTime(2026, 9, 5, 8))]);
+    final id = await firstId();
+
+    await tester.pumpWidget(MaterialApp(
+      home: SphygmaThemeScope(
+        theme: themeFor(ThemeVariant.instrument),
+        child: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showMeasurementSheet(
+                context,
+                controller: controller,
+                measurementId: id,
+              ),
+              child: const Text('öffnen'),
+            ),
+          ),
+        ),
+      ),
+    ));
+
+    await tester.tap(find.text('öffnen'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MeasurementSheet), findsOneWidget);
+  });
+}
+```
+
+- [ ] **Schritt 2: Test laufen lassen, Scheitern bestätigen**
+
+Run: `flutter test test/ui/measurement_sheet_test.dart`
+Erwartet: FAIL, `measurement_sheet.dart` existiert nicht.
+
+- [ ] **Schritt 3: Umsetzen**
+
+```dart
+// lib/ui/measurement_sheet.dart
+// Alles zu einer einzelnen Messung. Die Massenaktionen bleiben im
+// Geraetebereich; hier steht der Einzelexport, weil er zu genau dieser
+// Messung gehoert (Spezifikation vom 2026-09-05).
+import 'package:flutter/material.dart';
+
+import '../app/app_controller.dart';
+import '../app/feature_flags.dart';
+import '../db/app_database.dart';
+import '../stats/esc_classification.dart';
+import 'format.dart';
+import 'theme/sphygma_theme.dart';
+import 'widgets/classification_scale.dart';
+import 'widgets/reading_headline.dart';
+
+Future<void> showMeasurementSheet(
+  BuildContext context, {
+  required AppController controller,
+  required int measurementId,
+}) {
+  final theme = SphygmaTheme.of(context);
+  return showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: theme.surface,
+    isScrollControlled: true,
+    builder: (_) => SphygmaThemeScope(
+      theme: theme,
+      child: MeasurementSheet(
+        controller: controller,
+        measurementId: measurementId,
+      ),
+    ),
+  );
+}
+
+class MeasurementSheet extends StatelessWidget {
+  const MeasurementSheet({
+    super.key,
+    required this.controller,
+    required this.measurementId,
+  });
+
+  final AppController controller;
+
+  /// Nicht die Messung selbst: Nach einem Export ist das alte Objekt
+  /// veraltet. Die Nummer bleibt gueltig, der Zustand wird frisch geholt.
+  final int measurementId;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) {
+        final m = _require(controller.measurements, measurementId);
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.all(t.gapLarge),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ReadingHeadline(
+                  systolic: m.systolic,
+                  diastolic: m.diastolic,
+                  pulse: m.pulse,
+                  measuredAt: m.measuredAt,
+                ),
+                if (escClassificationEnabled) ...[
+                  SizedBox(height: t.gapLarge),
+                  ClassificationScale(
+                    category: classifyOffice(
+                      systolic: m.systolic,
+                      diastolic: m.diastolic,
+                    ),
+                  ),
+                ],
+                if (m.movement || m.arrhythmia) ...[
+                  SizedBox(height: t.gapLarge),
+                  if (m.movement)
+                    const _Flag(text: 'Bewegung während der Messung'),
+                  if (m.arrhythmia)
+                    const _Flag(text: 'Unregelmäßiger Puls'),
+                ],
+                SizedBox(height: t.gapLarge),
+                _Row(label: 'Messung Nr.', value: '${m.deviceSequence}'),
+                _Row(label: 'Speicherplatz', value: 'Benutzer ${m.userSlot}'),
+                _Row(
+                  label: 'Eingelesen',
+                  value: formatDayAndTime(m.importedAt),
+                ),
+                SizedBox(height: t.gapLarge),
+                _HealthConnect(controller: controller, measurement: m),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Wirft, wenn die Messung fortgefallen ist. Ein leeres Blatt waere von
+  /// einer geladenen Messung ohne Werte nicht zu unterscheiden.
+  static Measurement _require(List<Measurement> all, int id) {
+    for (final m in all) {
+      if (m.id == id) return m;
+    }
+    throw StateError('Messung $id ist nicht (mehr) vorhanden.');
+  }
+}
+
+class _Flag extends StatelessWidget {
+  const _Flag({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+    return Padding(
+      padding: EdgeInsets.only(bottom: t.gapSmall),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, size: 15, color: t.muted),
+          SizedBox(width: t.gapSmall),
+          Text(text, style: TextStyle(fontSize: 13, color: t.onSurface)),
+        ],
+      ),
+    );
+  }
+}
+
+class _Row extends StatelessWidget {
+  const _Row({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: t.gapSmall),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontSize: 13, color: t.muted)),
+          Text(value, style: TextStyle(fontSize: 13, color: t.onSurface)),
+        ],
+      ),
+    );
+  }
+}
+
+class _HealthConnect extends StatelessWidget {
+  const _HealthConnect({required this.controller, required this.measurement});
+
+  final AppController controller;
+  final Measurement measurement;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+    final exported = measurement.exportedAt != null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'HEALTH CONNECT',
+          style: TextStyle(fontSize: 10, letterSpacing: 1.6, color: t.muted),
+        ),
+        SizedBox(height: t.gapSmall),
+        Text(
+          exported
+              ? 'Übertragen am ${formatDayAndTime(measurement.exportedAt!)}'
+              : 'Noch nicht übertragen',
+          style: TextStyle(fontSize: 13, color: t.onSurface),
+        ),
+        SizedBox(height: t.gapSmall),
+        OutlinedButton(
+          onPressed: controller.busy
+              ? null
+              : () => exported
+                  ? controller.retractOne(measurement)
+                  : controller.exportOne(measurement),
+          child: Text(
+            exported
+                ? 'Aus Health Connect entfernen'
+                : 'Nach Health Connect übertragen',
+          ),
+        ),
+      ],
+    );
+  }
+}
+```
+
+- [ ] **Schritt 4: Test laufen lassen, Erfolg bestätigen**
+
+Run: `flutter test test/ui/measurement_sheet_test.dart`
+Erwartet: alle grün.
+
+- [ ] **Schritt 5: Analyse und Übernahme**
+
+```bash
+flutter analyze
+git add lib/ui/measurement_sheet.dart test/ui/measurement_sheet_test.dart
+git commit -m "feat(ui): Detail-Blatt je Messung mit Einzelexport"
+```
+
+---
+
+## Aufgabe 13: Bereich „Verlauf"
+
+Zeitraumwahl, Kurve, Mittelwerte, Liste nach Tagen. Ein Antippen öffnet das
+Detail-Blatt aus Aufgabe 12.
+
+Der Knopf „Bericht erzeugen" aus der Spezifikation fehlt hier **absichtlich**:
+`ReportService` entsteht erst im Berichtsplan. Ein Knopf ohne Wirkung wäre
+schlimmer als keiner.
+
+**Dateien**
+- Neu: `lib/ui/history_screen.dart`
+- Test: `test/ui/history_screen_test.dart`
+
+**Schnittstellen**
+- Nutzt: `SphygmaTheme.of`, `TrendChart` (Aufgabe 10), `PeriodAverages`, `groupByDay`, `formatDay`, `formatTime` (Aufgabe 11), `showMeasurementSheet` (Aufgabe 12), `Period` (Aufgabe 4), `AppController.period`, `.setPeriod(Period)`, `.measurementsInPeriod`.
+- Liefert: `HistoryScreen({required AppController controller})`.
+
+Zu beachten: `measurementsInPeriod` liefert **älteste zuerst** — so braucht es
+die Kurve. Die Liste dreht sich über `groupByDay`, das nach neuestem Tag
+sortiert.
+
+- [ ] **Schritt 1: Test schreiben**
+
+```dart
+// test/ui/history_screen_test.dart
+import 'dart:typed_data';
+
+import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:sphygma/app/app_controller.dart';
+import 'package:sphygma/ble/pairing_key_store.dart';
+import 'package:sphygma/db/app_database.dart';
+import 'package:sphygma/db/measurement_repository.dart';
+import 'package:sphygma/db/settings_repository.dart';
+import 'package:sphygma/protocol/readout.dart';
+import 'package:sphygma/protocol/record.dart';
+import 'package:sphygma/stats/period.dart';
+import 'package:sphygma/sync/export_service.dart';
+import 'package:sphygma/sync/health_sink.dart';
+import 'package:sphygma/sync/sync_service.dart';
+import 'package:sphygma/ui/history_screen.dart';
+import 'package:sphygma/ui/measurement_sheet.dart';
+import 'package:sphygma/ui/theme/sphygma_theme.dart';
+import 'package:sphygma/ui/theme/variants.dart';
+import 'package:sphygma/ui/widgets/trend_chart.dart';
+
+class _NoopSink implements HealthSink {
+  @override
+  Future<void> writeBloodPressure(BloodPressureWrite write) async {}
+  @override
+  Future<void> deleteBloodPressure(String clientRecordId) async {}
+}
+
+SlotRecord _rec(int seq, DateTime at, {int systolic = 128}) => SlotRecord(
+      userSlot: 1,
+      record: BloodPressureRecord(
+        systolic: systolic,
+        diastolic: 87,
+        pulse: 82,
+        timestamp: at,
+        arrhythmiaFlag: false,
+        movementFlag: false,
+        sequence: seq,
+      ),
+      rawBytes: Uint8List(14),
+    );
+
+void main() {
+  late AppDatabase db;
+  late MeasurementRepository repository;
+  late InMemoryPairingKeyStore keyStore;
+  late AppController controller;
+
+  Future<AppController> boot() async {
+    await keyStore.save(Uint8List(16));
+    final c = AppController(
+      settings: SettingsRepository(db),
+      keyStore: keyStore,
+      repository: repository,
+      syncService: SyncService(keyStore: keyStore, repository: repository),
+      exportService: ExportService(repository: repository, sink: _NoopSink()),
+      statusStream: () => const Stream.empty(),
+    );
+    await c.init();
+    await c.setUserSlot(1);
+    return c;
+  }
+
+  Future<void> pumpWith(WidgetTester tester, ThemeVariant v) =>
+      tester.pumpWidget(MaterialApp(
+        home: SphygmaThemeScope(
+          theme: themeFor(v),
+          child: Scaffold(body: HistoryScreen(controller: controller)),
+        ),
+      ));
+
+  setUp(() {
+    db = AppDatabase(NativeDatabase.memory());
+    repository = MeasurementRepository(db);
+    keyStore = InMemoryPairingKeyStore();
+  });
+
+  tearDown(() async {
+    controller.dispose();
+    await db.close();
+  });
+
+  group('in jeder Gestaltung', () {
+    for (final v in allVariants) {
+      testWidgets('zeigt Zeitraum, Kurve und Mittelwerte (${v.name})',
+          (tester) async {
+        controller = await boot();
+        final now = DateTime.now();
+        await repository.importAll([
+          _rec(1, now.subtract(const Duration(days: 2)), systolic: 120),
+          _rec(2, now.subtract(const Duration(hours: 2)), systolic: 130),
+        ]);
+        await controller.refreshForTest();
+
+        await pumpWith(tester, v);
+
+        expect(find.text('Woche'), findsOneWidget);
+        expect(find.byType(TrendChart), findsOneWidget);
+        expect(find.textContaining('125'), findsWidgets);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  });
+
+  testWidgets('der Zeitraumwechsel wirkt auf den Steuerungsteil',
+      (tester) async {
+    controller = await boot();
+    await pumpWith(tester, ThemeVariant.instrument);
+
+    await tester.tap(find.text('Monat'));
+    await tester.pumpAndSettle();
+
+    expect(controller.period, Period.month);
+  });
+
+  testWidgets('gruppiert die Liste nach Tagen', (tester) async {
+    controller = await boot();
+    final now = DateTime.now();
+    await repository.importAll([
+      _rec(1, now.subtract(const Duration(days: 2))),
+      _rec(2, now.subtract(const Duration(hours: 3))),
+      _rec(3, now.subtract(const Duration(hours: 2))),
+    ]);
+    await controller.refreshForTest();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+
+    // Zwei Tagesüberschriften, drei Zeilen.
+    expect(find.byType(DayHeading), findsNWidgets(2));
+    expect(find.byType(MeasurementRow), findsNWidgets(3));
+  });
+
+  testWidgets('ein Antippen öffnet das Detail-Blatt', (tester) async {
+    controller = await boot();
+    await repository.importAll([_rec(1, DateTime.now())]);
+    await controller.refreshForTest();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+    await tester.tap(find.byType(MeasurementRow));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MeasurementSheet), findsOneWidget);
+  });
+
+  testWidgets('ohne Messungen im Zeitraum steht dort ein Satz, keine Leere',
+      (tester) async {
+    controller = await boot();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+
+    expect(find.textContaining('Keine Messungen'), findsOneWidget);
+    expect(find.byType(TrendChart), findsNothing);
+  });
+
+  testWidgets('übertragene Messungen tragen einen Punkt', (tester) async {
+    controller = await boot();
+    await repository.importAll([_rec(1, DateTime.now())]);
+    await controller.refreshForTest();
+    await controller.exportOne(controller.measurements.first);
+
+    await pumpWith(tester, ThemeVariant.instrument);
+
+    expect(
+      find.byKey(const ValueKey('exported-dot')),
+      findsOneWidget,
+    );
+  });
+}
+```
+
+- [ ] **Schritt 2: Test laufen lassen, Scheitern bestätigen**
+
+Run: `flutter test test/ui/history_screen_test.dart`
+Erwartet: FAIL, `history_screen.dart` existiert nicht.
+
+- [ ] **Schritt 3: Umsetzen**
+
+```dart
+// lib/ui/history_screen.dart
+// Verlauf: Zeitraum, Kurve, Mittelwerte, Liste. Der Bericht fuer die Praxis
+// kommt mit dem Berichtsplan hinzu; ein Knopf ohne Wirkung stuende hier nur
+// im Weg.
+import 'package:flutter/material.dart';
+
+import '../app/app_controller.dart';
+import '../db/app_database.dart';
+import '../stats/period.dart';
+import '../stats/period_averages.dart';
+import '../stats/trend_stats.dart';
+import 'format.dart';
+import 'measurement_sheet.dart';
+import 'theme/sphygma_theme.dart';
+import 'widgets/trend_chart.dart';
+
+class HistoryScreen extends StatelessWidget {
+  const HistoryScreen({super.key, required this.controller});
+
+  final AppController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) {
+        final inPeriod = controller.measurementsInPeriod;
+        final averages = PeriodAverages.of(inPeriod);
+
+        return ListView(
+          padding: EdgeInsets.all(t.gapLarge),
+          children: [
+            _PeriodPicker(controller: controller),
+            if (inPeriod.isEmpty)
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: t.gapLarge * 2),
+                child: Text(
+                  'Keine Messungen in diesem Zeitraum.',
+                  style: TextStyle(fontSize: 14, color: t.muted),
+                ),
+              )
+            else ...[
+              SizedBox(height: t.gapLarge),
+              TrendChart(measurements: inPeriod),
+              SizedBox(height: t.gapLarge),
+              const _Section(title: 'MITTELWERTE'),
+              _AverageRow(label: 'Gesamt', average: averages.overall),
+              _AverageRow(label: 'Morgens', average: averages.morning),
+              _AverageRow(label: 'Abends', average: averages.evening),
+              SizedBox(height: t.gapLarge),
+              const _Section(title: 'MESSUNGEN'),
+              for (final group in groupByDay(inPeriod)) ...[
+                DayHeading(day: group.day),
+                for (final m in group.measurements)
+                  MeasurementRow(controller: controller, measurement: m),
+              ],
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _PeriodPicker extends StatelessWidget {
+  const _PeriodPicker({required this.controller});
+
+  final AppController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+
+    return Row(
+      children: [
+        for (final p in Period.values)
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(right: t.gapSmall),
+              child: GestureDetector(
+                onTap: () => controller.setPeriod(p),
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: t.gapSmall),
+                  decoration: BoxDecoration(
+                    color: p == controller.period ? t.onSurface : null,
+                    border: Border.all(color: t.line),
+                    borderRadius: BorderRadius.circular(t.radius),
+                  ),
+                  child: Text(
+                    p.label,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: p == controller.period ? t.surface : t.onSurface,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _Section extends StatelessWidget {
+  const _Section({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+    return Padding(
+      padding: EdgeInsets.only(bottom: t.gapSmall),
+      child: Text(
+        title,
+        style: TextStyle(fontSize: 10, letterSpacing: 1.6, color: t.muted),
+      ),
+    );
+  }
+}
+
+class _AverageRow extends StatelessWidget {
+  const _AverageRow({required this.label, required this.average});
+
+  final String label;
+
+  /// Null heisst: in diesem Zeitraum gab es dort keine Messung. Dann steht
+  /// ein Strich da, keine erfundene Null.
+  final Average? average;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+    final a = average;
+
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: t.gapSmall),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontSize: 13, color: t.muted)),
+          Text(
+            a == null
+                ? '–'
+                : '${a.systolic}/${a.diastolic} · ${a.pulse}',
+            style: TextStyle(
+              fontSize: 13,
+              color: t.onSurface,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class DayHeading extends StatelessWidget {
+  const DayHeading({super.key, required this.day});
+
+  final DateTime day;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+    return Padding(
+      padding: EdgeInsets.only(top: t.gapLarge, bottom: t.gapSmall),
+      child: Text(
+        formatDay(day),
+        style: TextStyle(fontSize: 12, color: t.muted),
+      ),
+    );
+  }
+}
+
+class MeasurementRow extends StatelessWidget {
+  const MeasurementRow({
+    super.key,
+    required this.controller,
+    required this.measurement,
+  });
+
+  final AppController controller;
+  final Measurement measurement;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+    final m = measurement;
+
+    return InkWell(
+      onTap: () => showMeasurementSheet(
+        context,
+        controller: controller,
+        measurementId: m.id,
+      ),
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: t.gapSmall),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: t.line)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                '${m.systolic}/${m.diastolic} · ${m.pulse}',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: t.onSurface,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ),
+            if (m.movement || m.arrhythmia)
+              Padding(
+                padding: EdgeInsets.only(right: t.gapSmall),
+                child: Icon(Icons.info_outline, size: 14, color: t.muted),
+              ),
+            if (m.exportedAt != null)
+              Padding(
+                key: const ValueKey('exported-dot'),
+                padding: EdgeInsets.only(right: t.gapSmall),
+                child: Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: t.muted,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            Text(
+              formatTime(m.measuredAt),
+              style: TextStyle(fontSize: 13, color: t.muted),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+- [ ] **Schritt 4: Test laufen lassen, Erfolg bestätigen**
+
+Run: `flutter test test/ui/history_screen_test.dart`
+Erwartet: alle grün.
+
+Hinweis: `FontFeature` kommt aus `dart:ui` und wird über
+`package:flutter/material.dart` mit exportiert — kein zusätzlicher Import nötig.
+Meldet die Analyse etwas anderes, `import 'dart:ui' show FontFeature;` ergänzen.
+
+- [ ] **Schritt 5: Analyse und Übernahme**
+
+```bash
+flutter analyze
+git add lib/ui/history_screen.dart test/ui/history_screen_test.dart
+git commit -m "feat(ui): Bereich Verlauf mit Kurve, Mittelwerten und Tagesliste"
+```
+
+---
+
+## Aufgabe 14: Neue Navigation, alte Bildschirme entfernen
+
+Drei Bereiche statt der bisherigen drei anderen. `SphygmaApp` legt den
+Gestaltungs-Scope über den ganzen Baum und wechselt ihn, wenn die Wahl sich
+ändert. Die alten Bildschirme fallen weg — sie sind vollständig ersetzt.
+
+Dass `Scaffold` und `MaterialApp` weiterhin ein `ThemeData` brauchen, ist kein
+Widerspruch zur eigenen Gestaltung: Material versorgt damit nur, was wir nicht
+selbst zeichnen (Wellenanimation beim Tippen, Textauswahl). Die sichtbaren
+Farben kommen aus `SphygmaTheme`.
+
+**Dateien**
+- Ändern: `lib/ui/sphygma_app.dart`
+- Löschen: `lib/ui/home_screen.dart`, `lib/ui/measurements_screen.dart`, `lib/ui/trends_screen.dart`
+- Löschen: alle Tests, die nur diese drei Bildschirme prüfen
+- Test: `test/ui/sphygma_app_test.dart`
+
+**Schnittstellen**
+- Nutzt: `TodayScreen` (Aufgabe 7), `HistoryScreen` (Aufgabe 13), `DeviceScreen` (Aufgabe 8), `themeFor`, `AppController.themeVariant`.
+- Liefert: `SphygmaApp({required AppController controller})` — unverändert in der Signatur, damit `main.dart` nicht angefasst werden muss.
+
+- [ ] **Schritt 1: Bestand sichten**
+
+```bash
+grep -rln "home_screen\|measurements_screen\|trends_screen" lib test
+```
+
+Jede Fundstelle außer `sphygma_app.dart` gehört zu einem Test der alten
+Bildschirme und wird in Schritt 5 mit gelöscht. Taucht eine Fundstelle in
+einer Datei auf, die nicht offensichtlich zu den alten Bildschirmen gehört:
+anhalten und melden, nicht raten.
+
+- [ ] **Schritt 2: Test schreiben**
+
+```dart
+// test/ui/sphygma_app_test.dart
+import 'dart:typed_data';
+
+import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:sphygma/app/app_controller.dart';
+import 'package:sphygma/ble/pairing_key_store.dart';
+import 'package:sphygma/db/app_database.dart';
+import 'package:sphygma/db/measurement_repository.dart';
+import 'package:sphygma/db/settings_repository.dart';
+import 'package:sphygma/sync/export_service.dart';
+import 'package:sphygma/sync/health_sink.dart';
+import 'package:sphygma/sync/sync_service.dart';
+import 'package:sphygma/ui/device_screen.dart';
+import 'package:sphygma/ui/history_screen.dart';
+import 'package:sphygma/ui/sphygma_app.dart';
+import 'package:sphygma/ui/theme/sphygma_theme.dart';
+import 'package:sphygma/ui/theme/variants.dart';
+import 'package:sphygma/ui/today_screen.dart';
+
+class _NoopSink implements HealthSink {
+  @override
+  Future<void> writeBloodPressure(BloodPressureWrite write) async {}
+  @override
+  Future<void> deleteBloodPressure(String clientRecordId) async {}
+}
+
+void main() {
+  late AppDatabase db;
+  late MeasurementRepository repository;
+  late InMemoryPairingKeyStore keyStore;
+  late AppController controller;
+
+  setUp(() async {
+    db = AppDatabase(NativeDatabase.memory());
+    repository = MeasurementRepository(db);
+    keyStore = InMemoryPairingKeyStore();
+    await keyStore.save(Uint8List(16));
+    controller = AppController(
+      settings: SettingsRepository(db),
+      keyStore: keyStore,
+      repository: repository,
+      syncService: SyncService(keyStore: keyStore, repository: repository),
+      exportService: ExportService(repository: repository, sink: _NoopSink()),
+      statusStream: () => const Stream.empty(),
+    );
+    await controller.init();
+    await controller.setUserSlot(1);
+  });
+
+  tearDown(() async {
+    controller.dispose();
+    await db.close();
+  });
+
+  testWidgets('startet auf Heute', (tester) async {
+    await tester.pumpWidget(SphygmaApp(controller: controller));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TodayScreen), findsOneWidget);
+  });
+
+  testWidgets('wechselt in die drei Bereiche', (tester) async {
+    await tester.pumpWidget(SphygmaApp(controller: controller));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Verlauf'));
+    await tester.pumpAndSettle();
+    expect(find.byType(HistoryScreen), findsOneWidget);
+
+    await tester.tap(find.text('Gerät'));
+    await tester.pumpAndSettle();
+    expect(find.byType(DeviceScreen), findsOneWidget);
+
+    await tester.tap(find.text('Heute'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TodayScreen), findsOneWidget);
+  });
+
+  testWidgets('die gewählte Gestaltung liegt über dem Baum', (tester) async {
+    await controller.setThemeVariant(ThemeVariant.journal);
+    await tester.pumpWidget(SphygmaApp(controller: controller));
+    await tester.pumpAndSettle();
+
+    final context = tester.element(find.byType(TodayScreen));
+    expect(
+      SphygmaTheme.of(context).name,
+      themeFor(ThemeVariant.journal).name,
+    );
+  });
+
+  testWidgets('ein Gestaltungswechsel schlägt sofort durch', (tester) async {
+    await tester.pumpWidget(SphygmaApp(controller: controller));
+    await tester.pumpAndSettle();
+
+    await controller.setThemeVariant(ThemeVariant.material);
+    await tester.pumpAndSettle();
+
+    final context = tester.element(find.byType(TodayScreen));
+    expect(
+      SphygmaTheme.of(context).name,
+      themeFor(ThemeVariant.material).name,
+    );
+  });
+
+  testWidgets('eine Meldung des Steuerungsteils erscheint', (tester) async {
+    await tester.pumpWidget(SphygmaApp(controller: controller));
+    await tester.pumpAndSettle();
+
+    // Ein Export ohne offene Messungen meldet "0 Messungen" - eine
+    // Meldung ohne Geraet und ohne Fehler.
+    await controller.exportAll();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SnackBar), findsOneWidget);
+  });
+}
+```
+
+- [ ] **Schritt 3: Test laufen lassen, Scheitern bestätigen**
+
+Run: `flutter test test/ui/sphygma_app_test.dart`
+Erwartet: FAIL — `sphygma_app.dart` kennt die neuen Bereiche noch nicht.
+
+- [ ] **Schritt 4: Umsetzen**
+
+```dart
+// lib/ui/sphygma_app.dart
+// Drei Bereiche: Heute, Verlauf, Geraet. Die Gestaltung liegt als Scope
+// darueber; kein Bildschirm holt sich Farben woanders her.
+import 'package:flutter/material.dart';
+
+import '../app/app_controller.dart';
+import 'device_screen.dart';
+import 'history_screen.dart';
+import 'theme/sphygma_theme.dart';
+import 'theme/variants.dart';
+import 'today_screen.dart';
+
+class SphygmaApp extends StatelessWidget {
+  const SphygmaApp({super.key, required this.controller});
+
+  final AppController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) {
+        final theme = themeFor(controller.themeVariant);
+        return MaterialApp(
+          title: 'Sphygma',
+          theme: ThemeData(
+            colorSchemeSeed: theme.accent,
+            scaffoldBackgroundColor: theme.surface,
+            useMaterial3: true,
+          ),
+          home: SphygmaThemeScope(
+            theme: theme,
+            child: _Shell(controller: controller),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _Shell extends StatefulWidget {
+  const _Shell({required this.controller});
+
+  final AppController controller;
+
+  @override
+  State<_Shell> createState() => _ShellState();
+}
+
+class _ShellState extends State<_Shell> {
+  int _index = 0;
+
+  /// Zuletzt angezeigte Meldung, damit dieselbe nicht bei jedem Neubau
+  /// erneut aufpoppt.
+  String? _shownStatus;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onControllerChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onControllerChanged);
+    super.dispose();
+  }
+
+  void _onControllerChanged() {
+    final status = widget.controller.status;
+    if (status == null || status == _shownStatus) return;
+    _shownStatus = status;
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(status)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+    const titles = ['Heute', 'Verlauf', 'Gerät'];
+
+    return ListenableBuilder(
+      listenable: widget.controller,
+      builder: (context, _) => Scaffold(
+        backgroundColor: t.surface,
+        appBar: AppBar(
+          title: Text(titles[_index]),
+          backgroundColor: t.surface,
+          foregroundColor: t.onSurface,
+          elevation: 0,
+        ),
+        body: switch (_index) {
+          0 => TodayScreen(controller: widget.controller),
+          1 => HistoryScreen(controller: widget.controller),
+          _ => DeviceScreen(controller: widget.controller),
+        },
+        bottomNavigationBar: NavigationBar(
+          backgroundColor: t.surface,
+          selectedIndex: _index,
+          onDestinationSelected: (i) => setState(() => _index = i),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.favorite_outline),
+              label: 'Heute',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.show_chart),
+              label: 'Verlauf',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.bluetooth),
+              label: 'Gerät',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+- [ ] **Schritt 5: Alte Bildschirme entfernen**
+
+```bash
+git rm lib/ui/home_screen.dart lib/ui/measurements_screen.dart lib/ui/trends_screen.dart
+```
+
+Dazu die in Schritt 1 gefundenen Tests dieser Bildschirme. Danach:
+
+```bash
+flutter analyze
+flutter test
+```
+
+Beide müssen sauber durchlaufen. Verweist noch etwas auf die gelöschten
+Dateien, wird es jetzt sichtbar.
+
+- [ ] **Schritt 6: Übernahme**
+
+```bash
+git add -A
+git commit -m "feat(ui): drei Bereiche statt der alten Bildschirme"
+```
+
+---
+
+## Aufgabe 15: Umlaute in sichtbaren Texten
+
+Der Bestand schreibt sichtbare Texte in ASCII-Ersatz: Auf dem Bildschirm steht
+„Geraeteuhr geht falsch" statt „Geräteuhr geht falsch". Das ist in einer
+deutschsprachigen App schlicht falsch geschrieben und fällt jedem Nutzer auf.
+
+Betroffen sind **nur Zeichenketten, die auf dem Bildschirm landen** — also
+Text in Widgets und die Meldungen aus `AppController.status`. Kommentare und
+Bezeichner bleiben, wie sie sind: Sie ändern nichts am Erscheinungsbild, und
+ein Rundumtausch verdeckte die inhaltliche Änderung.
+
+**Dateien**
+- Ändern: `lib/ui/today_screen.dart`, `lib/ui/device_screen.dart`, `lib/ui/history_screen.dart`, `lib/ui/measurement_sheet.dart`, `lib/ui/sphygma_app.dart`, `lib/ui/widgets/*.dart`, `lib/app/app_controller.dart`
+- Ändern: die zugehörigen Tests, soweit sie auf solche Texte prüfen
+
+- [ ] **Schritt 1: Fundstellen sammeln**
+
+```bash
+grep -rn "ae\|oe\|ue\|ss" lib/ui lib/app/app_controller.dart | grep "'"
+```
+
+Die Ausgabe enthält auch Importzeilen und Bezeichner. Von Hand durchgehen:
+geändert wird nur, was als Text angezeigt wird.
+
+- [ ] **Schritt 2: Ersetzen**
+
+Wortweise, nicht per Muster — `ue` steckt auch in „neue", `ss` in „lassen".
+Die häufigen Fälle im Bestand:
+
+| falsch | richtig |
+|---|---|
+| Geraet, Geraeteuhr, Geraeten | Gerät, Geräteuhr, Geräten |
+| gedrueckt, druecken, drueckt | gedrückt, drücken, drückt |
+| bestaetigen, bestaetigt | bestätigen, bestätigt |
+| aendert, aendern | ändert, ändern |
+| gewaehlt, waehlen | gewählt, wählen |
+| traegt | trägt |
+| pruefen, prueft | prüfen, prüft |
+| uebertragen, Uebertragen | übertragen, Übertragen |
+| unregelmaessig | unregelmäßig |
+| naechste, spaeter | nächste, später |
+| loeschen, geloescht | löschen, gelöscht |
+| fuer, ueber | für, über |
+| heisst, muesste | heißt, müsste |
+
+- [ ] **Schritt 3: Tests nachziehen**
+
+Jeder `find.text`/`find.textContaining` auf einen geänderten Text muss mit.
+
+- [ ] **Schritt 4: Prüfen und übernehmen**
+
+```bash
+flutter analyze
+flutter test
+git add -A
+git commit -m "fix(ui): Umlaute in sichtbaren Texten"
+```
+
+Am Gerät gegenlesen: Die Schriftart muss die Umlaute tragen — bei der
+System-Schrift ist das der Fall, aber es wird einmal angesehen.
