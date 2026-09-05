@@ -8,15 +8,28 @@ import '../app/app_controller.dart';
 import 'theme/sphygma_theme.dart';
 import 'theme/variants.dart';
 
-class DeviceScreen extends StatelessWidget {
+class DeviceScreen extends StatefulWidget {
   const DeviceScreen({super.key, required this.controller});
 
   final AppController controller;
 
   @override
+  State<DeviceScreen> createState() => _DeviceScreenState();
+}
+
+class _DeviceScreenState extends State<DeviceScreen> {
+  /// Der Kopplungsteil samt Speicherplatzwahl. Im Alltag verdeckt - die Wahl
+  /// faellt einmal beim Einrichten (Spezifikation vom 2026-09-05). Erreichbar
+  /// bleibt er trotzdem: Nach einem Werksreset am Geraet oder einer Kopplung
+  /// mit der Omron-App muss neu gekoppelt werden, und ein falsch gewaehlter
+  /// Speicherplatz laesst sonst dauerhaft den falschen Benutzer auslesen.
+  bool _pairingOpen = false;
+
+  @override
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
-    final c = controller;
+    final c = widget.controller;
+    final showPairing = !c.paired || _pairingOpen;
 
     return Material(
       color: t.surface,
@@ -31,7 +44,14 @@ class DeviceScreen extends StatelessWidget {
             ),
             if (c.userSlot != null)
               _Row(label: 'Speicherplatz', value: 'Benutzer ${c.userSlot}'),
-            if (!c.paired) ...[
+            if (c.paired && !_pairingOpen)
+              _Button(
+                label: 'Neu koppeln',
+                onPressed: c.busy
+                    ? null
+                    : () => setState(() => _pairingOpen = true),
+              ),
+            if (showPairing) ...[
               SizedBox(height: t.gapSmall),
               Text(
                 'Welcher Speicherplatz gehört dir am Gerät?',
@@ -61,7 +81,9 @@ class DeviceScreen extends StatelessWidget {
               _Button(
                 label: 'Koppeln',
                 filled: true,
-                onPressed: c.busy || c.userSlot == null ? null : () => _start(c.pair),
+                onPressed: c.busy || c.userSlot == null
+                    ? null
+                    : () => _start(c.pair),
               ),
             ],
 
@@ -99,7 +121,9 @@ class DeviceScreen extends StatelessWidget {
             ),
             _Button(
               label: 'Übertragene entfernen',
-              onPressed: c.busy ? null : () => _start(c.retractAll),
+              onPressed: c.busy || c.userSlot == null
+                  ? null
+                  : () => _start(c.retractAll),
             ),
 
             _Section(title: 'Gestaltung'),

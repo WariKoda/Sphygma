@@ -18,6 +18,19 @@ import 'package:sphygma/ui/measurement_sheet.dart';
 import 'package:sphygma/ui/theme/sphygma_theme.dart';
 import 'package:sphygma/ui/theme/variants.dart';
 
+/// Health Connect verweigert die Berechtigung - ein alltäglicher Fall.
+class _FailingSink implements HealthSink {
+  @override
+  Future<void> writeBloodPressure(BloodPressureWrite write) async {
+    throw StateError('Keine Berechtigung.');
+  }
+
+  @override
+  Future<void> deleteBloodPressure(String clientRecordId) async {
+    throw StateError('Keine Berechtigung.');
+  }
+}
+
 class _RecordingSink implements HealthSink {
   final written = <String>[];
   final removed = <String>[];
@@ -60,14 +73,17 @@ void main() {
   late _RecordingSink sink;
   late AppController controller;
 
-  Future<AppController> boot() async {
+  Future<AppController> boot({HealthSink? failing}) async {
     await keyStore.save(Uint8List(16));
     final c = AppController(
       settings: SettingsRepository(db),
       keyStore: keyStore,
       repository: repository,
       syncService: SyncService(keyStore: keyStore, repository: repository),
-      exportService: ExportService(repository: repository, sink: sink),
+      exportService: ExportService(
+        repository: repository,
+        sink: failing ?? sink,
+      ),
       statusStream: () => const Stream.empty(),
     );
     await c.init();
@@ -169,6 +185,20 @@ void main() {
 
     expect(sink.removed, hasLength(1));
     expect(find.text('Nach Health Connect übertragen'), findsOneWidget);
+  });
+
+  testWidgets('ein fehlschlagender Einzelexport meldet, statt unbeobachtet zu '
+      'scheitern', (tester) async {
+    controller = await boot(failing: _FailingSink());
+    await repository.importAll([_rec(1, DateTime(2026, 9, 5, 8))]);
+    final id = await firstId();
+
+    await pumpWith(tester, ThemeVariant.instrument, id);
+    await tester.tap(find.text('Nach Health Connect übertragen'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(controller.status, contains('Fehler'));
   });
 
   testWidgets('eine unbekannte Nummer wirft, statt leer zu bleiben',

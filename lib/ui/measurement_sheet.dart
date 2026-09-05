@@ -2,6 +2,8 @@
 // Alles zu einer einzelnen Messung. Die Massenaktionen bleiben im
 // Geraetebereich; hier steht der Einzelexport, weil er zu genau dieser
 // Messung gehoert (Spezifikation vom 2026-09-05).
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../app/app_controller.dart';
@@ -159,6 +161,15 @@ class _HealthConnect extends StatelessWidget {
   final AppController controller;
   final Measurement measurement;
 
+  /// Wie im Geraetebereich: [AppController] wirft nach dem Setzen von
+  /// `status` erneut. Ohne diesen Fang liefe der Fehler als unbeobachtete
+  /// Ausnahme in die Zone, statt als Meldung sichtbar zu werden.
+  static void _start(Future<void> Function() action) {
+    unawaited(action().catchError((Object e) {
+      debugPrint('[Sphygma] Aktion fehlgeschlagen: $e');
+    }));
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
@@ -182,9 +193,11 @@ class _HealthConnect extends StatelessWidget {
         OutlinedButton(
           onPressed: controller.busy
               ? null
-              : () => exported
-                  ? controller.retractOne(measurement)
-                  : controller.exportOne(measurement),
+              : () => _start(
+                    () => exported
+                        ? controller.retractOne(measurement)
+                        : controller.exportOne(measurement),
+                  ),
           child: Text(
             exported
                 ? 'Aus Health Connect entfernen'

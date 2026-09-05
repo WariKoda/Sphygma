@@ -168,6 +168,36 @@ void main() {
     expect(controller.status, contains('Fehler'));
   });
 
+  testWidgets('gekoppelt ist die Speicherplatzwahl verdeckt, "Neu koppeln" '
+      'holt sie zurück', (tester) async {
+    await boot();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+    expect(find.byType(SegmentedButton<int>), findsNothing);
+
+    await tester.ensureVisible(find.text('Neu koppeln'));
+    await tester.tap(find.text('Neu koppeln'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SegmentedButton<int>), findsOneWidget);
+    expect(find.text('Koppeln'), findsOneWidget);
+  });
+
+  testWidgets('ohne Speicherplatz ist "Übertragene entfernen" abgeschaltet',
+      (tester) async {
+    await boot(withSlot: false);
+
+    await pumpWith(tester, ThemeVariant.instrument);
+
+    final button = tester.widget<OutlinedButton>(
+      find.ancestor(
+        of: find.text('Übertragene entfernen'),
+        matching: find.byType(OutlinedButton),
+      ),
+    );
+    expect(button.onPressed, isNull);
+  });
+
   testWidgets('die Gestaltung lässt sich umschalten', (tester) async {
     await boot();
 
