@@ -11,6 +11,10 @@ const List<ThemeVariant> allVariants = ThemeVariant.values;
 
 /// Gruen fuer unauffaellig, Gelb fuer Grenzbereich, Rot fuer erhoeht.
 /// Zurueckhaltend gewaehlt: Es geht um Einordnung, nicht um Alarm.
+///
+/// `optimal` und `normal` teilen absichtlich eine Farbe: Die Leitlinie
+/// trennt sie, fuer den Nutzer ist beides unauffaellig. Eine eigene Farbe
+/// wuerde eine Bedeutung suggerieren, die es nicht gibt.
 const Map<EscCategory, Color> _calmScale = {
   EscCategory.optimal: Color(0xFF7EA77E),
   EscCategory.normal: Color(0xFF7EA77E),

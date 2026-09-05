@@ -46,6 +46,17 @@ void main() {
     expect(filterByPeriod(alle, Period.week, now), hasLength(1));
   });
 
+  test('eine Messung genau am Anfang des Zeitraums zaehlt dazu', () {
+    final start = Period.week.startFrom(now)!;
+    final alle = [_m(start), _m(start.subtract(const Duration(seconds: 1)))];
+
+    expect(filterByPeriod(alle, Period.week, now), hasLength(1));
+  });
+
+  test('eine Messung genau jetzt zaehlt dazu', () {
+    expect(filterByPeriod([_m(now)], Period.week, now), hasLength(1));
+  });
+
   test('jeder Zeitraum hat eine Beschriftung', () {
     for (final p in Period.values) {
       expect(p.label, isNotEmpty);

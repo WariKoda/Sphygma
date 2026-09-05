@@ -1,5 +1,6 @@
 // App-Einstellungen in der DB - ohne zusaetzliche Abhaengigkeit.
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 
 import '../ui/theme/variants.dart';
 import 'app_database.dart';
@@ -45,6 +46,14 @@ class SettingsRepository {
     for (final v in allVariants) {
       if (v.name == row.value) return v;
     }
+    // Gespeicherter Wert kennt niemand mehr - etwa nach dem Entfernen
+    // einer Variante. Ein Wurf waere hier falsch: Die App waere wegen
+    // einer Farbwahl unbenutzbar. Aber lautlos darf es auch nicht
+    // passieren (Codex-Review 2026-09-05).
+    debugPrint(
+      '[Sphygma] Unbekannte Gestaltung "${row.value}" gespeichert, '
+      'nutze ${ThemeVariant.instrument.name}.',
+    );
     return ThemeVariant.instrument;
   }
 
