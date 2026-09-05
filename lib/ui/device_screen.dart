@@ -1,5 +1,7 @@
 // Alles Technische an einem Ort: Geraet, Abgleich, Health Connect,
 // Gestaltung. Vorn auf "Heute" stoert es damit nicht mehr.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../app/app_controller.dart';
@@ -41,7 +43,12 @@ class DeviceScreen extends StatelessWidget {
                   ButtonSegment(value: 1, label: Text('Benutzer 1')),
                   ButtonSegment(value: 2, label: Text('Benutzer 2')),
                 ],
-                selected: {c.userSlot ?? 1},
+                // Ohne gewaehlten Slot ist nichts ausgewaehlt. Ein
+                // vorgetaeuschtes "Benutzer 1" liesse sich nicht antippen:
+                // SegmentedButton meldet keinen Wechsel auf das bereits
+                // ausgewaehlte einzige Segment (segmented_button.dart:489).
+                emptySelectionAllowed: true,
+                selected: c.userSlot == null ? const <int>{} : {c.userSlot!},
                 onSelectionChanged: (s) =>
                     s.isEmpty ? null : c.setUserSlot(s.first),
               ),
@@ -54,7 +61,7 @@ class DeviceScreen extends StatelessWidget {
               _Button(
                 label: 'Koppeln',
                 filled: true,
-                onPressed: c.busy || c.userSlot == null ? null : c.pair,
+                onPressed: c.busy || c.userSlot == null ? null : () => _start(c.pair),
               ),
             ],
 
@@ -71,7 +78,7 @@ class DeviceScreen extends StatelessWidget {
             _Button(
               label: 'Jetzt abgleichen',
               filled: true,
-              onPressed: c.busy || !c.paired ? null : c.sync,
+              onPressed: c.busy || !c.paired ? null : () => _start(c.sync),
             ),
             if (c.status != null) ...[
               SizedBox(height: t.gapSmall),
@@ -87,11 +94,12 @@ class DeviceScreen extends StatelessWidget {
             ),
             _Button(
               label: 'Alle uebertragen',
-              onPressed: c.busy || c.pendingExport == 0 ? null : c.exportAll,
+              onPressed:
+                  c.busy || c.pendingExport == 0 ? null : () => _start(c.exportAll),
             ),
             _Button(
               label: 'Uebertragene entfernen',
-              onPressed: c.busy ? null : c.retractAll,
+              onPressed: c.busy ? null : () => _start(c.retractAll),
             ),
 
             _Section(title: 'Gestaltung'),
@@ -118,6 +126,18 @@ class DeviceScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Startet eine Aktion des Steuerungsteils.
+  ///
+  /// [AppController] wirft nach dem Setzen von `status` erneut - die Meldung
+  /// steht also schon fest und wird angezeigt. Ohne diesen Fang liefe der
+  /// Fehler als unbeobachtete Ausnahme in die Zone und ruecke damit nirgends
+  /// mehr in Sicht.
+  static void _start(Future<void> Function() action) {
+    unawaited(action().catchError((Object e) {
+      debugPrint('[Sphygma] Aktion fehlgeschlagen: $e');
+    }));
   }
 }
 

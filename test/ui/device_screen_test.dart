@@ -8,6 +8,8 @@ import 'package:sphygma/ble/pairing_key_store.dart';
 import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/db/measurement_repository.dart';
 import 'package:sphygma/db/settings_repository.dart';
+import 'package:sphygma/protocol/readout.dart';
+import 'package:sphygma/protocol/record.dart';
 import 'package:sphygma/sync/export_service.dart';
 import 'package:sphygma/sync/health_sink.dart';
 import 'package:sphygma/sync/sync_service.dart';
@@ -22,12 +24,29 @@ class _NoopSink implements HealthSink {
   Future<void> deleteBloodPressure(String clientRecordId) async {}
 }
 
+/// Health Connect verweigert die Berechtigung - ein alltaeglicher Fall.
+class _FailingSink implements HealthSink {
+  @override
+  Future<void> writeBloodPressure(BloodPressureWrite write) async {
+    throw StateError('Keine Berechtigung.');
+  }
+
+  @override
+  Future<void> deleteBloodPressure(String clientRecordId) async {
+    throw StateError('Keine Berechtigung.');
+  }
+}
+
 void main() {
   late AppDatabase db;
   late InMemoryPairingKeyStore keyStore;
   late AppController controller;
 
-  Future<void> boot({bool paired = true, bool withSlot = true}) async {
+  Future<void> boot({
+    bool paired = true,
+    bool withSlot = true,
+    HealthSink? sink,
+  }) async {
     if (paired) await keyStore.save(Uint8List(16));
     final repository = MeasurementRepository(db);
     controller = AppController(
@@ -35,7 +54,10 @@ void main() {
       keyStore: keyStore,
       repository: repository,
       syncService: SyncService(keyStore: keyStore, repository: repository),
-      exportService: ExportService(repository: repository, sink: _NoopSink()),
+      exportService: ExportService(
+        repository: repository,
+        sink: sink ?? _NoopSink(),
+      ),
       statusStream: () => const Stream.empty(),
     );
     await controller.init();
@@ -98,6 +120,52 @@ void main() {
     await pumpWith(tester, ThemeVariant.instrument);
 
     expect(find.text('Benutzer 1'), findsOneWidget);
+  });
+
+  testWidgets('ohne gewaehlten Slot ist keiner ausgewaehlt und Slot 1 laesst '
+      'sich mit einem Tipp waehlen', (tester) async {
+    await boot(paired: false, withSlot: false);
+
+    await pumpWith(tester, ThemeVariant.instrument);
+
+    final button = tester.widget<SegmentedButton<int>>(
+      find.byType(SegmentedButton<int>),
+    );
+    expect(button.selected, isEmpty);
+
+    await tester.tap(find.text('Benutzer 1'));
+    await tester.pumpAndSettle();
+
+    expect(controller.userSlot, 1);
+  });
+
+  testWidgets('eine fehlschlagende Aktion meldet, statt unbeobachtet zu '
+      'scheitern', (tester) async {
+    await boot(sink: _FailingSink());
+    await MeasurementRepository(db).importAll([
+      SlotRecord(
+        userSlot: 1,
+        record: BloodPressureRecord(
+          systolic: 128,
+          diastolic: 87,
+          pulse: 82,
+          timestamp: DateTime.now(),
+          arrhythmiaFlag: false,
+          movementFlag: false,
+          sequence: 1,
+        ),
+        rawBytes: Uint8List(14),
+      ),
+    ]);
+    await controller.refreshForTest();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+    await tester.ensureVisible(find.text('Alle uebertragen'));
+    await tester.tap(find.text('Alle uebertragen'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(controller.status, contains('Fehler'));
   });
 
   testWidgets('die Gestaltung laesst sich umschalten', (tester) async {
