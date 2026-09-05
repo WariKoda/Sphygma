@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sphygma · Konzept: Tagesprofil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#171A24;
+    --muted:#6E7480;
+    --hair:#E1E4EA;
+    --z1:#D3E0F5;   /* im Zielbereich */
+    --z2:#8AA6D6;   /* grenzwertig */
+    --z3:#B8482C;   /* darüber */
+    --warn:#8A4A12;
+    --warn-bg:#F7EBDC;
+
+    --tafel-bg:#FFFFFF;
+    --tafel-muted:#71736F;
+    --tafel-line:#E4E5E2;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--tafel-bg); color:var(--ink);
+    font-family:Inter,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-size:16px; line-height:1.55; font-variant-numeric:tabular-nums;}
+  .wrap{max-width:1180px; margin:0 auto; padding:64px 32px 96px;}
+
+  .kicker{font-size:13px; color:var(--tafel-muted); margin:0 0 10px;}
+  h1{font-size:46px; line-height:1.06; font-weight:600; letter-spacing:-.025em; margin:0 0 22px; max-width:14ch;}
+  .lede{max-width:66ch; font-size:17px; margin:0 0 14px; color:#2A2C32;}
+  .lede strong{font-weight:600;}
+  h2{font-size:22px; font-weight:600; letter-spacing:-.01em; margin:0;}
+  .sec-head{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
+    border-bottom:1px solid var(--tafel-line); padding-bottom:10px; margin:72px 0 28px;}
+  .sec-head p{margin:0; color:var(--tafel-muted); font-size:14px;}
+  .note{max-width:66ch;}
+  ul{max-width:66ch; padding-left:20px;} li{margin-bottom:9px;}
+
+  /* ---------- Bildschirme ---------- */
+  .screens{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:40px 28px; align-items:start;}
+  .slot{display:flex; flex-direction:column; align-items:center; gap:12px;}
+  .cap{font-size:13px; color:var(--tafel-muted); text-align:center; max-width:33ch;}
+  .cap b{display:block; color:var(--ink); font-weight:600;}
+
+  .phone{width:320px; border:1px solid var(--tafel-line); border-radius:26px; overflow:hidden; background:#fff;}
+  .scr{display:flex; flex-direction:column; min-height:640px; padding:0; font-size:15px; line-height:1.45;}
+  .pad{padding:0 20px;}
+  .grow{flex:1 1 auto;}
+
+  .status{display:flex; justify-content:space-between; align-items:center;
+    padding:14px 20px 0; font-size:12.5px; color:var(--muted);}
+  .titel{font-size:19px; font-weight:600; letter-spacing:-.015em; margin:18px 0 2px;}
+  .klein{font-size:13px; color:var(--muted); margin:0;}
+  .schnitt{font-size:42px; font-weight:500; letter-spacing:-.035em; line-height:1; margin:14px 0 6px;}
+  .schnitt .s{font-weight:400; color:var(--muted);}
+  .satz{font-size:14px; color:var(--muted); margin:0 0 4px;}
+  .zeile{display:flex; justify-content:space-between; align-items:baseline; padding:7px 0; font-size:14.5px;}
+  .zeile .k{color:var(--muted);}
+  .zeile .v{font-weight:600;}
+  .trenn{height:1px; background:var(--hair); margin:14px 0;}
+
+  .paar{display:flex; gap:26px; margin-top:14px;}
+  .paar div{flex:1;}
+  .paar .k{font-size:12.5px; color:var(--muted);}
+  .paar .v{font-size:18px; font-weight:600; letter-spacing:-.02em;}
+
+  .hinweis{background:var(--warn-bg); color:var(--warn); padding:14px 20px; margin:16px 0 0; border-radius:8px;}
+  .hinweis b{display:block; color:#5F3208; font-weight:600; margin-bottom:3px; font-size:14px;}
+  .hinweis p{margin:0; font-size:13px; line-height:1.45;}
+
+  .link{font-size:14.5px; font-weight:500; border-bottom:1.5px solid var(--ink); padding-bottom:1px; cursor:pointer;}
+  .links{display:flex; flex-direction:column; gap:12px; align-items:flex-start; margin-top:18px;}
+
+  .haupt{margin:0; border:0; width:100%; background:var(--ink); color:#fff; font:inherit;
+    font-weight:600; font-size:15px; padding:16px; text-align:center;}
+  .haupt.aus{background:#EFF0F3; color:#9DA2AC;}
+  .neben{margin:0; border:0; width:100%; background:#fff; color:var(--ink); font:inherit;
+    font-weight:500; font-size:15px; padding:15px 16px; text-align:center; box-shadow:inset 0 1px 0 var(--hair);}
+
+  table{width:100%; border-collapse:collapse; margin-top:6px;}
+  th{text-align:left; font-size:13px; font-weight:500; color:var(--tafel-muted); padding:0 14px 8px 0; border-bottom:1px solid var(--tafel-line);}
+  td{vertical-align:top; padding:12px 14px 12px 0; border-bottom:1px solid #EEEFF1; font-size:14.5px; line-height:1.5;}
+  td:first-child{font-weight:600; width:26%;}
+
+  @media print{ .wrap{padding:0;} .slot,.phone{break-inside:avoid;} .sec-head{margin-top:34px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="kicker">Sphygma · Konzeptausarbeitung · 2026-09-05</p>
+  <h1>Tagesprofil</h1>
+
+  <p class="lede">Dieses Konzept gibt eine radikale Antwort auf die Frage nach der Einheit: <strong>Die Einheit ist die Tageszeit.</strong> Die Chronologie — der endlose Zeitstrahl über Tage und Monate — ist nicht mehr die Achse. Alle 114 Messungen im Bestand liegen übereinander auf einer einzigen Tagesachse — die Skizze zeigt den Ausschnitt von 6 bis 24 Uhr, weil die Nachtstunden einen eigenen Bildschirm haben.</p>
+
+  <p class="lede">Dadurch wird ein Muster sichtbar, das im Kalender verborgen bleibt: morgens hoch, nachmittags ruhiger, abends wieder ansteigend. Die App beantwortet nicht mehr „Wie war mein Blutdruck gestern?“, sondern <strong>„Wann ist mein Blutdruck hoch?“</strong>. Die Tageszeit ist bei Bluthochdruck medizinisch relevant, und kein anderes Konzept zeigt sie. Für die Frage, ob ein Medikament morgens noch wirkt, ist das Muster ein <em>Hinweis</em>, keine Antwort — dafür fehlen der Einnahmezeitpunkt und ein belastbarer Vergleich.</p>
+
+  <div class="sec-head">
+    <h2>Fünf Bildschirme</h2>
+    <p>Die Tageszeit als primärer Zugang · alle Verteilungszahlen und Abschnittsmittel sind geschätzt, nur der Bestand von 114 Messungen ist belegt</p>
+  </div>
+
+  <div class="screens">
+
+    <!-- 1 — Das Muster -->
+    <div class="slot">
+      <div class="phone"><div class="scr">
+        <div class="status"><span>RS7 verbunden</span><span>114 Messungen</span></div>
+        <div class="pad">
+          <p class="titel">Dein Tagesmuster</p>
+          <p class="klein">Messungen nach Uhrzeit · 6 bis 24 Uhr; die Nachtstunden stehen auf Bildschirm 5</p>
+          
+          <div style="margin: 24px 0 16px;">
+            <svg width="100%" height="140" viewBox="0 0 280 140" role="img" aria-label="Tagesmuster">
+              <line x1="24" y1="20" x2="280" y2="20" stroke="var(--tafel-line)"/>
+              <line x1="24" y1="60" x2="280" y2="60" stroke="var(--tafel-line)"/>
+              <line x1="24" y1="100" x2="280" y2="100" stroke="var(--tafel-line)"/>
+              
+              <text x="0" y="24" font-size="10" fill="var(--muted)">140</text>
+              <text x="0" y="64" font-size="10" fill="var(--muted)">125</text>
+              <text x="0" y="104" font-size="10" fill="var(--muted)">110</text>
+              
+              <!-- Morgens -->
+              <circle cx="50" cy="30" r="3" fill="var(--z3)" style="opacity: 0.8;"/>
+              <circle cx="65" cy="45" r="3" fill="var(--z2)" style="opacity: 0.8;"/>
+              <circle cx="75" cy="35" r="3" fill="var(--z3)" style="opacity: 0.8;"/>
+              <circle cx="85" cy="50" r="3" fill="var(--z2)" style="opacity: 0.8;"/>
+              <circle cx="95" cy="40" r="3" fill="var(--z3)" style="opacity: 0.8;"/>
+              
+              <!-- Mittags / Nachmittags -->
+              <circle cx="130" cy="95" r="3" fill="var(--z1)" style="opacity: 0.8;"/>
+              <circle cx="145" cy="85" r="3" fill="var(--z1)" style="opacity: 0.8;"/>
+              <circle cx="160" cy="105" r="3" fill="var(--z1)" style="opacity: 0.8;"/>
+              <circle cx="175" cy="90" r="3" fill="var(--z1)" style="opacity: 0.8;"/>
+              
+              <!-- Abends -->
+              <circle cx="210" cy="65" r="3" fill="var(--z2)" style="opacity: 0.8;"/>
+              <circle cx="225" cy="55" r="3" fill="var(--z2)" style="opacity: 0.8;"/>
+              <circle cx="240" cy="70" r="3" fill="var(--z1)" style="opacity: 0.8;"/>
+              <circle cx="255" cy="60" r="3" fill="var(--z2)" style="opacity: 0.8;"/>
+              
+              <!-- Trendkurve angedeutet -->
+              <path d="M 40 45 C 90 35, 120 100, 150 95 C 190 90, 230 65, 270 60" fill="none" stroke="var(--ink)" stroke-width="2" stroke-dasharray="4 4" style="opacity: 0.3;"/>
+              
+              <text x="35" y="130" font-size="11" fill="var(--muted)">6</text>
+              <text x="95" y="130" font-size="11" fill="var(--muted)">12</text>
+              <text x="175" y="130" font-size="11" fill="var(--muted)">18</text>
+              <text x="255" y="130" font-size="11" fill="var(--muted)">24</text>
+            </svg>
+          </div>
+          
+          <div class="trenn"></div>
+          <div class="zeile"><span class="k">Morgens</span><span class="v" style="color:var(--z3)">132/88</span></div>
+          <div class="zeile"><span class="k">Mittags</span><span class="v">120/82</span></div>
+          <div class="zeile"><span class="k">Nachmittags</span><span class="v">118/79</span></div>
+          <div class="zeile"><span class="k">Abends</span><span class="v">124/84</span></div>
+
+          <div class="links" style="margin-top:14px;">
+            <span class="link">Gerät und Übertragung</span>
+          </div>
+        </div>
+        <div class="grow"></div>
+      </div></div>
+      <p class="cap"><b>Das Tagesmuster</b>Alle 114 Messungen auf einer 24-Stunden-Achse. Die Verteilung und das Muster werden sofort greifbar.</p>
+    </div>
+
+    <!-- 2 — Der Morgen -->
+    <div class="slot">
+      <div class="phone"><div class="scr">
+        <div class="status"><span>Zurück zum Muster</span><span>Morgens</span></div>
+        <div class="pad">
+          <p class="titel">Morgens</p>
+          <p class="klein">06:00 bis 10:00 Uhr · 41 geschätzte Messungen</p>
+          <p class="schnitt" style="color:var(--z3)">132<span class="s">/</span>88</p>
+          <p class="satz">Puls 79 · diastolisch über dem Heim-Zielwert von 85</p>
+          
+          <div class="trenn"></div>
+          <p class="klein" style="margin-bottom:8px">Zuletzt um diese Uhrzeit</p>
+          
+          <div class="zeile"><span class="k">05. Sep, 07:12</span><span class="v">134/91</span></div>
+          <div class="zeile"><span class="k">03. Sep, 08:04</span><span class="v">128/86</span></div>
+          <div class="zeile"><span class="k">01. Sep, 06:58</span><span class="v">133/89</span></div>
+          <div class="zeile"><span class="k">28. Aug, 07:41</span><span class="v">129/87</span></div>
+          <div class="zeile"><span class="k">26. Aug, 07:03</span><span class="v">136/92</span></div>
+          
+          <div class="links">
+            <span class="link">Alle 41 Morgenmessungen ansehen</span>
+          </div>
+        </div>
+        <div class="grow"></div>
+        <button class="neben">Diese Auswahl als Bericht</button>
+      </div></div>
+      <p class="cap"><b>Tagesabschnitt im Detail</b>Das ist die Antwort auf die Frage, wie man ohne Kalender an eine einzelne Messung kommt: über ihren Tagesabschnitt.</p>
+    </div>
+
+    <!-- 3 — Einzelmessung -->
+    <div class="slot">
+      <div class="phone"><div class="scr">
+        <div class="status"><span>Zurück</span><span>Messung 538</span></div>
+        <div class="pad">
+          <p class="schnitt" style="margin-top:22px;">134<span class="s">/</span>91</p>
+          <p class="satz">Puls 82, zugeordnet zum Morgen</p>
+          
+          <div class="trenn"></div>
+          <div class="zeile"><span class="k">Uhrzeit laut Gerät</span><span class="v">07:12</span></div>
+          <div class="zeile"><span class="k">Datum laut Gerät</span><span class="v">05.09.2026</span></div>
+          <div class="zeile"><span class="k">Importiert</span><span class="v">05.09., 07:15</span></div>
+          
+          <div class="hinweis" style="margin-top:16px;">
+            <b>Ging die Uhr falsch?</b>
+            <p>Falls diese Messung eigentlich abends stattfand (Gerät stand auf PM statt AM), kannst du sie ins Abend-Muster verschieben.</p>
+          </div>
+          <div class="links">
+             <span class="link">+12 Stunden (in den Abend)</span>
+          </div>
+
+          <div class="trenn" style="margin-top:24px;"></div>
+          <div class="zeile"><span class="k">Health Connect</span><span class="v" style="color:var(--warn)">nicht übertragen</span></div>
+        </div>
+        <div class="grow"></div>
+        <button class="haupt">Nach Health Connect übertragen</button>
+      </div></div>
+      <p class="cap"><b>Eine Einzelmessung</b>Zeigt die zeitliche Zuordnung und bietet einen Ausweg, falls die Geräteuhr um genau 12 Stunden versetzt war.</p>
+    </div>
+
+    <!-- 4 — Vergleich als Trend-Ersatz -->
+    <div class="slot">
+      <div class="phone"><div class="scr">
+        <div class="status"><span>Zurück zum Muster</span><span>Vergleich</span></div>
+        <div class="pad">
+          <p class="titel">Entwicklung</p>
+          <p class="klein">Hat sich dein Muster verschoben?</p>
+          
+          <div class="paar" style="margin-top:24px;">
+            <div><div class="k">Letzte 30 Tage</div><div class="v">124/85</div></div>
+            <div><div class="k">Zeit davor</div><div class="v">129/88</div></div>
+          </div>
+          
+          <div class="trenn"></div>
+          <p class="klein" style="margin-bottom:12px">Morgens (06:00 bis 10:00)</p>
+          <div class="zeile"><span class="k" style="color:var(--ink)">Letzte 30 Tage</span><span class="v">128/86</span></div>
+          <div class="zeile"><span class="k">Zeit davor</span><span class="v" style="color:var(--muted)">135/91</span></div>
+          
+          <p class="klein" style="margin:20px 0 12px">Abends (19:00 bis 23:00)</p>
+          <div class="zeile"><span class="k" style="color:var(--ink)">Letzte 30 Tage</span><span class="v">122/81</span></div>
+          <div class="zeile"><span class="k">Zeit davor</span><span class="v" style="color:var(--muted)">124/82</span></div>
+          
+          <div class="hinweis" style="margin-top:24px; background:var(--z1); color:#1E3A5F;">
+            <p>Dein Morgen-Blutdruck hat sich in den letzten 30 Tagen deutlich verbessert (-7 mmHg).</p>
+          </div>
+        </div>
+        <div class="grow"></div>
+      </div></div>
+      <p class="cap"><b>Ersatz für Monats-Trends</b>Statt einer Kurve vergleicht das Konzept das Tagesprofil der jüngeren Vergangenheit mit älteren Werten.</p>
+    </div>
+
+    <!-- 5 — Nacht / Falsche Uhr -->
+    <div class="slot">
+      <div class="phone"><div class="scr">
+        <div class="status"><span>Muster</span><span>Unplausibel</span></div>
+        <div class="pad">
+          <p class="titel">Nacht-Messungen</p>
+          <p class="klein">23:00 bis 06:00 Uhr</p>
+          
+          <div class="hinweis" style="margin-top:16px;">
+            <b>Stimmt die Geräteuhr?</b>
+            <p>Es gibt 8 Messungen mitten in der Nacht (geschätzt). Das passiert fast immer, wenn das Omron-Gerät auf PM statt AM steht (z.B. 03:00 statt 15:00 Uhr).</p>
+          </div>
+          
+          <div class="trenn"></div>
+          
+          <div class="zeile"><span class="k">02. Jun, 03:14</span><span class="v">121/82</span></div>
+          <div class="zeile"><span class="k">01. Jun, 02:45</span><span class="v">119/80</span></div>
+          <div class="zeile"><span class="k">28. Mai, 04:10</span><span class="v">125/84</span></div>
+          
+          <div class="links">
+             <span class="link">Alle 8 ansehen</span>
+          </div>
+        </div>
+        <div class="grow"></div>
+        <button class="neben">Diese 8 um 12h verschieben</button>
+      </div></div>
+      <p class="cap"><b>Umgang mit der falschen Uhr</b>Das Risiko des Konzepts offen angesprochen. Unplausible Zeiten werden gebündelt, um sie mit einem Klick zu korrigieren.</p>
+    </div>
+
+  </div>
+
+  <div class="sec-head">
+    <h2>Was das Konzept vom Datenmodell verlangt</h2>
+    <p>Über den bisherigen Arbeitsvorrat hinaus</p>
+  </div>
+
+  <table>
+    <thead><tr><th>Baustein</th><th>Was gebraucht wird</th></tr></thead>
+    <tbody>
+      <tr><td>Keine Migration — solange nicht korrigiert wird</td><td>Für das Muster selbst braucht es <strong>keine Datenmigration</strong>: Die 114 gespeicherten Messungen bleiben unangetastet, die Umgruppierung geschieht in der Abfrage (nach Stunde statt nach Datum). Sobald aber die Uhr-Korrektur unten dazukommt, ist ein neues Feld nötig. Beides zusammen geht nicht — das ist die Entscheidung, die dieses Konzept verlangt.</td></tr>
+      <tr><td>Tagesabschnitte</td><td>Eine Logik, die 24 Stunden in sinnvolle Blöcke unterteilt (z.B. Morgens 6–10, Mittags 10–15, Nachmittags 15–19, Abends 19–23, Nachts 23–6). Idealerweise leicht anpassbar, falls jemand im Schichtdienst arbeitet.</td></tr>
+      <tr><td>Zeit-Offset</td><td>Um mit falschen Geräteuhren umzugehen, muss eine Messung (oder eine Gruppe von Messungen) einen manuellen Stunden-Versatz (Offset) im Datenmodell speichern können, ohne den Original-Zeitstempel des Geräts zu zerstören.</td></tr>
+      <tr><td>Virtueller Trend</td><td>Da die chronologische Kurve fehlt, muss das Modell Durchschnittswerte über gleitende Zeitfenster (z.B. letzte 30 Tage vs. davor) isoliert für jeden Tagesabschnitt berechnen können.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="sec-head">
+    <h2>Was der Tausch kostet</h2>
+    <p>Ehrlich gegenüber der bisherigen Struktur</p>
+  </div>
+
+  <ul>
+    <li><strong>Trends über Monate sind unsichtbar.</strong> Ob der Blutdruck im Frühjahr generell höher war als im Herbst, lässt sich auf der 24-Stunden-Achse nicht ablesen. Die Chronologie existiert nicht mehr als visuelles Element.</li>
+    <li><strong>Der „Heute“-Bildschirm verschwindet komplett.</strong> Wer nach dem Messen einfach nur seine heutige Liste sehen will, findet sie nicht am Stück. Er muss in den jeweiligen Tagesabschnitt (z.B. „Morgens“) gehen.</li>
+    <li><strong>Es bricht mit gelernten Mustern.</strong> Eine App, die nicht mit „Das war deine letzte Messung“ beginnt, erfordert ein Umdenken beim Nutzer. Das Konzept der übereinandergelegten Zeiten ist abstrakt, bis man seinen medizinischen Nutzen verstanden hat.</li>
+  </ul>
+
+  <div class="sec-head">
+    <h2>Wie es mit der falschen Geräteuhr umgeht</h2>
+    <p>Das Kernrisiko dieses Konzepts</p>
+  </div>
+
+  <p class="note">Jedes Konzept, das auf Kalenderzeit baut, erbt den Fehler einer falsch gehenden Geräteuhr. Beim Tagesprofil ist dieses Risiko maximal: Wenn die Uhrzeit auf dem Omron RS7 falsch eingestellt ist, landet die Morgenmessung plötzlich im Nachmittags-Muster und zerstört die gesamte Aussagekraft der App.</p>
+
+  <p class="note" style="margin-top:14px;"><strong>Das Konzept geht damit in zwei Stufen um:</strong> Erstens durch eine Plausibilitätsprüfung. Wenn eine Häufung von Messungen laut Gerät mitten in der Nacht stattfindet (typischerweise zwischen 2 und 4 Uhr), bündelt die App diese als „Unplausibel“ und schlägt vor, sie um exakt 12 Stunden zu verschieben — den klassischen AM/PM-Fehler (siehe Bildschirm 5). Wo sie danach landen, hängt von der Uhrzeit ab: 02:45 wird zu 14:45 und damit „Mittags“, 03:14 zu 15:14 und damit „Nachmittags“.</p>
+
+  <p class="note" style="margin-top:14px;">Zweitens überlässt es die Korrektur dem Nutzer bei jeder Einzelmessung. Wenn das Muster offensichtlich nicht stimmt, kann der Nutzer den Zeitstempel für die Anzeige mit einem Klick um einen Offset verschieben, ohne den Originalwert des Geräts zu überschreiben. Dennoch bleibt es ehrlich: Eine völlig verstellte Uhr (z.B. zufällig 7 Stunden verschoben), deren Fehler nicht sofort auffällt, ist für dieses Konzept fatal. Es steht und fällt mit einer zumindest konstant falsch gehenden Uhrzeit.</p>
+
+  <p class="note" style="margin-top:14px;"><strong>Offen bleibt der Export.</strong> Wenn eine Messung einen Offset trägt, muss festgelegt werden, welchen Zeitpunkt Health Connect bekommt — den rohen des Geräts oder den korrigierten. Beides ist vertretbar, aber die Entscheidung fällt einmal und gilt dann für alle: Ein nachträglicher Wechsel erzeugt Dubletten, weil die Client-Kennung an den Zeitpunkt gebunden ist.</p>
+
+</div>
+</body>
+</html>
