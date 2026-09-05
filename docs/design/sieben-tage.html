@@ -130,7 +130,7 @@
 
   <p class="lede">Deshalb ist die Woche hier kein Zeitfilter, sondern das zentrale Objekt der App. Ein Bildschirm zeigt die laufende Woche als Raster aus vierzehn Feldern. Man sieht in einem Blick, was gemessen wurde, was fehlt und wo die Werte liegen. Der Rest der App ist die Liste früherer Wochen und der Weg zu einer einzelnen Messung.</p>
 
-  <p class="lede">Es gibt keine Registerleiste mehr, keinen „Heute“-Bildschirm und keine freie Zeitraumwahl. Das ist ein echter Tausch, keine Verschönerung — was er kostet, steht weiter unten.</p>
+  <p class="lede">Es gibt keine Registerleiste mehr und keinen eigenen „Heute“-Bildschirm. Zeiträume bleiben vollständig auswertbar, werden aber in der Sprache des Konzepts gewählt: als zusammenhängende Folge ganzer Messwochen mit gemeinsamem Mittel und Trend.</p>
 
   <div class="legend" style="margin-top:26px;">
     <span><i class="sw" style="background:var(--z1)"></i>im Zielbereich, unter 135/85</span>
@@ -140,8 +140,8 @@
   </div>
 
   <div class="sec-head">
-    <h2>Sechs Bildschirme</h2>
-    <p>Farbe gehört den Daten, nie der Bedienung</p>
+    <h2>Acht Bildschirme</h2>
+    <p>Bestand exakt; Wochenverteilungen und übrige Beispielwerte geschätzt</p>
   </div>
 
   <div class="screens">
@@ -174,7 +174,7 @@
           </div>
 
           <div class="trenn"></div>
-          <div class="zeile"><span class="k">Zuletzt, gestern um 23:57</span><span class="v">128/87</span></div>
+          <div class="zeile"><span class="k">Zuletzt, gestern um 23:57</span><span class="v">128/87 · Puls 82</span></div>
 
           <div class="links">
             <span class="link">Frühere Wochen</span>
@@ -300,10 +300,10 @@
         </div>
 
         <div class="grow"></div>
-        <button class="neben">Auf den 5. September datieren</button>
+        <button class="neben">So stellst du die Uhr am Gerät</button>
         <button class="haupt">Nach Health Connect übertragen</button>
       </div></div>
-      <p class="cap"><b>Eine Messung</b>Eine falsch datierte Messung fällt aus jeder Woche heraus. Der Bildschirm bietet den Ausweg an</p>
+      <p class="cap"><b>Eine Messung</b>Eine falsch datierte Messung fällt aus jeder Woche heraus. Sphygma korrigiert das Datum nicht — es zeigt, woran man die falsche Uhr erkennt, und wie man sie am Gerät stellt</p>
     </div>
 
     <!-- 5 — Gerät -->
@@ -326,12 +326,13 @@
             <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
             <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
           </div>
-          <div class="zeile"><span class="k">14 von 114 übertragen</span></div>
+          <div class="zeile"><span class="k">Health Connect</span><span class="v">14 übertragen · 100 offen</span></div>
 
           <div class="links">
-            <span class="link">Übertragene aus Sphygma entfernen</span>
+            <span class="link">Aus Health Connect zurücknehmen</span>
             <span class="link">Gerät neu koppeln</span>
           </div>
+          <div class="hinweis"><b>Grenzen des Omron RS7</b><p>Sphygma kann Messungen auf dem Gerät nicht löschen und die Geräteuhr nicht per Bluetooth stellen.</p></div>
         </div>
         <div class="grow"></div>
         <button class="neben">Jetzt abgleichen</button>
@@ -370,6 +371,54 @@
       <p class="cap"><b>Lange Pause</b>Kein leeres Diagramm, sondern der Grund und der Weg zurück</p>
     </div>
 
+    <!-- 7 — Wochen auswerten -->
+    <div class="slot">
+      <div class="phone"><div class="scr">
+        <div class="status"><span>Auswertung</span><span>Verteilung geschätzt</span></div>
+        <div class="pad">
+          <p class="titel">Wochen auswählen</p>
+          <p class="klein">Nur zusammenhängende Messwochen</p>
+          <div class="trenn"></div>
+          <div class="zeile"><span class="k">Erste Woche</span><span class="v">11.–17. August</span></div>
+          <div class="zeile"><span class="k">Letzte Woche</span><span class="v">25.–31. August</span></div>
+          <p class="schnitt">128<span class="s">/</span>87</p>
+          <p class="satz">Gemeinsames Mittel aus drei Wochen · geschätzt</p>
+          <div class="trenn"></div>
+          <div class="zeile"><span class="k">Systolischer Trend</span><span class="v">−4 mmHg · geschätzt</span></div>
+          <div class="zeile"><span class="k">Diastolischer Trend</span><span class="v">−2 mmHg · geschätzt</span></div>
+          <div class="zeile"><span class="k">Abdeckung</span><span class="v">39 von 42 · geschätzt</span></div>
+          <p class="satz" style="margin-top:12px;">Die Wochenmittel und der daraus berechnete Trend werden gemeinsam ausgewiesen; Einzelmessungen bleiben darunter erreichbar.</p>
+        </div>
+        <div class="grow"></div>
+        <button class="neben">Messungen dieses Bereichs</button>
+        <button class="haupt">Praxisbericht erstellen</button>
+      </div></div>
+      <p class="cap"><b>Zusammenhängende Wochen auswerten</b>F2 bleibt vollständig, ohne das Wochenmodell durch beliebige Tagesgrenzen zu verlassen</p>
+    </div>
+
+    <!-- 8 — Wochen-Einstellungen -->
+    <div class="slot">
+      <div class="phone"><div class="scr">
+        <div class="status"><span>Zurück</span><span>Einstellungen</span></div>
+        <div class="pad">
+          <p class="titel">Wochen-Einstellungen</p>
+          <p class="klein">Darstellung und Organisation der App</p>
+          <div class="trenn"></div>
+          <div class="zeile"><span class="k">Gestaltung</span><span class="v">Klar</span></div>
+          <p class="satz">Ändert Typografie, Abstände und Tonstufen, nicht die Messdaten.</p>
+          <div class="trenn"></div>
+          <div class="zeile"><span class="k">Konzept</span><span class="v">Sieben Tage</span></div>
+          <p class="satz">Andere Konzepte ordnen denselben Bestand neu; keine Messung wird kopiert oder entfernt.</p>
+          <div class="trenn"></div>
+          <div class="zeile"><span class="k">Morgen endet um</span><span class="v">12:00</span></div>
+          <div class="links"><span class="link">Gestaltung wählen</span><span class="link">Konzept wählen</span></div>
+        </div>
+        <div class="grow"></div>
+        <button class="haupt">Einstellungen übernehmen</button>
+      </div></div>
+      <p class="cap"><b>Wochen-Einstellungen</b>F14 steht unmittelbar neben F15; beide verändern die Sicht, nie den gemeinsamen Datenbestand</p>
+    </div>
+
   </div>
 
   <div class="sec-head">
@@ -396,6 +445,32 @@
   </table>
 
   <div class="sec-head">
+    <h2>Wo jede Funktion sitzt</h2>
+    <p>Vollständige App, organisiert über Messwochen</p>
+  </div>
+
+  <table>
+    <thead><tr><th>Nummer</th><th>Funktion</th><th>Ort in diesem Konzept</th></tr></thead>
+    <tbody>
+      <tr><td>F1</td><td>Messwerte ansehen</td><td>„Diese Woche“, „Frühere Wochen“ und die Listen innerhalb einer Woche.</td></tr>
+      <tr><td>F2</td><td>Auswertung über einen Zeitraum</td><td>„Wochen auswählen“: erste und letzte zusammenhängende Messwoche, gemeinsames Mittel und Trend.</td></tr>
+      <tr><td>F3</td><td>Eine einzelne Messung im Detail</td><td>„Eine Messung“, erreichbar aus einem Wochenfeld oder der Messungsliste.</td></tr>
+      <tr><td>F4</td><td>Einordnung des Werts</td><td>Tonstufe im Wochenraster und ausgeschriebene Einordnung in der Einzelmessung.</td></tr>
+      <tr><td>F5</td><td>Bericht für die Praxis</td><td>Aus einer vollständigen Woche oder einem gewählten Bereich zusammenhängender Wochen.</td></tr>
+      <tr><td>F6</td><td>Gerät koppeln</td><td>„Gerät und Übertragung“ über „Gerät neu koppeln“ und die Wahl des Speicherplatzes.</td></tr>
+      <tr><td>F7</td><td>Abgleich, selbst ausgelöst</td><td>„Jetzt abgleichen“ in „Gerät und Übertragung“.</td></tr>
+      <tr><td>F8</td><td>Abgleich, automatisch — und sein Zustand</td><td>Statuszeile der Wochenansicht sowie letzter Abgleich und Bereitschaft im Gerätebildschirm.</td></tr>
+      <tr><td>F9</td><td>Health Connect, alle</td><td>„Alle übertragen“ und Rücknahme der übertragenen Messungen im Gerätebildschirm.</td></tr>
+      <tr><td>F10</td><td>Health Connect, einzeln</td><td>Übertragungsstatus und Aktion in „Eine Messung“.</td></tr>
+      <tr><td>F11</td><td>Hinweis: Geräteuhr geht falsch</td><td>Warnhinweis an der betroffenen Einzelmessung; das Omron RS7 lässt seine Uhr nicht per Bluetooth stellen.</td></tr>
+      <tr><td>F12</td><td>Hinweis: nicht gekoppelt</td><td>Statuszeile der Wochenansicht und Gerätebildschirm mit direktem Weg zum Koppeln.</td></tr>
+      <tr><td>F13</td><td>Meldungen des Steuerungsteils</td><td>Statuszeilen und Hinweise der Wochen-, Einzelmessungs- und Geräteansicht.</td></tr>
+      <tr><td>F14</td><td>Gestaltung wählen</td><td>„Wochen-Einstellungen“, direkt neben der Konzeptwahl.</td></tr>
+      <tr><td>F15</td><td>Konzept wählen</td><td>„Wochen-Einstellungen“; ordnet dieselben 114 Messungen neu.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="sec-head">
     <h2>Was das Konzept vom Datenmodell verlangt</h2>
     <p>Über den bisherigen Arbeitsvorrat hinaus</p>
   </div>
@@ -418,7 +493,7 @@
   </div>
 
   <ul>
-    <li><strong>Freie Zeiträume fallen weg.</strong> Wer den Jahresverlauf als Kurve sehen will, findet ihn hier nicht. Die Wochenliste zeigt die Richtung, aber gröber. Das ließe sich nachrüsten, gehört aber nicht in den Startbildschirm.</li>
+    <li><strong>Zeiträume folgen Wochengrenzen.</strong> Jede zusammenhängende Folge von Messwochen lässt sich mit gemeinsamem Mittel und Trend auswerten. Einzelne Tage als freie Grenzen gibt es nicht, weil sie die Vergleichseinheit zerschneiden würden.</li>
     <li><strong>Wer unregelmäßig misst, sieht überall Lücken.</strong> Der Entwurf hat eine Meinung: Er belohnt das protokollgerechte Messen und macht das Gegenteil sichtbar. Das kann als Vorwurf ankommen. Deshalb ist die Sprache in den leeren Zuständen sachlich und nennt immer den nächsten Schritt.</li>
     <li><strong>Der „Heute“-Blick verschwindet.</strong> Die eben gemessene Zahl steht nur noch klein unter dem Wochenraster. Das ist gewollt, kostet aber die kleine Genugtuung nach dem Messen.</li>
     <li><strong>Mehr Rechnung im Kern.</strong> Wochenbildung, Tageszeit, Zusammenfassung von Doppelmessungen — das ist deutlich mehr Logik als eine Liste mit Filtern.</li>

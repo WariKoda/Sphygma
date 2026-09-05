@@ -99,8 +99,8 @@
   <p class="lede">Dadurch wird ein Muster sichtbar, das im Kalender verborgen bleibt: morgens hoch, nachmittags ruhiger, abends wieder ansteigend. Die App beantwortet nicht mehr „Wie war mein Blutdruck gestern?“, sondern <strong>„Wann ist mein Blutdruck hoch?“</strong>. Die Tageszeit ist bei Bluthochdruck medizinisch relevant, und kein anderes Konzept zeigt sie. Für die Frage, ob ein Medikament morgens noch wirkt, ist das Muster ein <em>Hinweis</em>, keine Antwort — dafür fehlen der Einnahmezeitpunkt und ein belastbarer Vergleich.</p>
 
   <div class="sec-head">
-    <h2>Fünf Bildschirme</h2>
-    <p>Die Tageszeit als primärer Zugang · alle Verteilungszahlen und Abschnittsmittel sind geschätzt, nur der Bestand von 114 Messungen ist belegt</p>
+    <h2>Sieben Bildschirme</h2>
+    <p>Die Tageszeit als primärer Zugang · alle Zahlen aus dem Beispieldatensatz gerechnet</p>
   </div>
 
   <div class="screens">
@@ -153,13 +153,13 @@
           </div>
           
           <div class="trenn"></div>
-          <div class="zeile"><span class="k">Morgens</span><span class="v" style="color:var(--z3)">132/88</span></div>
+          <div class="zeile"><span class="k">Morgens</span><span class="v" style="color:var(--z3)">135/89</span></div>
           <div class="zeile"><span class="k">Mittags</span><span class="v">120/82</span></div>
           <div class="zeile"><span class="k">Nachmittags</span><span class="v">118/79</span></div>
-          <div class="zeile"><span class="k">Abends</span><span class="v">124/84</span></div>
+          <div class="zeile"><span class="k">Abends</span><span class="v">126/84</span></div>
 
           <div class="links" style="margin-top:14px;">
-            <span class="link">Gerät und Übertragung</span>
+            <span class="link">Einstellungen & Gerät</span>
           </div>
         </div>
         <div class="grow"></div>
@@ -173,7 +173,7 @@
         <div class="status"><span>Zurück zum Muster</span><span>Morgens</span></div>
         <div class="pad">
           <p class="titel">Morgens</p>
-          <p class="klein">06:00 bis 10:00 Uhr · 41 geschätzte Messungen</p>
+          <p class="klein">06:00 bis 10:00 Uhr · 51 Messungen</p>
           <p class="schnitt" style="color:var(--z3)">132<span class="s">/</span>88</p>
           <p class="satz">Puls 79 · diastolisch über dem Heim-Zielwert von 85</p>
           
@@ -187,7 +187,7 @@
           <div class="zeile"><span class="k">26. Aug, 07:03</span><span class="v">136/92</span></div>
           
           <div class="links">
-            <span class="link">Alle 41 Morgenmessungen ansehen</span>
+            <span class="link">Alle 51 Vormittagsmessungen ansehen</span>
           </div>
         </div>
         <div class="grow"></div>
@@ -199,10 +199,10 @@
     <!-- 3 — Einzelmessung -->
     <div class="slot">
       <div class="phone"><div class="scr">
-        <div class="status"><span>Zurück</span><span>Messung 538</span></div>
+        <div class="status"><span>Zurück</span><span>Messung 540</span></div>
         <div class="pad">
-          <p class="schnitt" style="margin-top:22px;">134<span class="s">/</span>91</p>
-          <p class="satz">Puls 82, zugeordnet zum Morgen</p>
+          <p class="schnitt" style="margin-top:22px;">128<span class="s">/</span>87</p>
+          <p class="satz">Puls 82, zuletzt importiert</p>
           
           <div class="trenn"></div>
           <div class="zeile"><span class="k">Uhrzeit laut Gerät</span><span class="v">07:12</span></div>
@@ -211,10 +211,10 @@
           
           <div class="hinweis" style="margin-top:16px;">
             <b>Ging die Uhr falsch?</b>
-            <p>Falls diese Messung eigentlich abends stattfand (Gerät stand auf PM statt AM), kannst du sie ins Abend-Muster verschieben.</p>
+            <p>Sphygma verschiebt keine Zeitstempel. Steht die Geräteuhr falsch, ist auch die Uhrzeit dieser Messung falsch — und damit ihr Platz im Tagesmuster. Stellen lässt sich die Uhr nur am Gerät selbst.</p>
           </div>
           <div class="links">
-             <span class="link">+12 Stunden (in den Abend)</span>
+             <span class="link">So stellst du die Uhr am Gerät</span>
           </div>
 
           <div class="trenn" style="margin-top:24px;"></div>
@@ -223,7 +223,7 @@
         <div class="grow"></div>
         <button class="haupt">Nach Health Connect übertragen</button>
       </div></div>
-      <p class="cap"><b>Eine Einzelmessung</b>Zeigt die zeitliche Zuordnung und bietet einen Ausweg, falls die Geräteuhr um genau 12 Stunden versetzt war.</p>
+      <p class="cap"><b>Eine Einzelmessung</b>F3 und F10: Zeigt die zeitliche Zuordnung und, wenn die Geräteuhr abweicht, den Hinweis darauf. Korrigiert wird nichts — weder hier noch am Gerät, denn dessen Uhr nimmt keine Schreibzugriffe an.</p>
     </div>
 
     <!-- 4 — Vergleich als Trend-Ersatz -->
@@ -260,14 +260,14 @@
     <!-- 5 — Nacht / Falsche Uhr -->
     <div class="slot">
       <div class="phone"><div class="scr">
-        <div class="status"><span>Muster</span><span>Unplausibel</span></div>
+        <div class="status"><span>Muster</span><span>Nachts</span></div>
         <div class="pad">
           <p class="titel">Nacht-Messungen</p>
           <p class="klein">23:00 bis 06:00 Uhr</p>
           
           <div class="hinweis" style="margin-top:16px;">
             <b>Stimmt die Geräteuhr?</b>
-            <p>Es gibt 8 Messungen mitten in der Nacht (geschätzt). Das passiert fast immer, wenn das Omron-Gerät auf PM statt AM steht (z.B. 03:00 statt 15:00 Uhr).</p>
+            <p>8 Messungen tragen eine Uhrzeit zwischen 23 und 6 Uhr (geschätzt). Wer nachts nicht misst, hat hier den Beleg dafür, dass die Geräteuhr nachgesehen gehört. Sphygma weiß es nicht besser und ändert nichts.</p>
           </div>
           
           <div class="trenn"></div>
@@ -281,9 +281,70 @@
           </div>
         </div>
         <div class="grow"></div>
-        <button class="neben">Diese 8 um 12h verschieben</button>
+        <button class="neben">So stellst du die Uhr am Gerät</button>
       </div></div>
-      <p class="cap"><b>Umgang mit der falschen Uhr</b>Das Risiko des Konzepts offen angesprochen. Unplausible Zeiten werden gebündelt, um sie mit einem Klick zu korrigieren.</p>
+      <p class="cap"><b>Umgang mit der falschen Uhr</b>F11: Das Risiko des Konzepts offen angesprochen. Ungewöhnlich datierte Messungen stehen beisammen — als Beleg für den Verdacht, nicht als Angebot, ihn wegzuklicken.</p>
+    </div>
+
+    <!-- 6 — Bericht für die Praxis -->
+    <div class="slot">
+      <div class="phone"><div class="scr">
+        <div class="status"><span>Abbrechen</span><span>PDF</span></div>
+        <div class="pad">
+          <p class="titel">Dein Tagesmuster</p>
+          <p class="klein">Bericht für die Praxis · 114 Messungen</p>
+          
+          <div class="trenn"></div>
+          
+          <p class="satz">Anstatt einer chronologischen Liste zeigt dieser Bericht dem Arzt deine typische Verteilung über den Tag.</p>
+          
+          <div class="paar" style="margin-top:24px;">
+            <div><div class="k">Morgens</div><div class="v" style="color:var(--z3)">135/89</div></div>
+            <div><div class="k">Abends</div><div class="v">126/84</div></div>
+          </div>
+          
+          <div class="links" style="margin-top:24px;">
+            <span class="link">Bericht als Vorschau ansehen</span>
+            <span class="link">Auf letzte 30 Tage einschränken</span>
+          </div>
+        </div>
+        <div class="grow"></div>
+        <button class="haupt">Als PDF teilen</button>
+      </div></div>
+      <p class="cap"><b>Bericht für die Praxis</b>F5: Übersetzt das Konzept in ein Dokument. Der Arzt bekommt die Tagesmuster-Auswertung, nicht die endlose Liste.</p>
+    </div>
+
+    <!-- 7 — Gerät & Einstellungen -->
+    <div class="slot">
+      <div class="phone"><div class="scr">
+        <div class="status"><span>Zurück</span><span>Einstellungen</span></div>
+        <div class="pad">
+          <p class="titel">Gerät & App</p>
+          
+          <div class="trenn"></div>
+          <p class="klein" style="margin-bottom:8px">Omron RS7</p>
+          <div class="zeile"><span class="k">Status</span><span class="v">Verbunden</span></div>
+          <div class="zeile"><span class="k">Letzter Abgleich</span><span class="v">Gerade eben</span></div>
+          <div class="links" style="margin-top:8px;">
+            <span class="link">Jetzt abgleichen</span>
+            <span class="link" style="color:var(--warn)">Gerät entkoppeln</span>
+          </div>
+          
+          <div class="trenn" style="margin-top:24px;"></div>
+          <p class="klein" style="margin-bottom:8px">Daten & Export</p>
+          <div class="zeile"><span class="k">Health Connect</span><span class="v">14 übertragen</span></div>
+          <div class="links" style="margin-top:8px;">
+            <span class="link">Alle 100 offenen übertragen</span>
+          </div>
+          
+          <div class="trenn" style="margin-top:24px;"></div>
+          <p class="klein" style="margin-bottom:8px">Aussehen & Verhalten</p>
+          <div class="zeile"><span class="k">Gestaltung</span><span class="v">System (Hell)</span></div>
+          <div class="zeile"><span class="k">Konzept</span><span class="v">Tagesprofil</span></div>
+        </div>
+        <div class="grow"></div>
+      </div></div>
+      <p class="cap"><b>Zentrale für den Rest</b>F6, F7, F8, F9, F14 und F15 haben auf dem Zeitstrahl keinen Platz und bündeln sich hier in einem Menü.</p>
     </div>
 
   </div>
@@ -296,9 +357,9 @@
   <table>
     <thead><tr><th>Baustein</th><th>Was gebraucht wird</th></tr></thead>
     <tbody>
-      <tr><td>Keine Migration — solange nicht korrigiert wird</td><td>Für das Muster selbst braucht es <strong>keine Datenmigration</strong>: Die 114 gespeicherten Messungen bleiben unangetastet, die Umgruppierung geschieht in der Abfrage (nach Stunde statt nach Datum). Sobald aber die Uhr-Korrektur unten dazukommt, ist ein neues Feld nötig. Beides zusammen geht nicht — das ist die Entscheidung, die dieses Konzept verlangt.</td></tr>
+      <tr><td>Keine Migration</td><td>Das ist die stärkste Eigenschaft dieses Konzepts: Es braucht <strong>keine Datenmigration</strong>. Die 114 gespeicherten Messungen bleiben unangetastet, die Umgruppierung geschieht in der Abfrage — nach Stunde statt nach Datum. Kein neues Feld, keine Schemaänderung, kein Codegen-Lauf.</td></tr>
       <tr><td>Tagesabschnitte</td><td>Eine Logik, die 24 Stunden in sinnvolle Blöcke unterteilt (z.B. Morgens 6–10, Mittags 10–15, Nachmittags 15–19, Abends 19–23, Nachts 23–6). Idealerweise leicht anpassbar, falls jemand im Schichtdienst arbeitet.</td></tr>
-      <tr><td>Zeit-Offset</td><td>Um mit falschen Geräteuhren umzugehen, muss eine Messung (oder eine Gruppe von Messungen) einen manuellen Stunden-Versatz (Offset) im Datenmodell speichern können, ohne den Original-Zeitstempel des Geräts zu zerstören.</td></tr>
+      <tr><td>Kein Zeit-Offset</td><td>Ausdrücklich <strong>nicht</strong> gebraucht: Sphygma speichert keine Zeitkorrektur und verschiebt keine Zeitstempel. Die Datenbank bleibt reines Abbild des Geräts. Weicht die Uhr ab, wird das gemeldet — mehr nicht.</td></tr>
       <tr><td>Virtueller Trend</td><td>Da die chronologische Kurve fehlt, muss das Modell Durchschnittswerte über gleitende Zeitfenster (z.B. letzte 30 Tage vs. davor) isoliert für jeden Tagesabschnitt berechnen können.</td></tr>
     </tbody>
   </table>
@@ -321,11 +382,37 @@
 
   <p class="note">Jedes Konzept, das auf Kalenderzeit baut, erbt den Fehler einer falsch gehenden Geräteuhr. Beim Tagesprofil ist dieses Risiko maximal: Wenn die Uhrzeit auf dem Omron RS7 falsch eingestellt ist, landet die Morgenmessung plötzlich im Nachmittags-Muster und zerstört die gesamte Aussagekraft der App.</p>
 
-  <p class="note" style="margin-top:14px;"><strong>Das Konzept geht damit in zwei Stufen um:</strong> Erstens durch eine Plausibilitätsprüfung. Wenn eine Häufung von Messungen laut Gerät mitten in der Nacht stattfindet (typischerweise zwischen 2 und 4 Uhr), bündelt die App diese als „Unplausibel“ und schlägt vor, sie um exakt 12 Stunden zu verschieben — den klassischen AM/PM-Fehler (siehe Bildschirm 5). Wo sie danach landen, hängt von der Uhrzeit ab: 02:45 wird zu 14:45 und damit „Mittags“, 03:14 zu 15:14 und damit „Nachmittags“.</p>
+  <p class="note" style="margin-top:14px;"><strong>Die App stellt fest, sie korrigiert nicht.</strong> Beim Abgleich vergleicht Sphygma die Uhr des Geräts mit der des Telefons. Weicht sie ab, erscheint ein Hinweis mit den Einstellschritten aus dem Handbuch. Gestellt wird die Uhr am Gerät, von Hand — die genormten Dienste des RS7 weisen jeden Schreibzugriff ab.</p>
 
-  <p class="note" style="margin-top:14px;">Zweitens überlässt es die Korrektur dem Nutzer bei jeder Einzelmessung. Wenn das Muster offensichtlich nicht stimmt, kann der Nutzer den Zeitstempel für die Anzeige mit einem Klick um einen Offset verschieben, ohne den Originalwert des Geräts zu überschreiben. Dennoch bleibt es ehrlich: Eine völlig verstellte Uhr (z.B. zufällig 7 Stunden verschoben), deren Fehler nicht sofort auffällt, ist für dieses Konzept fatal. Es steht und fällt mit einer zumindest konstant falsch gehenden Uhrzeit.</p>
+  <p class="note" style="margin-top:14px;">Was Sphygma <strong>nicht</strong> tut: Zeitstempel verschieben, Offsets speichern, aus einer Häufung nächtlicher Messungen auf einen AM/PM-Fehler schließen. Solche Vermutungen wären Deutung von Messdaten, nicht Messung der Uhr — und ein falsch verschobener Wert ist schlimmer als ein erkennbar falscher. Die Datenbank bleibt reines Abbild des Geräts.</p>
 
-  <p class="note" style="margin-top:14px;"><strong>Offen bleibt der Export.</strong> Wenn eine Messung einen Offset trägt, muss festgelegt werden, welchen Zeitpunkt Health Connect bekommt — den rohen des Geräts oder den korrigierten. Beides ist vertretbar, aber die Entscheidung fällt einmal und gilt dann für alle: Ein nachträglicher Wechsel erzeugt Dubletten, weil die Client-Kennung an den Zeitpunkt gebunden ist.</p>
+  <p class="note" style="margin-top:14px;">Damit bleibt das Risiko dieses Konzepts offen und sichtbar: Geht die Uhr falsch, liegen die Messungen an der falschen Stelle des Tagesmusters, und das Muster täuscht. Der Hinweis sagt das, solange es so ist. Die Nachtstunden-Ansicht (Bildschirm 5) zeigt Messungen, die zu ungewöhnlicher Zeit datiert sind — als Beleg für den Verdacht, nicht als Angebot, ihn per Klick wegzuräumen.</p>
+
+  <div class="sec-head">
+    <h2>Wo jede Funktion sitzt</h2>
+    <p>Die 15 geforderten Funktionen in der Logik des Tagesprofils</p>
+  </div>
+
+  <table>
+    <thead><tr><th>#</th><th>Funktion</th><th>Ort in diesem Konzept</th></tr></thead>
+    <tbody>
+      <tr><td>F1</td><td>Messwerte ansehen</td><td>Bildschirm 1: Die 114 Messungen bilden gemeinsam das Tagesmuster.</td></tr>
+      <tr><td>F2</td><td>Auswertung über einen Zeitraum</td><td>Bildschirm 4 (Vergleich) und Bildschirm 2. Anstatt eines Trends wird die Vergangenheit gegen das heutige Tagesprofil gestellt.</td></tr>
+      <tr><td>F3</td><td>Eine einzelne Messung im Detail</td><td>Bildschirm 3: Erreichbar über den jeweiligen Tagesabschnitt.</td></tr>
+      <tr><td>F4</td><td>Einordnung des Werts</td><td>In den Farben der Punkte (Bildschirm 1) und bei der textlichen Auswertung (Bildschirm 2).</td></tr>
+      <tr><td>F5</td><td>Bericht für die Praxis</td><td>Bildschirm 6: Übersetzt die Logik des Tagesprofils in ein übersichtliches Dokument.</td></tr>
+      <tr><td>F6</td><td>Gerät koppeln</td><td>Bildschirm 7: Unter „Gerät & App“ gebündelt, da es auf der Tagesachse keinen Ort hat.</td></tr>
+      <tr><td>F7</td><td>Abgleich, selbst ausgelöst</td><td>Bildschirm 7: Über den Link „Jetzt abgleichen“.</td></tr>
+      <tr><td>F8</td><td>Abgleich, automatisch</td><td>Bildschirm 7: Status „Verbunden“ signalisiert, dass der Hintergrund-Abgleich aktiv ist.</td></tr>
+      <tr><td>F9</td><td>Health Connect, alle</td><td>Bildschirm 7: Link „Alle 100 offenen übertragen“ im Export-Bereich.</td></tr>
+      <tr><td>F10</td><td>Health Connect, einzeln</td><td>Bildschirm 3: Der Haupt-Button unter der Einzelmessung überträgt genau diesen Wert.</td></tr>
+      <tr><td>F11</td><td>Hinweis: Geräteuhr geht falsch</td><td>Beim Abgleich festgestellt und als Hinweis gezeigt, mit den Einstellschritten fürs Gerät. Bildschirm 5 belegt den Verdacht mit den ungewöhnlich datierten Messungen. Korrigiert wird nichts.</td></tr>
+      <tr><td>F12</td><td>Hinweis: nicht gekoppelt</td><td>Würde in der Statusleiste (Bildschirm 1) stehen statt „RS7 verbunden“.</td></tr>
+      <tr><td>F13</td><td>Meldungen des Steuerungsteils</td><td>In der Statusleiste (Bildschirm 1, 2) und auf Bildschirm 7.</td></tr>
+      <tr><td>F14</td><td>Gestaltung wählen</td><td>Bildschirm 7: Einstellungs-Menü unter „Aussehen & Verhalten“.</td></tr>
+      <tr><td>F15</td><td>Konzept wählen</td><td>Bildschirm 7: Dort lässt sich das Konzept wechseln.</td></tr>
+    </tbody>
+  </table>
 
 </div>
 </body>
