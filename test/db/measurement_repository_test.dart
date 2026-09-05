@@ -64,6 +64,52 @@ void main() {
     });
   });
 
+  group('Sortierung', () {
+    // Angezeigt wird nach Datum, wie am Geraet abgelesen. Die
+    // Messungsnummer bleibt fuer Dedup und Uhr-Pruefung zustaendig.
+    test('allForSlot sortiert nach Datum, nicht nach Messungsnummer',
+        () async {
+      await repository.importAll([
+        // Hoechste Nummer, aber aeltestes Datum: falsch gestellte Uhr.
+        _slotRecord(
+          slot: 1,
+          sequence: 300,
+          measuredAt: DateTime(2023, 4, 18, 11, 2),
+        ),
+        _slotRecord(
+          slot: 1,
+          sequence: 100,
+          measuredAt: DateTime(2026, 9, 1, 8, 0),
+        ),
+        _slotRecord(
+          slot: 1,
+          sequence: 200,
+          measuredAt: DateTime(2026, 9, 3, 20, 0),
+        ),
+      ]);
+
+      final all = await repository.allForSlot(1);
+
+      expect(
+        all.map((m) => m.deviceSequence).toList(),
+        [300, 100, 200],
+        reason: 'aelteste zuerst nach Datum: 2023, dann 01.09., dann 03.09.',
+      );
+    });
+
+    test('bei gleichem Datum entscheidet die Messungsnummer', () async {
+      final same = DateTime(2026, 9, 3, 20, 0);
+      await repository.importAll([
+        _slotRecord(slot: 1, sequence: 202, measuredAt: same),
+        _slotRecord(slot: 1, sequence: 201, measuredAt: same),
+      ]);
+
+      final all = await repository.allForSlot(1);
+
+      expect(all.map((m) => m.deviceSequence).toList(), [201, 202]);
+    });
+  });
+
   group('importAll', () {
     test('legt neue Records an und meldet, wie viele neu waren', () async {
       final inserted = await repository.importAll([

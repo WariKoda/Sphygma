@@ -98,6 +98,46 @@ void main() {
     expect(controller.latest, isNull);
   });
 
+  group('clockLooksWrong', () {
+    // Die Anzeige sortiert nach Datum, diese Pruefung nach Messungsnummer.
+    // Genau hier faellt das auseinander: Bei falsch gestellter Uhr traegt
+    // die zuletzt gemessene Messung ein altes Datum und steht in der
+    // Datumssortierung ganz hinten.
+    test('erkennt die falsche Uhr an der zuletzt gemessenen Messung, '
+        'auch wenn deren Datum weit zurueckliegt', () async {
+      final now = DateTime.now();
+      await repository.importAll([
+        // Echte alte Messungen mit plausiblen Daten.
+        _rec(100, now.subtract(const Duration(days: 40))),
+        _rec(200, now.subtract(const Duration(days: 2))),
+        // Zuletzt gemessen - hoechste Nummer, aber Geraeteuhr steht 2023.
+        _rec(300, DateTime(2023, 4, 18, 11, 2)),
+      ]);
+      await controller.refreshForTest();
+
+      expect(controller.clockLooksWrong, isTrue);
+    });
+
+    test('meldet nichts, wenn die zuletzt gemessene Messung plausibel ist',
+        () async {
+      final now = DateTime.now();
+      await repository.importAll([
+        // Eine echte alte Messung darf keine Warnung ausloesen.
+        _rec(100, DateTime(2023, 4, 18, 11, 2)),
+        _rec(300, now.subtract(const Duration(hours: 2))),
+      ]);
+      await controller.refreshForTest();
+
+      expect(controller.clockLooksWrong, isFalse);
+    });
+
+    test('ohne Messungen gibt es nichts zu melden', () async {
+      await controller.refreshForTest();
+
+      expect(controller.clockLooksWrong, isFalse);
+    });
+  });
+
   test('die Gestaltung lässt sich wechseln und wird gespeichert', () async {
     expect(controller.themeVariant, ThemeVariant.instrument);
 

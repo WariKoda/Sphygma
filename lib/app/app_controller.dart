@@ -287,12 +287,22 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
-  static bool _clockLooksWrong(List<Measurement> newestFirst) {
-    if (newestFirst.isEmpty) return false;
-    final newest = newestFirst.first.measuredAt;
+  /// Geht die Geraeteuhr falsch?
+  ///
+  /// Massgeblich ist die **zuletzt gemessene** Messung, und das ist die mit
+  /// der hoechsten Geraetenummer - nicht die mit dem spaetesten Datum. Genau
+  /// darin liegt der Fall: Bei falscher Uhr traegt die frischeste Messung ein
+  /// altes Datum und stuende in einer nach Datum sortierten Liste weit hinten.
+  /// Die Anzeige sortiert nach Datum, diese Pruefung nach Zaehler.
+  static bool _clockLooksWrong(List<Measurement> all) {
+    if (all.isEmpty) return false;
+    var newest = all.first;
+    for (final m in all) {
+      if (m.deviceSequence > newest.deviceSequence) newest = m;
+    }
     final now = DateTime.now();
-    return newest.isAfter(now.add(const Duration(days: 1))) ||
-        newest.isBefore(now.subtract(const Duration(days: 365)));
+    return newest.measuredAt.isAfter(now.add(const Duration(days: 1))) ||
+        newest.measuredAt.isBefore(now.subtract(const Duration(days: 365)));
   }
 
   /// Nur zur Anzeige: erklaert die Ausnahme aus dem BLE-Scan.
