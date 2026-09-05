@@ -1,9 +1,14 @@
+// lib/ui/sphygma_app.dart
+// Drei Bereiche: Heute, Verlauf, Geraet. Die Gestaltung liegt als Scope
+// darueber; kein Bildschirm holt sich Farben woanders her.
 import 'package:flutter/material.dart';
 
 import '../app/app_controller.dart';
-import 'home_screen.dart';
-import 'measurements_screen.dart';
-import 'trends_screen.dart';
+import 'device_screen.dart';
+import 'history_screen.dart';
+import 'theme/sphygma_theme.dart';
+import 'theme/variants.dart';
+import 'today_screen.dart';
 
 class SphygmaApp extends StatelessWidget {
   const SphygmaApp({super.key, required this.controller});
@@ -12,10 +17,23 @@ class SphygmaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Sphygma',
-      theme: ThemeData(colorSchemeSeed: const Color(0xFF7A1F2B), useMaterial3: true),
-      home: _Shell(controller: controller),
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) {
+        final theme = themeFor(controller.themeVariant);
+        return MaterialApp(
+          title: 'Sphygma',
+          theme: ThemeData(
+            colorSchemeSeed: theme.accent,
+            scaffoldBackgroundColor: theme.surface,
+            useMaterial3: true,
+          ),
+          home: SphygmaThemeScope(
+            theme: theme,
+            child: _Shell(controller: controller),
+          ),
+        );
+      },
     );
   }
 }
@@ -32,25 +50,69 @@ class _Shell extends StatefulWidget {
 class _ShellState extends State<_Shell> {
   int _index = 0;
 
+  /// Zuletzt angezeigte Meldung, damit dieselbe nicht bei jedem Neubau
+  /// erneut aufpoppt.
+  String? _shownStatus;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onControllerChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onControllerChanged);
+    super.dispose();
+  }
+
+  void _onControllerChanged() {
+    final status = widget.controller.status;
+    if (status == null || status == _shownStatus) return;
+    _shownStatus = status;
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(status)));
+  }
+
   @override
   Widget build(BuildContext context) {
-    const titles = ['Sphygma', 'Messungen', 'Trend'];
+    final t = SphygmaTheme.of(context);
+    const titles = ['Heute', 'Verlauf', 'Gerät'];
+
     return ListenableBuilder(
       listenable: widget.controller,
       builder: (context, _) => Scaffold(
-        appBar: AppBar(title: Text(titles[_index])),
+        backgroundColor: t.surface,
+        appBar: AppBar(
+          title: Text(titles[_index]),
+          backgroundColor: t.surface,
+          foregroundColor: t.onSurface,
+          elevation: 0,
+        ),
         body: switch (_index) {
-          0 => HomeScreen(controller: widget.controller),
-          1 => MeasurementsScreen(controller: widget.controller),
-          _ => TrendsScreen(controller: widget.controller),
+          0 => TodayScreen(controller: widget.controller),
+          1 => HistoryScreen(controller: widget.controller),
+          _ => DeviceScreen(controller: widget.controller),
         },
         bottomNavigationBar: NavigationBar(
+          backgroundColor: t.surface,
           selectedIndex: _index,
           onDestinationSelected: (i) => setState(() => _index = i),
           destinations: const [
-            NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Start'),
-            NavigationDestination(icon: Icon(Icons.list_alt), label: 'Messungen'),
-            NavigationDestination(icon: Icon(Icons.show_chart), label: 'Trend'),
+            NavigationDestination(
+              icon: Icon(Icons.favorite_outline),
+              label: 'Heute',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.show_chart),
+              label: 'Verlauf',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.bluetooth),
+              label: 'Gerät',
+            ),
           ],
         ),
       ),
