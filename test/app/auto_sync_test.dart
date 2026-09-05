@@ -121,7 +121,7 @@ void main() {
     await db.close();
   });
 
-  test('synchronisiert, wenn das Geraet eine neue Nummer meldet', () async {
+  test('synchronisiert, wenn das Gerät eine neue Nummer meldet', () async {
     await repository.importAll([_record(540)]);
     final controller = await boot();
 
@@ -143,7 +143,7 @@ void main() {
     controller.dispose();
   });
 
-  test('synchronisiert nicht mehrfach fuer dieselbe Nummer', () async {
+  test('synchronisiert nicht mehrfach für dieselbe Nummer', () async {
     // Das Geraet sendet mehrmals je Sekunde dasselbe Advertising.
     await repository.importAll([_record(540)]);
     final controller = await boot();
@@ -165,7 +165,7 @@ void main() {
     controller.dispose();
   });
 
-  test('ein Fehlschlag loest fuer dieselbe Nummer keinen zweiten Versuch aus',
+  test('ein Fehlschlag loest für dieselbe Nummer keinen zweiten Versuch aus',
       () async {
     syncService = _CountingSyncService(
       keyStore,
@@ -209,11 +209,11 @@ void main() {
     await pumpEventQueue();
 
     expect(controller.autoSyncActive, isFalse);
-    expect(controller.status, contains('nicht verfuegbar'));
+    expect(controller.status, contains('nicht verfügbar'));
     controller.dispose();
   });
 
-  test('ein Fehler in einer Meldung blockiert die naechste nicht', () async {
+  test('ein Fehler in einer Meldung blockiert die nächste nicht', () async {
     // Ohne Fehlerbehandlung je Glied wuerde die Kette dauerhaft
     // vergiftet und jede weitere Meldung stillschweigend uebersprungen.
     var first = true;

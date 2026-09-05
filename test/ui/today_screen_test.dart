@@ -119,7 +119,7 @@ void main() {
 
     await pumpWith(tester, ThemeVariant.instrument);
 
-    expect(find.textContaining('Geraeteuhr'), findsOneWidget);
+    expect(find.textContaining('Geräteuhr'), findsOneWidget);
 
     await tester.tap(find.text('Anleitung anzeigen'));
     await tester.pumpAndSettle();

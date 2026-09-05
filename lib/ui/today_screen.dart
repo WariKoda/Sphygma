@@ -14,10 +14,10 @@ import 'widgets/reading_headline.dart';
 /// per Bluetooth stellen (docs/protocol/hem-6232t.md §8.7), also bleibt
 /// nur, sie zu erklaeren.
 const String clockInstructions =
-    'Batterien herausnehmen und wieder einlegen. Dann die Taste gedrueckt '
+    'Batterien herausnehmen und wieder einlegen. Dann die Taste gedrückt '
     'halten, bis das Jahr blinkt. Jahr, Monat, Tag, Stunde und Minute '
-    'nacheinander mit START/STOP bestaetigen; die andere Taste aendert den '
-    'Wert, gehalten springt sie schnell. Zum Schluss START/STOP druecken, '
+    'nacheinander mit START/STOP bestätigen; die andere Taste ändert den '
+    'Wert, gehalten springt sie schnell. Zum Schluss START/STOP drücken, '
     'um zu speichern.';
 
 /// Wie viele der letzten Messungen unter dem grossen Wert erscheinen.
@@ -82,20 +82,20 @@ class TodayScreen extends StatelessWidget {
           const NoticeCard(
             title: 'Nicht gekoppelt',
             message: 'Ohne Kopplung kann Sphygma keine Messungen holen. '
-                'Unter "Geraet" einrichten.',
+                'Unter "Gerät" einrichten.',
           ),
         if (controller.clockLooksWrong)
           const NoticeCard(
-            title: 'Geraeteuhr geht falsch',
-            message: 'Die neueste Messung traegt ein unplausibles Datum. '
-                'Sphygma kann die Uhr nicht stellen, das geht nur am Geraet.',
+            title: 'Geräteuhr geht falsch',
+            message: 'Die neueste Messung trägt ein unplausibles Datum. '
+                'Sphygma kann die Uhr nicht stellen, das geht nur am Gerät.',
             details: clockInstructions,
           ),
         if (controller.paired && !controller.autoSyncActive)
           const NoticeCard(
             title: 'Kein automatischer Abgleich',
             message: 'Neue Messungen werden nicht von selbst geholt. '
-                'Unter "Geraet" laesst sich der Abgleich von Hand ausloesen.',
+                'Unter "Gerät" lässt sich der Abgleich von Hand auslösen.',
           ),
       ];
 }
@@ -125,8 +125,8 @@ class _EmptyState extends StatelessWidget {
           SizedBox(height: t.gapSmall),
           Text(
             paired
-                ? 'Miss am Geraet - Sphygma holt die Messung von selbst.'
-                : 'Zuerst unter "Geraet" koppeln.',
+                ? 'Miss am Gerät - Sphygma holt die Messung von selbst.'
+                : 'Zuerst unter "Gerät" koppeln.',
             style: TextStyle(fontSize: 13, color: t.muted),
           ),
         ],

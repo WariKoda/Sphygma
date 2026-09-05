@@ -24,7 +24,7 @@ class DeviceScreen extends StatelessWidget {
         padding: EdgeInsets.all(t.gapLarge),
         child: Column(
           children: [
-            _Section(title: 'Geraet'),
+            _Section(title: 'Gerät'),
             _Row(
               label: 'RS7 Intelli IT',
               value: c.paired ? 'gekoppelt' : 'nicht gekoppelt',
@@ -34,7 +34,7 @@ class DeviceScreen extends StatelessWidget {
             if (!c.paired) ...[
               SizedBox(height: t.gapSmall),
               Text(
-                'Welcher Speicherplatz gehoert dir am Geraet?',
+                'Welcher Speicherplatz gehört dir am Gerät?',
                 style: TextStyle(fontSize: 12, color: t.muted),
               ),
               SizedBox(height: t.gapSmall),
@@ -54,7 +54,7 @@ class DeviceScreen extends StatelessWidget {
               ),
               SizedBox(height: t.gapSmall),
               Text(
-                'Zum Koppeln die Bluetooth-Taste am Geraet lange druecken, '
+                'Zum Koppeln die Bluetooth-Taste am Gerät lange drücken, '
                 'bis "-P-" blinkt.',
                 style: TextStyle(fontSize: 12, color: t.muted),
               ),
@@ -87,18 +87,18 @@ class DeviceScreen extends StatelessWidget {
 
             _Section(title: 'Health Connect'),
             _Row(
-              label: 'Uebertragen',
+              label: 'Übertragen',
               value:
                   '${c.measurements.length - c.pendingExport} '
                   'von ${c.measurements.length}',
             ),
             _Button(
-              label: 'Alle uebertragen',
+              label: 'Alle übertragen',
               onPressed:
                   c.busy || c.pendingExport == 0 ? null : () => _start(c.exportAll),
             ),
             _Button(
-              label: 'Uebertragene entfernen',
+              label: 'Übertragene entfernen',
               onPressed: c.busy ? null : () => _start(c.retractAll),
             ),
 

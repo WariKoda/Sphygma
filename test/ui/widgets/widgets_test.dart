@@ -51,10 +51,10 @@ void main() {
   testWidgets('NoticeCard zeigt Titel und Text', (tester) async {
     await tester.pumpWidget(_wrap(
       ThemeVariant.instrument,
-      const NoticeCard(title: 'Geraeteuhr', message: 'Datum weicht ab.'),
+      const NoticeCard(title: 'Geräteuhr', message: 'Datum weicht ab.'),
     ));
 
-    expect(find.text('Geraeteuhr'), findsOneWidget);
+    expect(find.text('Geräteuhr'), findsOneWidget);
     expect(find.text('Datum weicht ab.'), findsOneWidget);
   });
 
@@ -63,7 +63,7 @@ void main() {
     await tester.pumpWidget(_wrap(
       ThemeVariant.instrument,
       const NoticeCard(
-        title: 'Geraeteuhr',
+        title: 'Geräteuhr',
         message: 'Datum weicht ab.',
         details: 'Batterien herausnehmen und wieder einlegen.',
       ),

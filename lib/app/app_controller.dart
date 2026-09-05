@@ -145,7 +145,7 @@ class AppController extends ChangeNotifier {
 
     _lastAutoSyncAttempt = onDevice;
     debugPrint(
-      '[Sphygma] Autosync: Geraet meldet $onDevice, bekannt ${known ?? "nichts"}',
+      '[Sphygma] Autosync: Gerät meldet $onDevice, bekannt ${known ?? "nichts"}',
     );
     try {
       await sync();
@@ -165,7 +165,7 @@ class AppController extends ChangeNotifier {
     debugPrint('[Sphygma] Autosync-Scan: $error');
     _watch = null;
     if (_disposed) return;
-    status = 'Automatischer Abgleich nicht verfuegbar: $error';
+    status = 'Automatischer Abgleich nicht verfügbar: $error';
     notifyListeners();
   }
 
@@ -214,7 +214,7 @@ class AppController extends ChangeNotifier {
           // passt nicht mehr (z. B. nach Neuinstallation, Risiko R-4).
           if (e.message.contains('Entsperren')) {
             paired = false;
-            status = 'Das Geraet kennt diesen Key nicht mehr - bitte neu pairen.';
+            status = 'Das Gerät kennt diesen Key nicht mehr - bitte neu pairen.';
           }
           rethrow;
         }
@@ -245,7 +245,7 @@ class AppController extends ChangeNotifier {
   int _requireSlot() {
     final slot = userSlot;
     if (slot == null) {
-      throw StateError('Kein User-Slot gewaehlt.');
+      throw StateError('Kein User-Slot gewählt.');
     }
     return slot;
   }
@@ -298,7 +298,7 @@ class AppController extends ChangeNotifier {
   /// Nur zur Anzeige: erklaert die Ausnahme aus dem BLE-Scan.
   static String describe(Object error) {
     if (error is DeviceNotFoundException) {
-      return 'Kein Omron gefunden. Bluetooth-Taste am Geraet kurz druecken '
+      return 'Kein Omron gefunden. Bluetooth-Taste am Gerät kurz drücken '
           'und erneut versuchen.';
     }
     return error.toString();

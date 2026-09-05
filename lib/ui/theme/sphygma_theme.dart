@@ -54,7 +54,7 @@ class SphygmaTheme {
     if (scope == null) {
       throw FlutterError(
         'SphygmaTheme.of() ohne SphygmaThemeScope aufgerufen. '
-        'Der Scope gehoert oberhalb jedes Bildschirms in den Baum.',
+        'Der Scope gehört oberhalb jedes Bildschirms in den Baum.',
       );
     }
     return scope.theme;

@@ -122,8 +122,8 @@ void main() {
     expect(find.text('Benutzer 1'), findsOneWidget);
   });
 
-  testWidgets('ohne gewaehlten Slot ist keiner ausgewaehlt und Slot 1 laesst '
-      'sich mit einem Tipp waehlen', (tester) async {
+  testWidgets('ohne gewählten Slot ist keiner ausgewählt und Slot 1 lässt '
+      'sich mit einem Tipp wählen', (tester) async {
     await boot(paired: false, withSlot: false);
 
     await pumpWith(tester, ThemeVariant.instrument);
@@ -160,15 +160,15 @@ void main() {
     await controller.refreshForTest();
 
     await pumpWith(tester, ThemeVariant.instrument);
-    await tester.ensureVisible(find.text('Alle uebertragen'));
-    await tester.tap(find.text('Alle uebertragen'));
+    await tester.ensureVisible(find.text('Alle übertragen'));
+    await tester.tap(find.text('Alle übertragen'));
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
     expect(controller.status, contains('Fehler'));
   });
 
-  testWidgets('die Gestaltung laesst sich umschalten', (tester) async {
+  testWidgets('die Gestaltung lässt sich umschalten', (tester) async {
     await boot();
 
     await pumpWith(tester, ThemeVariant.instrument);

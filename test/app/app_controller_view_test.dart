@@ -98,7 +98,7 @@ void main() {
     expect(controller.latest, isNull);
   });
 
-  test('die Gestaltung laesst sich wechseln und wird gespeichert', () async {
+  test('die Gestaltung lässt sich wechseln und wird gespeichert', () async {
     expect(controller.themeVariant, ThemeVariant.instrument);
 
     await controller.setThemeVariant(ThemeVariant.diary);
