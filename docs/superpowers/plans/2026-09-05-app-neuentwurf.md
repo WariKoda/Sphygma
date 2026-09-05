@@ -6,7 +6,7 @@
 
 **Aufbau:** Die bestehende Schichtung bleibt unangetastet (UI → Sync → {DB | Health Connect} → Protokoll → BLE). Neu sind eine Gestaltungsabstraktion, ein Berichtsdienst und drei neu geschnittene Bildschirme. Der Steuerungsteil bekommt Zeitraumwahl und Gestaltungswahl.
 
-**Werkzeuge:** Flutter 3.47.2, drift, `fl_chart` 1.2.0, `pdf` 3.13.0, `printing` 5.15.0, `share_plus` 13.3.0.
+**Werkzeuge:** Flutter 3.47.2, drift, `pdf` 3.13.0, `printing` 5.15.0, `share_plus` 13.3.0. Die Kurve wird selbst gezeichnet (`CustomPainter`), kein Diagrammpaket.
 
 **Spezifikation:** `docs/superpowers/specs/2026-09-05-app-neuentwurf-design.md`
 
@@ -49,7 +49,8 @@ Dokument.
 | `lib/ui/widgets/reading_headline.dart` | Große Wertdarstellung, in „Heute" und im Blatt |
 | `lib/ui/widgets/classification_scale.dart` | Skala mit Zeiger |
 | `lib/ui/widgets/notice_card.dart` | Hinweisfeld mit aufklappbarem Inhalt |
-| `lib/ui/widgets/trend_chart.dart` | Kurve |
+| `lib/stats/chart_geometry.dart` | Messwerte in Bildpunkte umrechnen, ohne Flutter |
+| `lib/ui/widgets/trend_chart.dart` | Kurve zeichnen |
 | `lib/report/report_data.dart` | Berichtsinhalt als reine Daten |
 | `lib/report/csv_report.dart` | CSV-Erzeugung |
 | `lib/report/pdf_report.dart` | PDF-Erzeugung |
@@ -61,7 +62,7 @@ Dokument.
 |---|---|
 | `lib/ui/sphygma_app.dart` | Drei Bereiche statt vier, Gestaltung anwenden |
 | `lib/app/app_controller.dart` | Zeitraum, Gestaltung, Bericht |
-| `pubspec.yaml` | vier Pakete |
+| `pubspec.yaml` | drei Pakete für die Berichte |
 
 **Entfällt**
 
@@ -1919,4 +1920,485 @@ git commit -m "feat(ui): Bereich Geraet mit Abgleich-Zustand und Gestaltungswahl
 
 ---
 
-*Die Aufgaben 9 und 10 — Verlauf mit Kurve und Detail-Blatt — sowie die Berichte folgen. Sie hängen von Aufgabe 7 und 8 ab und werden nach deren Umsetzung ergänzt.*
+## Aufgabe 9: Kurvengeometrie
+
+Reine Rechnung, ohne Flutter. Die Umrechnung von Messwerten in Bildpunkte ist der
+Teil, in dem sich Fehler verstecken; getrennt vom Zeichnen ist er prüfbar.
+
+**Dateien**
+- Neu: `lib/stats/chart_geometry.dart`
+- Test: `test/stats/chart_geometry_test.dart`
+
+**Schnittstellen**
+- Liefert: `ChartGeometry.fit({required List<Measurement> measurements, required double width, required double height, double threshold = 135})` → `ChartGeometry` mit `List<Offset> systolicPoints`, `List<Offset> diastolicPoints`, `double thresholdY`, `int minValue`, `int maxValue`; `Offset` kommt aus `dart:ui`.
+
+- [ ] **Schritt 1: Test schreiben**
+
+```dart
+// test/stats/chart_geometry_test.dart
+import 'dart:typed_data';
+import 'dart:ui';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:sphygma/db/app_database.dart';
+import 'package:sphygma/stats/chart_geometry.dart';
+
+Measurement _m(int sys, int dia, DateTime at) => Measurement(
+      id: at.millisecondsSinceEpoch,
+      userSlot: 1,
+      deviceSequence: at.millisecondsSinceEpoch ~/ 1000,
+      systolic: sys,
+      diastolic: dia,
+      pulse: 70,
+      measuredAt: at,
+      movement: false,
+      arrhythmia: false,
+      rawBytes: Uint8List(14),
+      importedAt: at,
+      exportedAt: null,
+    );
+
+void main() {
+  final t0 = DateTime(2026, 9, 1);
+
+  test('der hoechste Wert liegt oben, der niedrigste unten', () {
+    final g = ChartGeometry.fit(
+      measurements: [
+        _m(120, 80, t0),
+        _m(140, 90, t0.add(const Duration(days: 1))),
+      ],
+      width: 100,
+      height: 100,
+    );
+
+    // Kleineres y heisst weiter oben.
+    expect(g.systolicPoints[1].dy, lessThan(g.systolicPoints[0].dy));
+    expect(g.diastolicPoints[0].dy, greaterThan(g.systolicPoints[0].dy));
+  });
+
+  test('Punkte verteilen sich ueber die volle Breite', () {
+    final g = ChartGeometry.fit(
+      measurements: [
+        _m(120, 80, t0),
+        _m(125, 82, t0.add(const Duration(days: 1))),
+        _m(130, 85, t0.add(const Duration(days: 2))),
+      ],
+      width: 200,
+      height: 100,
+    );
+
+    expect(g.systolicPoints.first.dx, 0);
+    expect(g.systolicPoints.last.dx, 200);
+    expect(g.systolicPoints, hasLength(3));
+  });
+
+  test('eine einzelne Messung sitzt am linken Rand, ohne Division durch 0',
+      () {
+    final g = ChartGeometry.fit(
+      measurements: [_m(120, 80, t0)],
+      width: 200,
+      height: 100,
+    );
+
+    expect(g.systolicPoints, hasLength(1));
+    expect(g.systolicPoints.first.dx, 0);
+    expect(g.systolicPoints.first.dy.isFinite, isTrue);
+  });
+
+  test('gleiche Werte ergeben endliche Punkte statt Division durch 0', () {
+    // Ohne Spanne waere die Skalierung 0/0.
+    final g = ChartGeometry.fit(
+      measurements: [
+        _m(120, 120, t0),
+        _m(120, 120, t0.add(const Duration(days: 1))),
+      ],
+      width: 100,
+      height: 100,
+    );
+
+    for (final p in [...g.systolicPoints, ...g.diastolicPoints]) {
+      expect(p.dy.isFinite, isTrue);
+    }
+  });
+
+  test('die Schwelle liegt im Bild, wenn sie in die Spanne faellt', () {
+    final g = ChartGeometry.fit(
+      measurements: [
+        _m(120, 80, t0),
+        _m(150, 95, t0.add(const Duration(days: 1))),
+      ],
+      width: 100,
+      height: 100,
+      threshold: 135,
+    );
+
+    expect(g.thresholdY, greaterThanOrEqualTo(0));
+    expect(g.thresholdY, lessThanOrEqualTo(100));
+  });
+
+  test('wirft bei leerer Liste - eine leere Kurve ist ein Aufruferfehler',
+      () {
+    expect(
+      () => ChartGeometry.fit(measurements: [], width: 100, height: 100),
+      throwsArgumentError,
+    );
+  });
+
+  test('wirft bei nicht positiver Groesse', () {
+    expect(
+      () => ChartGeometry.fit(
+        measurements: [_m(120, 80, t0)],
+        width: 0,
+        height: 100,
+      ),
+      throwsArgumentError,
+    );
+  });
+}
+```
+
+- [ ] **Schritt 2: Test ausführen, Fehlschlag bestätigen**
+
+Ausführen: `flutter test test/stats/chart_geometry_test.dart`
+Erwartet: FEHLER, `chart_geometry.dart` fehlt.
+
+- [ ] **Schritt 3: Umsetzen**
+
+```dart
+// lib/stats/chart_geometry.dart
+// Rechnet Messwerte in Bildpunkte um. Bewusst getrennt vom Zeichnen:
+// Hier verstecken sich die Fehler, und so sind sie ohne Oberflaeche
+// pruefbar.
+import 'dart:ui';
+
+import '../db/app_database.dart';
+
+class ChartGeometry {
+  const ChartGeometry._({
+    required this.systolicPoints,
+    required this.diastolicPoints,
+    required this.thresholdY,
+    required this.minValue,
+    required this.maxValue,
+  });
+
+  /// Punkte der oberen Linie, in Zeichenreihenfolge.
+  final List<Offset> systolicPoints;
+
+  /// Punkte der unteren Linie.
+  final List<Offset> diastolicPoints;
+
+  /// Hoehe der Schwellenlinie im Bild.
+  final double thresholdY;
+
+  final int minValue;
+  final int maxValue;
+
+  /// Randabstand oben und unten, damit Punkte nicht am Rand kleben.
+  static const double _padding = 6;
+
+  /// Verteilt [measurements] gleichmaessig ueber [width] und skaliert die
+  /// Werte auf [height].
+  ///
+  /// Die Punkte sitzen in gleichen Abstaenden, nicht nach Zeitabstand:
+  /// Bei unregelmaessigem Messen waeren echte Zeitabstaende unlesbar, und
+  /// die Geraeteuhr ist ohnehin nicht garantiert (§8.2).
+  ///
+  /// Wirft bei leerer Liste oder nicht positiver Groesse - beides ist ein
+  /// Fehler des Aufrufers, kein Zustand, den diese Klasse glaetten darf.
+  static ChartGeometry fit({
+    required List<Measurement> measurements,
+    required double width,
+    required double height,
+    double threshold = 135,
+  }) {
+    if (measurements.isEmpty) {
+      throw ArgumentError.value(
+        measurements.length,
+        'measurements',
+        'darf nicht leer sein - ohne Messungen gibt es keine Kurve',
+      );
+    }
+    if (width <= 0 || height <= 0) {
+      throw ArgumentError('Breite und Hoehe muessen positiv sein');
+    }
+
+    var min = measurements.first.diastolic;
+    var max = measurements.first.systolic;
+    for (final m in measurements) {
+      if (m.diastolic < min) min = m.diastolic;
+      if (m.systolic > max) max = m.systolic;
+    }
+    if (threshold < min) min = threshold.floor();
+    if (threshold > max) max = threshold.ceil();
+
+    // Ohne Spanne waere die Skalierung eine Division durch null.
+    final span = (max - min) == 0 ? 1.0 : (max - min).toDouble();
+    final usable = height - 2 * _padding;
+
+    double y(num value) =>
+        _padding + usable - ((value - min) / span) * usable;
+
+    final step =
+        measurements.length == 1 ? 0.0 : width / (measurements.length - 1);
+
+    return ChartGeometry._(
+      systolicPoints: [
+        for (var i = 0; i < measurements.length; i++)
+          Offset(i * step, y(measurements[i].systolic)),
+      ],
+      diastolicPoints: [
+        for (var i = 0; i < measurements.length; i++)
+          Offset(i * step, y(measurements[i].diastolic)),
+      ],
+      thresholdY: y(threshold),
+      minValue: min,
+      maxValue: max,
+    );
+  }
+}
+```
+
+- [ ] **Schritt 4: Test ausführen, Erfolg bestätigen**
+
+Ausführen: `flutter test test/stats/chart_geometry_test.dart`
+Erwartet: alle grün.
+
+- [ ] **Schritt 5: Prüfen und committen**
+
+```bash
+flutter analyze && flutter test
+git add lib/stats/chart_geometry.dart test/stats/chart_geometry_test.dart
+git commit -m "feat(stats): Kurvengeometrie, ohne Flutter pruefbar"
+```
+
+---
+
+## Aufgabe 10: Die Kurve zeichnen
+
+**Dateien**
+- Neu: `lib/ui/widgets/trend_chart.dart`
+- Test: `test/ui/widgets/trend_chart_test.dart`
+
+**Schnittstellen**
+- Nutzt: `ChartGeometry.fit` (Aufgabe 9), `SphygmaTheme.of` (Aufgabe 1).
+- Liefert: `TrendChart({required List<Measurement> measurements, double height = 120})`.
+
+- [ ] **Schritt 1: Test schreiben**
+
+```dart
+// test/ui/widgets/trend_chart_test.dart
+import 'dart:typed_data';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:sphygma/db/app_database.dart';
+import 'package:sphygma/ui/theme/sphygma_theme.dart';
+import 'package:sphygma/ui/theme/variants.dart';
+import 'package:sphygma/ui/widgets/trend_chart.dart';
+
+Measurement _m(int sys, DateTime at) => Measurement(
+      id: at.millisecondsSinceEpoch,
+      userSlot: 1,
+      deviceSequence: at.millisecondsSinceEpoch ~/ 1000,
+      systolic: sys,
+      diastolic: 80,
+      pulse: 70,
+      measuredAt: at,
+      movement: false,
+      arrhythmia: false,
+      rawBytes: Uint8List(14),
+      importedAt: at,
+      exportedAt: null,
+    );
+
+Widget _wrap(ThemeVariant v, Widget child) => MaterialApp(
+      home: SphygmaThemeScope(
+        theme: themeFor(v),
+        child: Scaffold(body: SizedBox(width: 300, child: child)),
+      ),
+    );
+
+void main() {
+  final t0 = DateTime(2026, 9, 1);
+  final drei = [
+    _m(120, t0),
+    _m(135, t0.add(const Duration(days: 1))),
+    _m(128, t0.add(const Duration(days: 2))),
+  ];
+
+  group('in jeder Gestaltung', () {
+    for (final v in allVariants) {
+      testWidgets('zeichnet ohne Fehler (${v.name})', (tester) async {
+        await tester.pumpWidget(_wrap(v, TrendChart(measurements: drei)));
+
+        expect(tester.takeException(), isNull);
+      });
+    }
+  });
+
+  testWidgets('ohne Messungen erscheint ein Hinweis statt einer leeren Flaeche',
+      (tester) async {
+    await tester.pumpWidget(
+      _wrap(ThemeVariant.instrument, const TrendChart(measurements: [])),
+    );
+
+    expect(find.textContaining('Keine Messungen'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('eine einzelne Messung stuerzt nicht ab', (tester) async {
+    await tester.pumpWidget(
+      _wrap(ThemeVariant.instrument, TrendChart(measurements: [_m(120, t0)])),
+    );
+
+    expect(tester.takeException(), isNull);
+  });
+}
+```
+
+- [ ] **Schritt 2: Test ausführen, Fehlschlag bestätigen**
+
+Ausführen: `flutter test test/ui/widgets/trend_chart_test.dart`
+Erwartet: FEHLER, `trend_chart.dart` fehlt.
+
+- [ ] **Schritt 3: Umsetzen**
+
+```dart
+// lib/ui/widgets/trend_chart.dart
+// Zwei Linien und eine gestrichelte Schwelle. Kein Diagrammpaket: Was
+// gebraucht wird, passt in eine Datei, und eine Abhaengigkeit weniger ist
+// in einer App mit Gesundheitsdaten ein Gewinn.
+import 'package:flutter/material.dart';
+
+import '../../db/app_database.dart';
+import '../../stats/chart_geometry.dart';
+import '../theme/sphygma_theme.dart';
+
+class TrendChart extends StatelessWidget {
+  const TrendChart({
+    super.key,
+    required this.measurements,
+    this.height = 120,
+  });
+
+  final List<Measurement> measurements;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+
+    if (measurements.isEmpty) {
+      return SizedBox(
+        height: height,
+        child: Center(
+          child: Text(
+            'Keine Messungen in diesem Zeitraum',
+            style: TextStyle(fontSize: 13, color: t.muted),
+          ),
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: height,
+      child: LayoutBuilder(
+        builder: (context, constraints) => CustomPaint(
+          size: Size(constraints.maxWidth, height),
+          painter: _TrendPainter(
+            geometry: ChartGeometry.fit(
+              measurements: measurements,
+              width: constraints.maxWidth,
+              height: height,
+            ),
+            lineColor: t.onSurface,
+            secondaryColor: t.muted,
+            gridColor: t.line,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TrendPainter extends CustomPainter {
+  _TrendPainter({
+    required this.geometry,
+    required this.lineColor,
+    required this.secondaryColor,
+    required this.gridColor,
+  });
+
+  final ChartGeometry geometry;
+  final Color lineColor;
+  final Color secondaryColor;
+  final Color gridColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    _dashedLine(canvas, size, geometry.thresholdY);
+    _polyline(canvas, geometry.systolicPoints, lineColor, 1.6);
+    _polyline(canvas, geometry.diastolicPoints, secondaryColor, 1.6);
+    _dot(canvas, geometry.systolicPoints.last, lineColor);
+  }
+
+  void _polyline(Canvas canvas, List<Offset> points, Color color, double w) {
+    if (points.length < 2) {
+      if (points.length == 1) _dot(canvas, points.first, color);
+      return;
+    }
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = w
+      ..style = PaintingStyle.stroke
+      ..strokeJoin = StrokeJoin.round;
+    final path = Path()..moveTo(points.first.dx, points.first.dy);
+    for (final p in points.skip(1)) {
+      path.lineTo(p.dx, p.dy);
+    }
+    canvas.drawPath(path, paint);
+  }
+
+  void _dot(Canvas canvas, Offset at, Color color) =>
+      canvas.drawCircle(at, 3, Paint()..color = color);
+
+  /// Die Leitlinien-Schwelle, gestrichelt gezeichnet.
+  void _dashedLine(Canvas canvas, Size size, double y) {
+    if (y < 0 || y > size.height) return;
+    final paint = Paint()
+      ..color = gridColor
+      ..strokeWidth = 1;
+    const dash = 3.0;
+    const gap = 4.0;
+    var x = 0.0;
+    while (x < size.width) {
+      canvas.drawLine(Offset(x, y), Offset(x + dash, y), paint);
+      x += dash + gap;
+    }
+  }
+
+  @override
+  bool shouldRepaint(_TrendPainter old) =>
+      old.geometry != geometry ||
+      old.lineColor != lineColor ||
+      old.secondaryColor != secondaryColor;
+}
+```
+
+- [ ] **Schritt 4: Test ausführen, Erfolg bestätigen**
+
+Ausführen: `flutter test test/ui/widgets/trend_chart_test.dart`
+Erwartet: alle grün.
+
+- [ ] **Schritt 5: Prüfen und committen**
+
+```bash
+flutter analyze && flutter test
+git add lib/ui/widgets/trend_chart.dart test/ui/widgets/trend_chart_test.dart
+git commit -m "feat(ui): Kurve, selbst gezeichnet"
+```
+
+---
+
+*Aufgabe 11 (Bereich „Verlauf" samt Detail-Blatt) und Aufgabe 12 (neue Navigation) folgen. Die Berichte bekommen einen eigenen Plan.*

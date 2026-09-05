@@ -149,8 +149,17 @@ eingeschaltet ist.
 
 ### Kurve
 
-`fl_chart` 1.2.0. Alternative wäre eigenes Zeichnen über `CustomPainter`; das
-Paket spart erheblichen Aufwand bei Achsen, Beschriftung und Berührungspunkten.
+**Eigenes Zeichnen über `CustomPainter`**, kein Diagrammpaket.
+
+Ursprünglich war `fl_chart` vorgesehen. Beim Ausarbeiten des Umsetzungsplans
+revidiert: Gebraucht werden zwei Linien und eine gestrichelte Schwelle. Ein
+Diagrammpaket bringt Achsenlogik, Legenden, Berührungspunkte, Animationen und
+Zoom — alles ungenutzt. Dafür eine weitere Abhängigkeit in einer App, die
+Gesundheitsdaten führt, und eine fremde API, deren Brüche wir mitschleppen.
+
+Der Zeichencode ist überschaubar und vollständig unter unserer Kontrolle. Die
+Umrechnung von Messwerten in Bildpunkte ist reine Rechnung und ohne Flutter
+prüfbar.
 
 ## Was aus dem Bestand bleibt
 
