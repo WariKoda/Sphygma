@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sphygma · Vierte Handschrift: Pegel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Handschrift D — Pegel */
+    --ink:#16211F;
+    --ink-soft:#6B7671;
+    --paper:#ECEEEB;
+    --flaeche:#FFFFFF;
+    --signal:#0E5C4C;
+    --signal-soft:#DFE6E2;
+    --ton-normal:#D9E5E0;
+    --ton-hochnormal:#EFE1C9;
+    --warn-flaeche:#F3E4CB;
+    --warn-text:#7A4A05;
+
+    /* Tafel-Rahmen, bewusst still */
+    --tafel-bg:#FAFAF9;
+    --tafel-line:#DCDFDC;
+    --tafel-text:#1A1A1A;
+    --tafel-muted:#71736F;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0; background:var(--tafel-bg); color:var(--tafel-text);
+    font-family:Inter,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-size:16px; line-height:1.55;
+    font-variant-numeric:tabular-nums;
+  }
+  .wrap{max-width:1180px; margin:0 auto; padding:64px 32px 96px;}
+
+  /* ---------- Tafel-Typografie ---------- */
+  .kicker{font-size:13px; color:var(--tafel-muted); margin:0 0 10px;}
+  h1{font-size:44px; line-height:1.1; font-weight:600; letter-spacing:-.02em; margin:0 0 20px; max-width:16ch;}
+  .lede{max-width:66ch; font-size:17px; color:#2C2E2B; margin:0 0 14px;}
+  .lede strong{font-weight:600;}
+  h2{font-size:22px; font-weight:600; letter-spacing:-.01em; margin:0; }
+  .sec-head{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
+    border-bottom:1px solid var(--tafel-line); padding-bottom:10px; margin:72px 0 28px;}
+  .sec-head p{margin:0; color:var(--tafel-muted); font-size:14px;}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.88em; background:#F0F0EE; padding:1px 5px; border-radius:3px;}
+
+  /* ---------- Bildschirm-Raster ---------- */
+  .screens{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:36px 28px; align-items:start;}
+  .slot{display:flex; flex-direction:column; align-items:center; gap:12px;}
+  .cap{font-size:13px; color:var(--tafel-muted); text-align:center; max-width:32ch;}
+  .cap b{display:block; color:var(--tafel-text); font-weight:600;}
+
+  .phone{
+    width:320px; border:1px solid var(--tafel-line); border-radius:26px; overflow:hidden;
+    background:var(--paper);
+  }
+  .scr{display:flex; flex-direction:column; min-height:640px; color:var(--ink);
+       font-size:15px; line-height:1.45;}
+  .grow{flex:1 1 auto; background:var(--paper);}
+
+  /* Bänder: randlos, keine Linien, keine Schatten, kein Radius */
+  .b{padding:18px 20px;}
+  .b.w{background:var(--flaeche);}
+  .b.p{background:var(--paper);}
+  .b.tight{padding-top:12px; padding-bottom:12px;}
+
+  .head{padding:24px 20px 22px;}
+  .head.normal{background:var(--ton-normal);}
+  .head.hoch{background:var(--ton-hochnormal);}
+  .lab{font-size:13px; color:var(--ink-soft); margin:0 0 6px;}
+  .head .lab{color:#4A5652;}
+  .zahl{font-size:62px; line-height:.92; font-weight:600; letter-spacing:-.035em; margin:0;}
+  .zahl .slash{font-weight:400; color:#4A5652;}
+  .head-foot{display:flex; justify-content:space-between; align-items:flex-end; margin-top:12px; gap:12px;}
+  .head-foot .meta{font-size:13.5px; color:#4A5652;}
+  .einordnung{font-size:19px; font-weight:600; letter-spacing:-.01em;}
+
+  .r{display:flex; justify-content:space-between; align-items:baseline; gap:14px; padding:8px 0;}
+  .r:first-child{padding-top:0;}
+  .r:last-child{padding-bottom:0;}
+  .r .k{color:var(--ink-soft); font-size:14.5px;}
+  .r .v{font-weight:600;}
+  .r .v.plain{font-weight:400; color:var(--ink-soft); font-size:14px;}
+  .sub{font-size:12.5px; color:var(--warn-text); margin:-2px 0 6px;}
+  .fuss{font-size:13px; color:var(--ink-soft);}
+
+  /* Aktionen: das Band selbst ist der Knopf */
+  .act{display:block; width:100%; border:0; text-align:center; padding:17px 16px;
+       font:inherit; font-weight:600; font-size:15px; background:var(--signal); color:#fff; cursor:default;}
+  .act.sec{background:var(--signal-soft); color:var(--ink);}
+  .act.dis{background:#E3E6E3; color:#9AA5A0;}
+  .txtact{color:var(--signal); font-weight:600; font-size:14.5px; border-bottom:2px solid var(--signal); padding-bottom:1px;}
+
+  /* Zeitraumwahl: Unterstreichung statt Kachel, Pille oder Chip */
+  .seg{display:flex; gap:16px; background:var(--flaeche); padding:14px 20px 0;}
+  .seg span{font-size:14px; color:var(--ink-soft); padding-bottom:9px; border-bottom:3px solid transparent;}
+  .seg span.on{color:var(--ink); font-weight:600; border-bottom-color:var(--signal);}
+
+  /* Kennzahlen: drei Spalten in einem Band, getrennt durch Leerraum */
+  .kz{display:flex; gap:16px;}
+  .kz div{flex:1;}
+  .kz .k{font-size:13px; color:var(--ink-soft);}
+  .kz .v{font-size:19px; font-weight:600; letter-spacing:-.02em; margin-top:2px;}
+  .kz .p{font-size:12.5px; color:var(--ink-soft);}
+
+  .tag{font-size:13px; color:var(--ink-soft); margin:0 0 6px;}
+
+  .hinweis{background:var(--warn-flaeche); color:var(--warn-text); padding:18px 20px;}
+  .hinweis b{display:block; color:#5C3803; font-weight:600; margin-bottom:4px;}
+  .hinweis p{margin:0; font-size:13.5px; line-height:1.45;}
+
+  .leer{background:var(--paper); padding:28px 20px;}
+  .leer h3{margin:0 0 6px; font-size:19px; font-weight:600; letter-spacing:-.01em;}
+  .leer p{margin:0; color:var(--ink-soft); font-size:14.5px;}
+
+  /* Navigation: dunkles Vollband */
+  .nav{display:flex; background:var(--ink);}
+  .nav span{flex:1; text-align:center; padding:14px 4px 15px; font-size:12.5px; color:#8FA09B; border-top:3px solid transparent;}
+  .nav span.on{color:#fff; font-weight:600; border-top-color:#4FBFA3;}
+
+  .bt{vertical-align:-2px; margin-right:8px;}
+
+  /* ---------- Tabellen ---------- */
+  table{width:100%; border-collapse:collapse; margin-top:6px;}
+  th{text-align:left; font-size:13px; font-weight:500; color:var(--tafel-muted); padding:0 14px 8px 0; border-bottom:1px solid var(--tafel-line);}
+  td{vertical-align:top; padding:12px 14px 12px 0; border-bottom:1px solid #EAEAE7; font-size:14.5px; line-height:1.5;}
+  td:first-child{font-weight:600; width:22%;}
+  .swatch{display:inline-block; width:11px; height:11px; border-radius:2px; border:1px solid rgba(0,0,0,.12); margin-right:7px; vertical-align:-1px;}
+  ul{max-width:66ch; padding-left:20px;}
+  li{margin-bottom:8px;}
+  .note{max-width:66ch; color:#2C2E2B;}
+
+  @media print{
+    body{background:#fff;} .wrap{padding:0;} .sec-head{margin-top:34px;}
+    .phone{break-inside:avoid;} .slot{break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="kicker">Sphygma · vierte Handschrift · 2026-09-05</p>
+  <h1>Pegel</h1>
+  <p class="lede">Eine vierte Handschrift neben Messinstrument, Tagebuch und Material&nbsp;3. Dieselben Bausteine, dieselben Aktionen, dieselben Texte — nur eine andere Form. Was hier neu ist, ist das Trennmittel: <strong>Pegel trennt weder mit Linien noch mit Karten, sondern mit ganzflächigen Bändern.</strong> Ein Abschnitt endet dort, wo die Fläche ihren Ton wechselt. Es gibt keine Ränder, keine Schatten, keine Abstände zwischen den Blöcken.</p>
+  <p class="lede">Zweite Eigenheit: Die Einordnung färbt nicht ein Band, einen Chip oder eine Pille, sondern die Kopffläche selbst. Der Bildschirm sagt seinen Zustand, bevor man die Zahl gelesen hat — ruhig genug, dass „Hochnormal“ nicht wie ein Alarm wirkt.</p>
+  <p class="lede">Gleiche Daten wie auf der dritten Fassung: 114 Messungen, zuletzt 128/87 bei Puls 82, Wochenschnitt 124/85.</p>
+
+  <div class="sec-head">
+    <h2>Fünf Bildschirme</h2>
+    <p>Wochenschnitt trägt die Aussage, Einzelwert als Rückmeldung darunter</p>
+  </div>
+
+  <div class="screens">
+
+    <!-- ============ HEUTE ============ -->
+    <div class="slot">
+      <div class="phone"><div class="scr">
+        <div class="head normal">
+          <p class="lab">Letzte 7 Tage, 12 Messungen</p>
+          <p class="zahl">124<span class="slash">/</span>85</p>
+          <div class="head-foot">
+            <span class="meta">mmHg, Puls 81</span>
+            <span class="einordnung">Normal</span>
+          </div>
+        </div>
+
+        <div class="b w">
+          <p class="lab">Zuletzt übernommen, vor 10 Minuten</p>
+          <div class="r"><span class="k">05.09. um 23:57</span><span class="v">128/87, Puls 82</span></div>
+        </div>
+
+        <div class="b p">
+          <p class="lab">Letzte Tage</p>
+          <div class="r"><span class="v">126/90, Puls 95</span><span class="v plain">gestern</span></div>
+          <div class="r"><span class="v">126/84, Puls 84</span><span class="v plain">gestern</span></div>
+          <div class="r"><span class="v">133/91, Puls 78</span><span class="v plain">18.04.2023</span></div>
+          <p class="sub">Gerätezeit fraglich</p>
+        </div>
+
+        <div class="b w tight">
+          <span class="fuss">114 Messungen, 100 nicht übertragen</span>
+        </div>
+
+        <div class="grow"></div>
+        <div class="nav"><span class="on">Heute</span><span>Verlauf</span><span>Gerät</span></div>
+      </div></div>
+      <p class="cap"><b>Heute</b>Kopffläche in der Farbe der Einordnung, Einzelwert im nächsten Band</p>
+    </div>
+
+    <!-- ============ VERLAUF ============ -->
+    <div class="slot">
+      <div class="phone"><div class="scr">
+        <div class="seg"><span>Woche</span><span class="on">Monat</span><span>3 Mon.</span><span>Jahr</span><span>Alles</span></div>
+
+        <div class="b w" style="padding-top:14px;">
+          <svg viewBox="0 0 280 132" width="100%" height="132" role="img" aria-label="Verlauf von Systole und Diastole über einen Monat">
+            <path d="M8,34 L52,44 L96,26 L140,40 L184,32 L228,46 L272,22 L272,86 L228,94 L184,88 L140,96 L96,84 L52,92 L8,88 Z" fill="#0E5C4C" opacity=".10"/>
+            <polyline points="8,34 52,44 96,26 140,40 184,32 228,46 272,22" fill="none" stroke="#0E5C4C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+            <polyline points="8,88 52,92 96,84 140,96 184,88 228,94 272,86" fill="none" stroke="#16211F" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" opacity=".55"/>
+            <rect x="268" y="18" width="8" height="8" fill="#0E5C4C"/>
+            <rect x="268" y="82" width="8" height="8" fill="#16211F" opacity=".55"/>
+            <text x="8" y="126" font-size="10" fill="#6B7671" font-family="Inter,sans-serif">06.08.</text>
+            <text x="72" y="126" font-size="10" fill="#6B7671" font-family="Inter,sans-serif">13.08.</text>
+            <text x="136" y="126" font-size="10" fill="#6B7671" font-family="Inter,sans-serif">20.08.</text>
+            <text x="200" y="126" font-size="10" fill="#6B7671" font-family="Inter,sans-serif">27.08.</text>
+            <text x="252" y="126" font-size="10" fill="#6B7671" font-family="Inter,sans-serif">05.09.</text>
+          </svg>
+        </div>
+
+        <div class="b p">
+          <p class="lab">Mittelwerte</p>
+          <div class="kz">
+            <div><div class="k">Gesamt</div><div class="v">124/85</div><div class="p">Puls 81</div></div>
+            <div><div class="k">Morgens</div><div class="v">121/83</div><div class="p">Puls 79</div></div>
+            <div><div class="k">Abends</div><div class="v">127/87</div><div class="p">Puls 83</div></div>
+          </div>
+        </div>
+
+        <div class="b w">
+          <p class="tag">Samstag, 5. September</p>
+          <div class="r"><span class="v">128/87, Puls 82</span><span class="v plain">23:57</span></div>
+          <div class="r"><span class="v">126/90, Puls 95</span><span class="v plain">08:12</span></div>
+        </div>
+
+        <div class="grow"></div>
+        <button class="act">Bericht für die Praxis</button>
+        <div class="nav"><span>Heute</span><span class="on">Verlauf</span><span>Gerät</span></div>
+      </div></div>
+      <p class="cap"><b>Verlauf</b>Fläche zwischen Systole und Diastole statt zwei Einzellinien; Hauptaktion als randloses Band</p>
+    </div>
+
+    <!-- ============ VERLAUF, LEER ============ -->
+    <div class="slot">
+      <div class="phone"><div class="scr">
+        <div class="seg"><span class="on">Woche</span><span>Monat</span><span>3 Mon.</span><span>Jahr</span><span>Alles</span></div>
+
+        <div class="b w" style="padding-top:14px;">
+          <svg viewBox="0 0 280 132" width="100%" height="132" role="img" aria-label="Leerer Verlauf">
+            <line x1="8" y1="60" x2="272" y2="60" stroke="#C9CFCB" stroke-width="1.4" stroke-dasharray="3 5"/>
+            <text x="8" y="126" font-size="10" fill="#6B7671" font-family="Inter,sans-serif">30.08.</text>
+            <text x="252" y="126" font-size="10" fill="#6B7671" font-family="Inter,sans-serif">05.09.</text>
+          </svg>
+        </div>
+
+        <div class="leer">
+          <h3>Keine Messungen in den letzten 7 Tagen</h3>
+          <p>Der letzte Wert liegt 8 Wochen zurück.</p>
+        </div>
+
+        <button class="act sec">Zeitraum mit Messungen zeigen</button>
+
+        <div class="grow"></div>
+        <div class="nav"><span>Heute</span><span class="on">Verlauf</span><span>Gerät</span></div>
+      </div></div>
+      <p class="cap"><b>Verlauf ohne Messungen</b>Kein automatischer Wechsel; derselbe Text, der Ausweg als tonales Band</p>
+    </div>
+
+    <!-- ============ GERÄT ============ -->
+    <div class="slot">
+      <div class="phone"><div class="scr">
+        <div class="b w" style="padding-top:24px;">
+          <p class="lab">Gerät</p>
+          <div class="r"><span class="v" style="font-size:19px;">RS7 Intelli IT</span></div>
+          <div class="r"><span class="k">Gekoppelt, Speicherplatz Benutzer 1</span></div>
+          <div class="r" style="padding-top:14px;"><span class="txtact">Neu koppeln</span></div>
+        </div>
+
+        <div class="b p">
+          <p class="lab">Abgleich</p>
+          <div class="r">
+            <span class="k">
+              <svg class="bt" width="13" height="17" viewBox="0 0 13 17" fill="none" aria-hidden="true">
+                <path d="M4 5.2 L9.4 11.8 L6.5 14.5 V2.5 L9.4 5.2 L4 11.8" stroke="#0E5C4C" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+                <path d="M11.2 5.6 A4.6 4.6 0 0 1 11.2 11.4" stroke="#0E5C4C" stroke-width="1.3" stroke-linecap="round" opacity=".8"/>
+                <path d="M1.8 5.6 A4.6 4.6 0 0 0 1.8 11.4" stroke="#0E5C4C" stroke-width="1.3" stroke-linecap="round" opacity=".8"/>
+              </svg>Abgleich bereit</span>
+            <span class="v">an</span>
+          </div>
+          <div class="r"><span class="k">Letzte Messung</span><span class="v">vor 10 Minuten</span></div>
+          <div class="r"><span class="k">Gespeichert</span><span class="v">114 Messungen</span></div>
+        </div>
+
+        <button class="act dis">Jetzt abgleichen</button>
+
+        <div class="b w">
+          <p class="lab">Health Connect</p>
+          <div class="r"><span class="k">Übertragen</span><span class="v">14 von 114</span></div>
+        </div>
+
+        <button class="act">Alle übertragen</button>
+        <button class="act sec">Übertragene entfernen</button>
+
+        <div class="grow"></div>
+        <div class="nav"><span>Heute</span><span>Verlauf</span><span class="on">Gerät</span></div>
+      </div></div>
+      <p class="cap"><b>Gerät</b>Bereitschaft und Datenaktualität in getrennten Zeilen; Rangfolge der Aktionen über den Ton, nicht über die Form</p>
+    </div>
+
+    <!-- ============ DETAIL ============ -->
+    <div class="slot">
+      <div class="phone"><div class="scr">
+        <div class="head hoch">
+          <p class="lab">Messung 542</p>
+          <p class="zahl">133<span class="slash">/</span>91</p>
+          <div class="head-foot">
+            <span class="meta">mmHg, Puls 78</span>
+            <span class="einordnung">Hochnormal</span>
+          </div>
+        </div>
+
+        <div class="hinweis">
+          <b>Gerätezeit fraglich</b>
+          <p>Das Gerät meldete den 18.04.2023, eingelesen wurde die Messung am 05.09.2026. Die Uhr des Geräts geht falsch — Sphygma kann sie nicht stellen.</p>
+        </div>
+
+        <div class="b w">
+          <div class="r"><span class="k">Gemessen laut Gerät</span><span class="v">18.04.2023, 11:02</span></div>
+          <div class="r"><span class="k">Eingelesen</span><span class="v">05.09.2026, 23:58</span></div>
+          <div class="r"><span class="k">Speicherplatz</span><span class="v">Benutzer 1</span></div>
+        </div>
+
+        <div class="b p tight">
+          <p class="lab" style="margin:0 0 2px;">Health Connect</p>
+          <span class="fuss">Noch nicht übertragen</span>
+        </div>
+
+        <button class="act">Nach Health Connect übertragen</button>
+
+        <div class="grow"></div>
+        <div class="nav"><span class="on">Heute</span><span>Verlauf</span><span>Gerät</span></div>
+      </div></div>
+      <p class="cap"><b>Detail-Blatt</b>Hinweis als eigenes Vollband zwischen Kopf und Daten — kein Kasten, keine Kante</p>
+    </div>
+
+  </div>
+
+  <div class="sec-head">
+    <h2>Die elf Bausteine in dieser Handschrift</h2>
+    <p>Gleiche Funktion, andere Form — die Regel aus der dritten Fassung gilt unverändert</p>
+  </div>
+
+  <p class="note">Kein Baustein fehlt, keiner kommt hinzu, kein Text ändert sich. Wo A eine Haarlinie zieht, B eine Karte legt und C eine Fläche einfärbt, wechselt D den Flächenton über die volle Breite.</p>
+
+  <table>
+    <thead><tr><th>Baustein</th><th>D — Pegel</th><th>Wodurch es sich von A, B, C unterscheidet</th></tr></thead>
+    <tbody>
+      <tr><td>Kopf: Wochenschnitt</td><td>Kopffläche im Ton der Einordnung, Schnitt in 62&nbsp;px, Einordnung als Wort rechts auf der Grundlinie</td><td>Die Fläche trägt die Einordnung, nicht Band, Pille oder Chip</td></tr>
+      <tr><td>Letzte Messung mit Alter</td><td>Eigenes weißes Band direkt darunter, Zeitpunkt links, Wert rechts</td><td>Rangfolge über Flächenton und Größe, nicht über Karte oder Trennlinie</td></tr>
+      <tr><td>Kennzahlen</td><td>Drei Spalten in einem Band, getrennt nur durch Leerraum</td><td>Nebeneinander wie B, aber ohne Mini-Karten</td></tr>
+      <tr><td>Messungsliste</td><td>Zeilen ohne Trennlinie, Tagesüberschrift als kleine Zeile, ganzes Band je Tag</td><td>Rhythmus statt Linie oder Kartenrand</td></tr>
+      <tr><td>Zeitraumwahl (5 Werte)</td><td>Textreihe, gewählter Wert mit 3&nbsp;px Unterstreichung in Signalfarbe</td><td>Weder Segmentleiste noch Pille noch Chip</td></tr>
+      <tr><td>Kurve</td><td>Fläche zwischen Systole und Diastole, letzte Punkte als Quadrate</td><td>Die Spanne selbst wird sichtbar statt zweier getrennter Linien</td></tr>
+      <tr><td>Leerer Zeitraum</td><td>Gestrichelte Achse, darunter Text im Grundton, Ausweg als tonales Band</td><td>Text steht in einem eigenen Band, nicht auf dem Grund oder in einer Karte</td></tr>
+      <tr><td>Hinweisfeld</td><td>Vollband in <span class="swatch" style="background:#F3E4CB"></span>#F3E4CB über die ganze Breite</td><td>Keine Kante links, kein Radius, keine rosa Fehlerfarbe</td></tr>
+      <tr><td>Abgleich-Symbol</td><td>Dasselbe Zeichen wie in A, B, C — Bluetooth mit Wellen, in Signalfarbe</td><td>Unverändert, wie festgelegt</td></tr>
+      <tr><td>Hauptaktion</td><td>Randloses Band über die volle Breite, gefüllt in <span class="swatch" style="background:#0E5C4C"></span>#0E5C4C, 54&nbsp;px hoch</td><td>Kein Knopf auf einer Fläche, sondern eine Fläche, die der Knopf ist</td></tr>
+      <tr><td>Nebenaktion</td><td>Gleiches Band in <span class="swatch" style="background:#DFE6E2"></span>#DFE6E2 mit dunkler Schrift; dritte Rangstufe als unterstrichener Text</td><td>Rangfolge über den Ton, die Form bleibt gleich</td></tr>
+    </tbody>
+  </table>
+
+  <div class="sec-head">
+    <h2>Was in den Code müsste</h2>
+    <p>Farben, Maße, Schriftgrade — als <code>ThemeData</code> lesbar</p>
+  </div>
+
+  <table>
+    <thead><tr><th>Rolle</th><th>Wert</th><th>Verwendung</th></tr></thead>
+    <tbody>
+      <tr><td>Tinte</td><td><span class="swatch" style="background:#16211F"></span>#16211F</td><td>Schrift, Navigationsleiste</td></tr>
+      <tr><td>Tinte gedämpft</td><td><span class="swatch" style="background:#6B7671"></span>#6B7671</td><td>Beschriftungen, Zeitangaben</td></tr>
+      <tr><td>Grund</td><td><span class="swatch" style="background:#ECEEEB"></span>#ECEEEB</td><td>Jedes zweite Band</td></tr>
+      <tr><td>Fläche</td><td><span class="swatch" style="background:#FFFFFF"></span>#FFFFFF</td><td>Jedes andere Band</td></tr>
+      <tr><td>Signal</td><td><span class="swatch" style="background:#0E5C4C"></span>#0E5C4C</td><td>Hauptaktion, Unterstreichung, Systole-Kurve</td></tr>
+      <tr><td>Signal weich</td><td><span class="swatch" style="background:#DFE6E2"></span>#DFE6E2</td><td>Nebenaktion</td></tr>
+      <tr><td>Einordnung normal</td><td><span class="swatch" style="background:#D9E5E0"></span>#D9E5E0</td><td>Kopffläche bei Optimal und Normal</td></tr>
+      <tr><td>Einordnung hoch</td><td><span class="swatch" style="background:#EFE1C9"></span>#EFE1C9</td><td>Kopffläche bei Hochnormal</td></tr>
+      <tr><td>Hinweisfläche</td><td><span class="swatch" style="background:#F3E4CB"></span>#F3E4CB auf <span class="swatch" style="background:#7A4A05"></span>#7A4A05</td><td>Gerätezeit fraglich</td></tr>
+      <tr><td>Schrift</td><td>Inter, Stärken 400 / 500 / 600, Ziffern tabellarisch</td><td>Eine Familie, drei Stärken, keine Kapitälchen</td></tr>
+      <tr><td>Schnittzahl</td><td>62&nbsp;px, Stärke 600, Laufweite −3,5&nbsp;%</td><td>Nur einmal je Bildschirm</td></tr>
+      <tr><td>Bandpolster</td><td>18&nbsp;px oben und unten, 20&nbsp;px seitlich</td><td>Einheitlich, Abstand zwischen Bändern: 0</td></tr>
+      <tr><td>Radius</td><td>0 überall</td><td>Auch bei Knöpfen und Hinweisfeldern</td></tr>
+      <tr><td>Schatten</td><td>keine, Höhenstufe 0</td><td>Auch die Navigationsleiste ohne Kante</td></tr>
+    </tbody>
+  </table>
+
+  <div class="sec-head">
+    <h2>Drei Punkte, die beim Bauen auffallen werden</h2>
+    <p>Bevor sie im Code auffallen</p>
+  </div>
+
+  <ul>
+    <li><strong>Die Kopffläche braucht eine Farbe je Einordnungsstufe.</strong> Die Klassifikation ist bereits gebaut, hängt aber an <code>SPHYGMA_ESC</code>. Ohne dieses Flag hat der Kopf keine Aussage — dann muss er auf den Grundton zurückfallen und die Einordnung entfällt, wie in den anderen Handschriften auch.</li>
+    <li><strong>Randlose Bänder vertragen keinen <code>Card</code>-Wrapper.</strong> In Flutter heißt das <code>Container</code> mit <code>color</code> und voller Breite, Listen ohne <code>ListTile</code>-Standardpolster, und <code>SafeArea</code> nur unten, damit die Kopffläche bis unter die Statusleiste läuft.</li>
+    <li><strong>Ohne Trennlinien trägt allein der Abstand.</strong> Zeilen brauchen 8&nbsp;px oben und unten, Bänder 18&nbsp;px; wird das ungleich, zerfällt der Bildschirm sofort. Das ist die einzige Stelle, an der diese Handschrift empfindlicher ist als die anderen drei.</li>
+  </ul>
+
+  <p class="note" style="margin-top:28px; color:var(--tafel-muted); font-size:14px;">Pegel ändert Layout und Gewichtung, nicht den Funktionsumfang. Der Arbeitsvorrat aus der dritten Fassung bleibt unverändert: Wochenschnitt als Hauptaussage, Zeitraum „3 Monate“, erklärter leerer Zeitraum, Kennzeichnung je Messung, Alter der Messung, getrennte Zustandszeilen, Bericht für die Praxis.</p>
+
+</div>
+</body>
+</html>

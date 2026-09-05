@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sphygma · Zweiter Entwurf: Sieben Tage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#171A24;
+    --muted:#6E7480;
+    --hair:#E1E4EA;
+    --z1:#D3E0F5;   /* im Zielbereich */
+    --z2:#8AA6D6;   /* grenzwertig */
+    --z3:#B8482C;   /* darüber */
+    --warn:#8A4A12;
+    --warn-bg:#F7EBDC;
+
+    --tafel-bg:#FFFFFF;
+    --tafel-muted:#71736F;
+    --tafel-line:#E4E5E2;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--tafel-bg); color:var(--ink);
+    font-family:Inter,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-size:16px; line-height:1.55; font-variant-numeric:tabular-nums;}
+  .wrap{max-width:1180px; margin:0 auto; padding:64px 32px 96px;}
+
+  .kicker{font-size:13px; color:var(--tafel-muted); margin:0 0 10px;}
+  h1{font-size:46px; line-height:1.06; font-weight:600; letter-spacing:-.025em; margin:0 0 22px; max-width:14ch;}
+  .lede{max-width:66ch; font-size:17px; margin:0 0 14px; color:#2A2C32;}
+  .lede strong{font-weight:600;}
+  h2{font-size:22px; font-weight:600; letter-spacing:-.01em; margin:0;}
+  .sec-head{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
+    border-bottom:1px solid var(--tafel-line); padding-bottom:10px; margin:72px 0 28px;}
+  .sec-head p{margin:0; color:var(--tafel-muted); font-size:14px;}
+  .note{max-width:66ch;}
+  ul{max-width:66ch; padding-left:20px;} li{margin-bottom:9px;}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.88em; background:#F2F3F5; padding:1px 5px; border-radius:3px;}
+
+  .legend{display:flex; gap:22px; flex-wrap:wrap; margin:0 0 8px; font-size:14px; color:var(--muted);}
+  .legend span{display:flex; align-items:center; gap:8px;}
+  .sw{width:14px; height:14px; border-radius:2px; display:inline-block;}
+
+  /* ---------- Bildschirme ---------- */
+  .screens{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:40px 28px; align-items:start;}
+  .slot{display:flex; flex-direction:column; align-items:center; gap:12px;}
+  .cap{font-size:13px; color:var(--tafel-muted); text-align:center; max-width:33ch;}
+  .cap b{display:block; color:var(--ink); font-weight:600;}
+
+  .phone{width:320px; border:1px solid var(--tafel-line); border-radius:26px; overflow:hidden; background:#fff;}
+  .scr{display:flex; flex-direction:column; min-height:640px; padding:0; font-size:15px; line-height:1.45;}
+  .pad{padding:0 20px;}
+  .grow{flex:1 1 auto;}
+
+  .status{display:flex; justify-content:space-between; align-items:center;
+    padding:14px 20px 0; font-size:12.5px; color:var(--muted);}
+  .titel{font-size:19px; font-weight:600; letter-spacing:-.015em; margin:18px 0 2px;}
+  .klein{font-size:13px; color:var(--muted); margin:0;}
+  .schnitt{font-size:42px; font-weight:500; letter-spacing:-.035em; line-height:1; margin:14px 0 6px;}
+  .schnitt .s{font-weight:400; color:var(--muted);}
+  .satz{font-size:14px; color:var(--muted); margin:0 0 4px;}
+  .zeile{display:flex; justify-content:space-between; align-items:baseline; padding:7px 0; font-size:14.5px;}
+  .zeile .k{color:var(--muted);}
+  .zeile .v{font-weight:600;}
+  .trenn{height:1px; background:var(--hair); margin:14px 0;}
+
+  /* Das Raster ist die Hauptsache */
+  .tage{display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin:18px 0 6px;}
+  .tage span{font-size:11px; color:var(--muted); text-align:center;}
+  .reihe-lab{font-size:12.5px; color:var(--muted); margin:10px 0 5px;}
+  .reihe{display:grid; grid-template-columns:repeat(7,1fr); gap:4px;}
+  .z{height:36px; border-radius:2px; display:flex; align-items:center; justify-content:center;
+     font-size:11.5px; font-weight:500; color:var(--ink);}
+  .z.a{background:var(--z1);} .z.b{background:var(--z2);} .z.c{background:var(--z3); color:#fff;}
+  .z.leer{background:transparent; box-shadow:inset 0 0 0 1px var(--hair);}
+  .z.heute{box-shadow:inset 0 0 0 2px var(--ink);}
+
+  .paar{display:flex; gap:26px; margin-top:14px;}
+  .paar div{flex:1;}
+  .paar .k{font-size:12.5px; color:var(--muted);}
+  .paar .v{font-size:18px; font-weight:600; letter-spacing:-.02em;}
+
+  /* Wochenliste */
+  .wz{display:flex; align-items:center; gap:14px; padding:14px 0; border-bottom:1px solid var(--hair);}
+  .mini{display:grid; grid-template-columns:repeat(7,8px); gap:2px;}
+  .mini i{height:8px; border-radius:1px; display:block;}
+  .mini i.a{background:var(--z1);} .mini i.b{background:var(--z2);} .mini i.c{background:var(--z3);}
+  .mini i.leer{box-shadow:inset 0 0 0 1px var(--hair);}
+  .wz .txt{flex:1;}
+  .wz .d{font-size:14px; font-weight:600;}
+  .wz .m{font-size:12.5px; color:var(--muted);}
+  .wz .w{font-size:16px; font-weight:600; letter-spacing:-.02em;}
+
+  /* Übertragungsstreifen */
+  .streifen{display:flex; gap:1px; margin:10px 0 2px;}
+  .streifen i{flex:1; height:10px; background:var(--hair);}
+  .streifen i.on{background:var(--ink);}
+
+  .hinweis{background:var(--warn-bg); color:var(--warn); padding:14px 20px; margin:16px 0 0;}
+  .hinweis b{display:block; color:#5F3208; font-weight:600; margin-bottom:3px; font-size:14px;}
+  .hinweis p{margin:0; font-size:13px; line-height:1.45;}
+
+  .link{font-size:14.5px; font-weight:500; border-bottom:1.5px solid var(--ink); padding-bottom:1px;}
+  .links{display:flex; flex-direction:column; gap:12px; align-items:flex-start; margin-top:18px;}
+
+  .haupt{margin:0; border:0; width:100%; background:var(--ink); color:#fff; font:inherit;
+    font-weight:600; font-size:15px; padding:16px; text-align:center;}
+  .haupt.aus{background:#EFF0F3; color:#9DA2AC;}
+  .neben{margin:0; border:0; width:100%; background:#fff; color:var(--ink); font:inherit;
+    font-weight:500; font-size:15px; padding:15px 16px; text-align:center; box-shadow:inset 0 1px 0 var(--hair);}
+
+  table{width:100%; border-collapse:collapse; margin-top:6px;}
+  th{text-align:left; font-size:13px; font-weight:500; color:var(--tafel-muted); padding:0 14px 8px 0; border-bottom:1px solid var(--tafel-line);}
+  td{vertical-align:top; padding:12px 14px 12px 0; border-bottom:1px solid #EEEFF1; font-size:14.5px; line-height:1.5;}
+  td:first-child{font-weight:600; width:26%;}
+
+  @media print{ .wrap{padding:0;} .slot,.phone{break-inside:avoid;} .sec-head{margin-top:34px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="kicker">Sphygma · zweiter Entwurf, unabhängig vom ersten · 2026-09-05</p>
+  <h1>Sieben Tage</h1>
+
+  <p class="lede">Dieser Entwurf beginnt nicht bei der Oberfläche, sondern bei der Frage, welche Einheit überhaupt etwas aussagt. Ein einzelner Messwert sagt fast nichts. Auch ein gleitender Sieben-Tage-Schnitt ist nur ein Trostpflaster: Er mittelt über einen Zeitraum, der zufällig entstanden ist. <strong>Aussagekraft hat die Messwoche</strong> — sieben Tage, morgens und abends gemessen, mit einem Zielwert, der für zu Hause gilt.</p>
+
+  <p class="lede">Deshalb ist die Woche hier kein Zeitfilter, sondern das zentrale Objekt der App. Ein Bildschirm zeigt die laufende Woche als Raster aus vierzehn Feldern. Man sieht in einem Blick, was gemessen wurde, was fehlt und wo die Werte liegen. Der Rest der App ist die Liste früherer Wochen und der Weg zu einer einzelnen Messung.</p>
+
+  <p class="lede">Es gibt keine Registerleiste mehr, keinen „Heute“-Bildschirm und keine freie Zeitraumwahl. Das ist ein echter Tausch, keine Verschönerung — was er kostet, steht weiter unten.</p>
+
+  <div class="legend" style="margin-top:26px;">
+    <span><i class="sw" style="background:var(--z1)"></i>im Zielbereich, unter 135/85</span>
+    <span><i class="sw" style="background:var(--z2)"></i>grenzwertig</span>
+    <span><i class="sw" style="background:var(--z3)"></i>darüber</span>
+    <span><i class="sw" style="box-shadow:inset 0 0 0 1px var(--hair)"></i>nicht gemessen</span>
+  </div>
+
+  <div class="sec-head">
+    <h2>Sechs Bildschirme</h2>
+    <p>Farbe gehört den Daten, nie der Bedienung</p>
+  </div>
+
+  <div class="screens">
+
+    <!-- 1 — Diese Woche -->
+    <div class="slot">
+      <div class="phone"><div class="scr">
+        <div class="status"><span>RS7 verbunden</span><span>abgeglichen vor 10 Minuten</span></div>
+        <div class="pad">
+          <p class="titel">Diese Woche</p>
+          <p class="klein">Tag 7 von 7, seit Montag 12 Messungen</p>
+          <p class="schnitt">124<span class="s">/</span>85</p>
+          <p class="satz">Mittel dieser Woche, Puls 81</p>
+
+          <div class="tage"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
+          <p class="reihe-lab">Morgens</p>
+          <div class="reihe">
+            <i class="z a">118</i><i class="z a">121</i><i class="z a">120</i><i class="z a">124</i><i class="z a">122</i><i class="z a">121</i><i class="z leer heute"></i>
+          </div>
+          <p class="reihe-lab">Abends</p>
+          <div class="reihe">
+            <i class="z a">128</i><i class="z a">126</i><i class="z b">130</i><i class="z a">127</i><i class="z a">128</i><i class="z b">129</i><i class="z leer heute"></i>
+          </div>
+
+          <p class="satz" style="margin-top:14px;">Heute fehlen noch beide Messungen.</p>
+
+          <div class="paar">
+            <div><div class="k">Morgens</div><div class="v">121/83</div></div>
+            <div><div class="k">Abends</div><div class="v">127/87</div></div>
+          </div>
+
+          <div class="trenn"></div>
+          <div class="zeile"><span class="k">Zuletzt, gestern um 23:57</span><span class="v">128/87</span></div>
+
+          <div class="links">
+            <span class="link">Frühere Wochen</span>
+            <span class="link">Gerät und Übertragung</span>
+          </div>
+        </div>
+        <div class="grow"></div>
+        <button class="haupt aus">Bericht für die Praxis</button>
+      </div></div>
+      <p class="cap"><b>Diese Woche</b>Das Raster ist die Hauptsache. Der Bericht bleibt grau, solange die Woche unvollständig ist</p>
+    </div>
+
+    <!-- 2 — Frühere Wochen -->
+    <div class="slot">
+      <div class="phone"><div class="scr">
+        <div class="status"><span>Wochen</span><span>seit April 2023</span></div>
+        <div class="pad">
+          <p class="titel">Frühere Wochen</p>
+          <p class="klein">Vollständige Wochen sind für die Praxis brauchbar</p>
+
+          <div class="wz">
+            <div class="mini">
+              <i class="a"></i><i class="a"></i><i class="a"></i><i class="a"></i><i class="a"></i><i class="a"></i><i class="a"></i>
+              <i class="a"></i><i class="a"></i><i class="b"></i><i class="a"></i><i class="a"></i><i class="b"></i><i class="a"></i>
+            </div>
+            <div class="txt"><div class="d">25. bis 31. August</div><div class="m">14 von 14</div></div>
+            <div class="w">124/85</div>
+          </div>
+
+          <div class="wz">
+            <div class="mini">
+              <i class="a"></i><i class="a"></i><i class="b"></i><i class="a"></i><i class="leer"></i><i class="a"></i><i class="a"></i>
+              <i class="b"></i><i class="a"></i><i class="b"></i><i class="leer"></i><i class="leer"></i><i class="a"></i><i class="b"></i>
+            </div>
+            <div class="txt"><div class="d">18. bis 24. August</div><div class="m">11 von 14</div></div>
+            <div class="w">127/88</div>
+          </div>
+
+          <div class="wz">
+            <div class="mini">
+              <i class="b"></i><i class="c"></i><i class="b"></i><i class="a"></i><i class="a"></i><i class="b"></i><i class="a"></i>
+              <i class="b"></i><i class="b"></i><i class="c"></i><i class="b"></i><i class="a"></i><i class="b"></i><i class="b"></i>
+            </div>
+            <div class="txt"><div class="d">11. bis 17. August</div><div class="m">14 von 14</div></div>
+            <div class="w">133/89</div>
+          </div>
+
+          <div class="wz">
+            <div class="mini">
+              <i class="leer"></i><i class="leer"></i><i class="a"></i><i class="leer"></i><i class="leer"></i><i class="leer"></i><i class="leer"></i>
+              <i class="leer"></i><i class="a"></i><i class="leer"></i><i class="leer"></i><i class="leer"></i><i class="leer"></i><i class="leer"></i>
+            </div>
+            <div class="txt"><div class="d">4. bis 10. August</div><div class="m">2 von 14</div></div>
+            <div class="w">126/87</div>
+          </div>
+
+          <div class="trenn"></div>
+          <div class="zeile"><span class="k">114 Messungen gespeichert</span><span class="v">100 offen</span></div>
+          <div class="links"><span class="link">Alle nach Health Connect übertragen</span></div>
+        </div>
+        <div class="grow"></div>
+      </div></div>
+      <p class="cap"><b>Frühere Wochen</b>Der Verlauf ist eine Liste von Wochen, nicht eine Kurve über beliebige Zeiträume</p>
+    </div>
+
+    <!-- 3 — Eine Woche -->
+    <div class="slot">
+      <div class="phone"><div class="scr">
+        <div class="status"><span>Zurück zu den Wochen</span><span>14 von 14</span></div>
+        <div class="pad">
+          <p class="titel">25. bis 31. August</p>
+          <p class="klein">Vollständig gemessen</p>
+          <p class="schnitt">124<span class="s">/</span>85</p>
+          <p class="satz">Mittel ohne den ersten Tag, so rechnet die Praxis</p>
+
+          <div class="tage"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
+          <p class="reihe-lab">Morgens</p>
+          <div class="reihe">
+            <i class="z a">119</i><i class="z a">121</i><i class="z a">118</i><i class="z a">123</i><i class="z a">120</i><i class="z a">122</i><i class="z a">121</i>
+          </div>
+          <p class="reihe-lab">Abends</p>
+          <div class="reihe">
+            <i class="z a">129</i><i class="z a">126</i><i class="z b">131</i><i class="z a">127</i><i class="z a">125</i><i class="z b">130</i><i class="z a">128</i>
+          </div>
+
+          <div class="paar">
+            <div><div class="k">Morgens</div><div class="v">121/83</div></div>
+            <div><div class="k">Abends</div><div class="v">127/87</div></div>
+          </div>
+
+          <div class="trenn"></div>
+          <div class="zeile"><span class="k">Di 26., morgens</span><span class="v">121/83</span></div>
+          <div class="zeile"><span class="k">Di 26., abends</span><span class="v">126/86</span></div>
+          <div class="zeile"><span class="k">Mi 27., morgens</span><span class="v">118/81</span></div>
+          <div class="links"><span class="link">Alle vierzehn Messungen</span></div>
+        </div>
+        <div class="grow"></div>
+        <button class="haupt">Bericht für die Praxis</button>
+      </div></div>
+      <p class="cap"><b>Eine Woche</b>Der erste Tag zählt nicht in den Schnitt — das steht dabei, statt versteckt zu sein</p>
+    </div>
+
+    <!-- 4 — Eine Messung -->
+    <div class="slot">
+      <div class="phone"><div class="scr">
+        <div class="status"><span>Zurück</span><span>Messung 542</span></div>
+        <div class="pad">
+          <p class="schnitt" style="margin-top:22px;">133<span class="s">/</span>91</p>
+          <p class="satz">Puls 78, diastolisch über dem Zielbereich</p>
+        </div>
+
+        <div class="hinweis">
+          <b>Keiner Woche zugeordnet</b>
+          <p>Das Gerät meldete den 18.04.2023, eingelesen wurde die Messung am 05.09.2026. Die Uhr des Geräts geht falsch, Sphygma kann sie nicht stellen.</p>
+        </div>
+
+        <div class="pad">
+          <div class="zeile" style="padding-top:14px;"><span class="k">Gemessen laut Gerät</span><span class="v">18.04.2023, 11:02</span></div>
+          <div class="zeile"><span class="k">Eingelesen</span><span class="v">05.09.2026, 23:58</span></div>
+          <div class="zeile"><span class="k">Speicherplatz</span><span class="v">Benutzer 1</span></div>
+          <div class="trenn"></div>
+          <div class="zeile"><span class="k">Health Connect</span><span class="v">noch nicht übertragen</span></div>
+        </div>
+
+        <div class="grow"></div>
+        <button class="neben">Auf den 5. September datieren</button>
+        <button class="haupt">Nach Health Connect übertragen</button>
+      </div></div>
+      <p class="cap"><b>Eine Messung</b>Eine falsch datierte Messung fällt aus jeder Woche heraus. Der Bildschirm bietet den Ausweg an</p>
+    </div>
+
+    <!-- 5 — Gerät -->
+    <div class="slot">
+      <div class="phone"><div class="scr">
+        <div class="status"><span>Zurück</span><span>RS7 Intelli IT</span></div>
+        <div class="pad">
+          <p class="titel">Gerät und Übertragung</p>
+          <p class="klein">Gekoppelt, Speicherplatz Benutzer 1</p>
+
+          <div class="trenn"></div>
+          <div class="zeile"><span class="k">Abgleich</span><span class="v">bereit</span></div>
+          <div class="zeile"><span class="k">Letzte Messung</span><span class="v">vor 10 Minuten</span></div>
+          <div class="zeile"><span class="k">Gespeichert</span><span class="v">114 Messungen</span></div>
+
+          <div class="trenn"></div>
+          <p class="klein" style="margin-bottom:2px;">In Health Connect</p>
+          <div class="streifen">
+            <i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i>
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <div class="zeile"><span class="k">14 von 114 übertragen</span></div>
+
+          <div class="links">
+            <span class="link">Übertragene aus Sphygma entfernen</span>
+            <span class="link">Gerät neu koppeln</span>
+          </div>
+        </div>
+        <div class="grow"></div>
+        <button class="neben">Jetzt abgleichen</button>
+        <button class="haupt">Alle übertragen</button>
+      </div></div>
+      <p class="cap"><b>Gerät und Übertragung</b>Kein Reiter, sondern ein Blatt, das man aufruft. Der Streifen zeigt den Rückstand als Menge</p>
+    </div>
+
+    <!-- 6 — Lange Pause -->
+    <div class="slot">
+      <div class="phone"><div class="scr">
+        <div class="status"><span>RS7 verbunden</span><span>abgeglichen vor 1 Minute</span></div>
+        <div class="pad">
+          <p class="titel">Seit acht Wochen keine Messung</p>
+          <p class="klein">Die letzte Woche blieb bei 6 von 14</p>
+
+          <div class="tage"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
+          <p class="reihe-lab">Morgens</p>
+          <div class="reihe">
+            <i class="z a">124</i><i class="z b">129</i><i class="z leer"></i><i class="z a">122</i><i class="z leer"></i><i class="z leer"></i><i class="z leer"></i>
+          </div>
+          <p class="reihe-lab">Abends</p>
+          <div class="reihe">
+            <i class="z b">131</i><i class="z a">127</i><i class="z leer"></i><i class="z b">130</i><i class="z leer"></i><i class="z leer"></i><i class="z leer"></i>
+          </div>
+
+          <p class="satz" style="margin-top:16px;">Aus sechs Messungen lässt sich kein belastbarer Wert bilden. Sieben Tage morgens und abends ergeben einen, den die Praxis verwenden kann.</p>
+
+          <div class="trenn"></div>
+          <div class="zeile"><span class="k">Letzter Wert, 11. Juli</span><span class="v">130/88</span></div>
+          <div class="links"><span class="link">Alte Wochen ansehen</span></div>
+        </div>
+        <div class="grow"></div>
+        <button class="haupt">Neue Messwoche ab morgen</button>
+      </div></div>
+      <p class="cap"><b>Lange Pause</b>Kein leeres Diagramm, sondern der Grund und der Weg zurück</p>
+    </div>
+
+  </div>
+
+  <div class="sec-head">
+    <h2>Warum die Woche und nicht der Tag</h2>
+    <p>Die Annahme, auf der der ganze Entwurf steht</p>
+  </div>
+
+  <p class="note">Für die Heimmessung empfehlen die einschlägigen Leitlinien, an mindestens vier, besser sieben aufeinanderfolgenden Tagen zu messen, morgens und abends je zweimal, den ersten Tag zu verwerfen und aus dem Rest den Mittelwert zu bilden. Für zu Hause gilt dabei ein niedrigerer Grenzwert als in der Praxis: 135/85 statt 140/90.</p>
+
+  <p class="note" style="margin-top:14px;">Damit hat die App ein natürliches Objekt, das die bisherigen Entwürfe nicht hatten. Eine Woche ist vollständig oder nicht. Sie hat einen Wert, der etwas bedeutet. Sie ist genau das, was in der Sprechstunde gefragt wird. Alles andere im Entwurf folgt daraus: das Raster aus vierzehn Feldern, der graue Bericht-Knopf bei unvollständiger Woche, die Wochenliste als Verlauf, der Satz „Mittel ohne den ersten Tag“.</p>
+
+  <div class="sec-head">
+    <h2>Die Gestaltungsregeln</h2>
+    <p>Vier Sätze, aus denen sich jeder Bildschirm ableiten lässt</p>
+  </div>
+
+  <table>
+    <tbody>
+      <tr><td>Farbe gehört den Daten</td><td>Die drei Tonstufen und das Rostrot erscheinen ausschließlich in Messfeldern. Knöpfe, Verweise und Beschriftungen sind schwarz auf weiß. Wer im Bildschirm Farbe sieht, sieht einen Messwert.</td></tr>
+      <tr><td>Keine Behälter</td><td>Keine Karten, keine Kacheln, keine gefüllten Flächen außer den Messfeldern und dem Hinweis. Gegliedert wird durch Raster, Abstand und eine einzige Haarlinie als Zäsur.</td></tr>
+      <tr><td>Ein Raster für alles</td><td>Sieben Spalten. Die Messfelder, die Wochenübersicht und der Übertragungsstreifen benutzen dasselbe Raster in drei Größen.</td></tr>
+      <tr><td>Ein Weg statt vier Reiter</td><td>Ein Startbildschirm, von dem zwei Verweise wegführen. Kein gleichzeitiges Nebeneinander von Heute, Verlauf und Gerät, weil zwei davon selten gebraucht werden.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="sec-head">
+    <h2>Was das Konzept vom Datenmodell verlangt</h2>
+    <p>Über den bisherigen Arbeitsvorrat hinaus</p>
+  </div>
+
+  <table>
+    <thead><tr><th>Baustein</th><th>Was gebraucht wird</th></tr></thead>
+    <tbody>
+      <tr><td>Tageszeit</td><td>Jede Messung braucht die Zuordnung morgens oder abends. Eine feste Grenze reicht nicht für alle; sinnvoll ist eine Grenze um 12 Uhr mit der Möglichkeit, sie zu verschieben.</td></tr>
+      <tr><td>Woche</td><td>Wochen als eigenes Objekt, gebildet von Montag bis Sonntag, mit Vollständigkeit (gemessene von vierzehn möglichen Feldern) und zwei Mittelwerten.</td></tr>
+      <tr><td>Erster Tag</td><td>Der Wochenschnitt lässt Tag 1 aus. Der Wert über alle sieben Tage sollte trotzdem abrufbar sein, sonst wirkt die Zahl willkürlich.</td></tr>
+      <tr><td>Mehrfachmessung</td><td>Zwei Messungen kurz hintereinander gehören in dasselbe Feld. Sphygma muss sie zusammenfassen, sonst ist das Raster falsch gefüllt.</td></tr>
+      <tr><td>Falsch datierte Messung</td><td>Neu: eine Messung ohne brauchbares Datum gehört in keine Woche. Sie braucht einen eigenen Zustand und die Möglichkeit, sie einem Tag zuzuweisen — mit Vermerk, dass das Datum von Hand gesetzt wurde.</td></tr>
+      <tr><td>Zielbereich</td><td>Die Tonstufen der Felder brauchen Schwellen für die Heimmessung (135/85), nicht die Praxisschwellen der bisherigen Einordnung.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="sec-head">
+    <h2>Was der Tausch kostet</h2>
+    <p>Ehrlich gegenüber der bisherigen Struktur</p>
+  </div>
+
+  <ul>
+    <li><strong>Freie Zeiträume fallen weg.</strong> Wer den Jahresverlauf als Kurve sehen will, findet ihn hier nicht. Die Wochenliste zeigt die Richtung, aber gröber. Das ließe sich nachrüsten, gehört aber nicht in den Startbildschirm.</li>
+    <li><strong>Wer unregelmäßig misst, sieht überall Lücken.</strong> Der Entwurf hat eine Meinung: Er belohnt das protokollgerechte Messen und macht das Gegenteil sichtbar. Das kann als Vorwurf ankommen. Deshalb ist die Sprache in den leeren Zuständen sachlich und nennt immer den nächsten Schritt.</li>
+    <li><strong>Der „Heute“-Blick verschwindet.</strong> Die eben gemessene Zahl steht nur noch klein unter dem Wochenraster. Das ist gewollt, kostet aber die kleine Genugtuung nach dem Messen.</li>
+    <li><strong>Mehr Rechnung im Kern.</strong> Wochenbildung, Tageszeit, Zusammenfassung von Doppelmessungen — das ist deutlich mehr Logik als eine Liste mit Filtern.</li>
+  </ul>
+
+</div>
+</body>
+</html>
