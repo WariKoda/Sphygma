@@ -118,6 +118,17 @@ void main() {
     expect(find.byType(TodayScreen), findsNothing);
   });
 
+  testWidgets('Titel und Navigationseintrag heißen gleich', (tester) async {
+    // Sonst verspräche der Reiter „Heute" einen Tagesfilter, den das
+    // Tagesprofil gerade nicht anwendet.
+    await controller.setConcept(AppConcept.tagesprofil);
+    await tester.pumpWidget(SphygmaApp(controller: controller));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Muster'), findsNWidgets(2));
+    expect(find.text('Heute'), findsNothing);
+  });
+
   testWidgets('der Gerätebereich bleibt in jedem Konzept erreichbar',
       (tester) async {
     // Dort wird das Konzept gewechselt — wäre er in einem Konzept

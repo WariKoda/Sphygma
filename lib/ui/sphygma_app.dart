@@ -111,16 +111,19 @@ class _ShellState extends State<_Shell> {
           backgroundColor: t.surface,
           selectedIndex: _index,
           onDestinationSelected: (i) => setState(() => _index = i),
-          destinations: const [
+          destinations: [
             NavigationDestination(
-              icon: Icon(Icons.favorite_outline),
-              label: 'Heute',
+              // Dieselbe Beschriftung wie oben in der Titelzeile: Ein Reiter,
+              // der „Heute" heißt und das Muster aller Messungen zeigt, würde
+              // einen Tagesfilter versprechen, den es dort nicht gibt.
+              icon: const Icon(Icons.favorite_outline),
+              label: titles[0],
             ),
-            NavigationDestination(
+            const NavigationDestination(
               icon: Icon(Icons.show_chart),
               label: 'Verlauf',
             ),
-            NavigationDestination(
+            const NavigationDestination(
               icon: Icon(Icons.bluetooth),
               label: 'Gerät',
             ),
