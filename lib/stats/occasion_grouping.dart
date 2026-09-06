@@ -45,7 +45,8 @@ class MeasurementOccasion {
     required this.state,
     required this.rule,
     required this.openSeam,
-  });
+    required List<int> confirmedSeams,
+  }) : confirmedSeams = List.unmodifiable(confirmedSeams);
 
   /// Alle Rohmessungen dieses Anlasses, älteste zuerst.
   final List<Measurement> measurements;
@@ -70,6 +71,16 @@ class MeasurementOccasion {
   /// Oberfläche aus der Reihenfolge zurückrechnen, welche Messung gemeint
   /// ist — und läge falsch, sobald eine Nummer fehlt.
   final int? openSeam;
+
+  /// Die Gerätenummern, unter denen Entscheidungen des Nutzers gespeichert
+  /// sind, die diesen Anlass betreffen.
+  ///
+  /// Aus dem Anlass allein nicht ableitbar: Bei einem bestätigten Zusammen
+  /// ist es die angeschlossene Messung, bei einer bestätigten Trennung die
+  /// erste Messung des *folgenden* Anlasses. Wer das errät, löscht beim
+  /// Zurücknehmen den falschen Eintrag — und die Schaltfläche bleibt
+  /// wirkungslos.
+  final List<int> confirmedSeams;
 
   /// Die Gerätenummer, unter der dieser Anlass geführt wird: die erste.
   int get sequence => measurements.first.deviceSequence;
@@ -120,6 +131,8 @@ List<MeasurementOccasion> proposeOccasions(
   final gruppen = <List<Measurement>>[];
   final zustaende = <OccasionState>[];
   final naehte = <int?>[];
+  final bestaetigt = <List<int>>[];
+  var aktuelleNaehte = <int>[];
   var aktuell = <Measurement>[sortiert.first];
   var aktuellerZustand = OccasionState.sicher;
 
@@ -131,6 +144,9 @@ List<MeasurementOccasion> proposeOccasions(
     if (entscheidung.zusammen) {
       aktuell.add(jetzt);
       aktuellerZustand = _staerker(aktuellerZustand, entscheidung.state);
+      if (entscheidung.state == OccasionState.bestaetigt) {
+        aktuelleNaehte.add(jetzt.deviceSequence);
+      }
     } else {
       // Eine bestätigte Trennung betrifft beide Seiten: Der abgeschlossene
       // Anlass endet hier, weil der Nutzer es so entschieden hat, und trägt
@@ -142,8 +158,15 @@ List<MeasurementOccasion> proposeOccasions(
       naehte.add(entscheidung.state == OccasionState.zuPruefen
           ? jetzt.deviceSequence
           : null);
+      // Eine bestätigte Trennung steht unter der Nummer der ersten Messung
+      // des neuen Anlasses — und betrifft beide Seiten der Naht.
+      final getrenntBestaetigt =
+          entscheidung.state == OccasionState.bestaetigt;
+      if (getrenntBestaetigt) aktuelleNaehte.add(jetzt.deviceSequence);
+      bestaetigt.add(aktuelleNaehte);
+      aktuelleNaehte = getrenntBestaetigt ? [jetzt.deviceSequence] : <int>[];
       aktuell = [jetzt];
-      aktuellerZustand = entscheidung.state == OccasionState.bestaetigt
+      aktuellerZustand = getrenntBestaetigt
           ? OccasionState.bestaetigt
           : OccasionState.sicher;
     }
@@ -151,10 +174,11 @@ List<MeasurementOccasion> proposeOccasions(
   gruppen.add(aktuell);
   zustaende.add(aktuellerZustand);
   naehte.add(null);
+  bestaetigt.add(aktuelleNaehte);
 
   return [
     for (var i = 0; i < gruppen.length; i++)
-      _build(gruppen[i], zustaende[i], naehte[i]),
+      _build(gruppen[i], zustaende[i], naehte[i], bestaetigt[i]),
   ];
 }
 
@@ -216,6 +240,7 @@ MeasurementOccasion _build(
   List<Measurement> gruppe,
   OccasionState state,
   int? openSeam,
+  List<int> confirmedSeams,
 ) {
   // Bewegung während der Messung macht den Wert unzuverlässig — solche
   // Messungen fallen aus dem Ergebnis. Trügen alle das Kennzeichen, bliebe
@@ -256,5 +281,6 @@ MeasurementOccasion _build(
     state: state,
     rule: regel,
     openSeam: openSeam,
+    confirmedSeams: confirmedSeams,
   );
 }

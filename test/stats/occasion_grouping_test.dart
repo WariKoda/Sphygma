@@ -279,4 +279,60 @@ void main() {
       expect(getrennt.every((o) => o.openSeam == null), isTrue);
     });
   });
+
+  group('Eine Entscheidung lässt sich zurücknehmen', () {
+    test('die bestätigte Trennung steht bei beiden Nachbarn', () {
+      final anlaesse = proposeOccasions(
+        [
+          _m(500, _basis),
+          _m(501, _basis.add(const Duration(minutes: 11))),
+        ],
+        confirmedSplits: {501},
+      );
+
+      expect(anlaesse, hasLength(2));
+      // Gespeichert ist die Entscheidung unter 501 — der Nummer der ersten
+      // Messung des rechten Anlasses. Beide Seiten müssen sie nennen können,
+      // sonst löscht die Rücknahme den falschen Eintrag.
+      expect(anlaesse.first.confirmedSeams, [501]);
+      expect(anlaesse.last.confirmedSeams, [501]);
+    });
+
+    test('das bestätigte Zusammen steht beim gemeinsamen Anlass', () {
+      final anlaesse = proposeOccasions(
+        [
+          _m(600, _basis),
+          _m(601, _basis.add(const Duration(minutes: 11))),
+        ],
+        confirmedJoins: {601},
+      );
+
+      expect(anlaesse.single.confirmedSeams, [601]);
+    });
+
+    test('ohne Entscheidung ist keine Naht bestätigt', () {
+      final anlaesse = proposeOccasions([
+        _m(700, _basis),
+        _m(701, _basis.add(const Duration(minutes: 2))),
+      ]);
+
+      expect(anlaesse.single.confirmedSeams, isEmpty);
+    });
+
+    test('jede genannte Nummer trägt wirklich eine Entscheidung', () {
+      // Drei Messungen, zwei Entscheidungen: 801 angeschlossen, 802 getrennt.
+      final anlaesse = proposeOccasions(
+        [
+          _m(800, _basis),
+          _m(801, _basis.add(const Duration(minutes: 11))),
+          _m(802, _basis.add(const Duration(minutes: 22))),
+        ],
+        confirmedJoins: {801},
+        confirmedSplits: {802},
+      );
+
+      final genannt = {for (final o in anlaesse) ...o.confirmedSeams};
+      expect(genannt, {801, 802});
+    });
+  });
 }

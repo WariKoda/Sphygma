@@ -250,4 +250,31 @@ void main() {
     expect(find.textContaining('120 / '), findsOneWidget);
     expect(find.textContaining('4 Anlässe · 6 Rohmessungen'), findsOneWidget);
   });
+
+  testWidgets('eine Entscheidung lässt sich zurücknehmen und wirkt wirklich',
+      (tester) async {
+    await boot();
+    await bestand();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+    await tester.tap(find.text('Prüfen'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Ein Anlass'));
+    await tester.pumpAndSettle();
+    expect(controller.occasions, hasLength(3));
+
+    // Über das Archiv in den bestätigten Anlass.
+    await tester.tap(find.text('Archiv'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('2 Messungen · gute Güte').first);
+    await tester.pumpAndSettle();
+
+    // Der Knopf nennt die Nummer, unter der die Entscheidung steht — geraten
+    // hätte er die falsche gelöscht und wäre wirkungslos geblieben.
+    await tester.tap(find.textContaining('Entscheidung zu Nr. 5').first);
+    await tester.pumpAndSettle();
+
+    expect(controller.occasions, hasLength(4));
+    expect(controller.openOccasions, hasLength(1));
+  });
 }

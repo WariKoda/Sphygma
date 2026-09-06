@@ -115,15 +115,14 @@ class OccasionDetailScreen extends StatelessWidget {
             'Zustand: ${o.state.label}',
             style: TextStyle(fontSize: 11, color: t.muted),
           ),
-          if (o.state == OccasionState.bestaetigt)
+          // Je Entscheidung ein Knopf mit ihrer Nummer: Eine bestätigte
+          // Trennung steht unter der ersten Messung des Nachbaranlasses,
+          // ein bestätigtes Zusammen unter der angeschlossenen Messung.
+          // Ein einzelner Knopf müsste raten, welche gemeint ist.
+          for (final naht in o.confirmedSeams)
             TextButton(
-              onPressed: () {
-                final naht = o.measurements.length > 1
-                    ? o.measurements.last.deviceSequence
-                    : o.sequence;
-                controller.clearOccasionDecision(naht);
-              },
-              child: const Text('Entscheidung zurücknehmen'),
+              onPressed: () => controller.clearOccasionDecision(naht),
+              child: Text('Entscheidung zu Nr. $naht zurücknehmen'),
             ),
         ],
       ),
