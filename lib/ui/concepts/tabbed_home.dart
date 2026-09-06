@@ -10,6 +10,7 @@ import '../../app/app_controller.dart';
 import '../../app/concept.dart';
 import '../device_screen.dart';
 import '../history_screen.dart';
+import '../settings_screen.dart';
 import '../theme/sphygma_theme.dart';
 import '../today_screen.dart';
 import 'day_profile/day_profile_screen.dart';
@@ -44,6 +45,14 @@ class _TabbedHomeState extends State<TabbedHome> {
           backgroundColor: t.surface,
           foregroundColor: t.onSurface,
           elevation: 0,
+          actions: [
+            IconButton(
+              tooltip: 'Konzept und Gestaltung ändern',
+              icon: const Icon(Icons.tune),
+              onPressed: () =>
+                  showSettings(context, controller: widget.controller),
+            ),
+          ],
         ),
         // Das Konzept bestimmt, was auf dem ersten Reiter steht. Der
         // Gerätebereich bleibt in jedem Konzept derselbe — dort geht es

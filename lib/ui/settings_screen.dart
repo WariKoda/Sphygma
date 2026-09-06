@@ -27,7 +27,7 @@ class SettingsScreen extends StatelessWidget {
       builder: (context, _) => Scaffold(
         backgroundColor: t.surface,
         appBar: AppBar(
-          title: const Text('Einstellungen'),
+          title: const Text('Konzept und Gestaltung'),
           backgroundColor: t.surface,
           foregroundColor: t.onSurface,
           elevation: 0,
@@ -100,9 +100,14 @@ class SettingsScreen extends StatelessWidget {
 /// Öffnet die Einstellungen und nimmt die Gestaltung mit — eine geschobene
 /// Route liegt außerhalb des bisherigen Baums und fände den Scope sonst nicht.
 ///
-/// Ein Weg, nicht vier: Bis zum 06.09.2026 trug jede Konzepthülle zusätzlich
-/// ein Zahnrad in der Titelzeile, und das Blatt hieß je Konzept anders. Vier
-/// Zugänge zu einer Wahl, die man einmal trifft, sind drei zu viel.
+/// **Ein Zugang je Konzept, oben rechts, überall an derselben Stelle.**
+///
+/// Die fünf Konzepte schließen einander aus — wer eines sieht, sieht die
+/// anderen nicht. Ein Zahnrad je Hülle sind deshalb nicht fünf konkurrierende
+/// Zugänge, sondern einer. Der Umweg über den Gerätebereich wäre der falsche
+/// Ort gewesen: „Gerät und Übertragung" verspricht Kopplung und Datentransport,
+/// nicht Typografie. Und wer mit einem Konzept unzufrieden ist, sucht die
+/// Alternative dort, wo er sie sieht — nicht hinter Bluetooth.
 Future<void> showSettings(
   BuildContext context, {
   required AppController controller,

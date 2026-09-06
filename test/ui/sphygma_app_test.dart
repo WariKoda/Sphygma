@@ -156,4 +156,27 @@ void main() {
 
     expect(find.byType(SnackBar), findsOneWidget);
   });
+
+  testWidgets('jedes Konzept trägt den Zugang zur Wahl an derselben Stelle',
+      (tester) async {
+    // Die fünf Konzepte schließen einander aus — ein Zahnrad je Hülle sind
+    // deshalb nicht fünf Zugänge, sondern einer. Fehlte er in einem, käme
+    // man aus diesem Konzept nicht mehr heraus, ohne den Gerätebereich zu
+    // durchsuchen.
+    for (final k in allConcepts) {
+      await controller.setConcept(k);
+      await tester.pumpWidget(SphygmaApp(controller: controller));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.tune), findsOneWidget, reason: k.name);
+
+      await tester.tap(find.byIcon(Icons.tune));
+      await tester.pumpAndSettle();
+      expect(find.text('KONZEPT'), findsOneWidget, reason: k.name);
+      expect(find.text('GESTALTUNG'), findsOneWidget, reason: k.name);
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+    }
+  });
 }

@@ -177,20 +177,18 @@ void main() {
     expect(find.text('Gerät und Übertragung'), findsOneWidget);
   });
 
-  testWidgets('die Konzeptwahl ist über den Gerätebereich erreichbar',
+  testWidgets('die Konzeptwahl sitzt oben rechts, nicht hinter Bluetooth',
       (tester) async {
     await boot();
     await teilwoche();
 
     await pumpWith(tester, ThemeVariant.instrument);
-    // Ohne Reiterleiste führt der Verweis dorthin.
-    await tester.tap(find.text('Gerät und Übertragung'));
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Konzept und Gestaltung ändern'));
-    await tester.tap(find.text('Konzept und Gestaltung ändern'));
+    await tester.tap(find.byIcon(Icons.tune));
     await tester.pumpAndSettle();
 
-    // F14 und F15 bleiben erreichbar — an einem Ort, nicht an vieren.
+    // Wer mit einem Konzept unzufrieden ist, sucht die Alternative dort, wo
+    // er sie sieht — nicht im Gerätebereich.
+    expect(find.text('Konzept und Gestaltung'), findsOneWidget);
     expect(find.text('KONZEPT'), findsOneWidget);
     expect(find.text('GESTALTUNG'), findsOneWidget);
   });

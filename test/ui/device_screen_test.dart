@@ -200,28 +200,5 @@ void main() {
     expect(button.onPressed, isNull);
   });
 
-  testWidgets('der Weg zu Konzept und Gestaltung führt aus dem Gerätebereich '
-      'heraus', (tester) async {
-    await boot();
 
-    await pumpWith(tester, ThemeVariant.instrument);
-    await tester.ensureVisible(find.text('Konzept und Gestaltung ändern'));
-    await tester.tap(find.text('Konzept und Gestaltung ändern'));
-    await tester.pumpAndSettle();
-
-    // Die Wahl selbst steht seit dem 06.09.2026 auf einem eigenen Blatt:
-    // Gerät und Übertragung tun etwas mit den Messungen, diese beiden nur
-    // mit ihrer Darstellung.
-    expect(find.text('KONZEPT'), findsOneWidget);
-    expect(find.text('GESTALTUNG'), findsOneWidget);
-  });
-
-  testWidgets('nennt das gewählte Konzept, ohne die Wahl aufzublättern',
-      (tester) async {
-    await boot();
-
-    await pumpWith(tester, ThemeVariant.instrument);
-
-    expect(find.text('Messung und Filter'), findsOneWidget);
-  });
 }

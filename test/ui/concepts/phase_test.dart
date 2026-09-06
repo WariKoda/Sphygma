@@ -245,17 +245,14 @@ void main() {
     );
   });
 
-  testWidgets('die Konzeptwahl ist über den Gerätereiter erreichbar',
-      (tester) async {
+  testWidgets('die Konzeptwahl sitzt oben rechts', (tester) async {
     await boot();
 
     await pumpWith(tester, ThemeVariant.instrument);
-    await tester.tap(find.text('Gerät'));
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Konzept und Gestaltung ändern'));
-    await tester.tap(find.text('Konzept und Gestaltung ändern'));
+    await tester.tap(find.byIcon(Icons.tune));
     await tester.pumpAndSettle();
 
+    expect(find.text('Konzept und Gestaltung'), findsOneWidget);
     expect(find.text('KONZEPT'), findsOneWidget);
   });
 

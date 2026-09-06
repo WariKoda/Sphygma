@@ -5,9 +5,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../app/app_controller.dart';
-import 'settings_screen.dart';
 import 'theme/sphygma_theme.dart';
-import 'theme/variants.dart';
 import 'widgets/section_header.dart';
 
 class DeviceScreen extends StatefulWidget {
@@ -128,13 +126,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
                   : () => _start(c.retractAll),
             ),
 
-            const SectionHeader(title: 'Darstellung'),
-            _Row(label: 'Konzept', value: c.concept.label),
-            _Row(label: 'Gestaltung', value: themeFor(c.themeVariant).name),
-            _Button(
-              label: 'Konzept und Gestaltung ändern',
-              onPressed: () => showSettings(context, controller: c),
-            ),
           ],
         ),
       ),
