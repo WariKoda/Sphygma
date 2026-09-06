@@ -54,12 +54,64 @@ class AppSettings extends Table {
   Set<Column> get primaryKey => {key};
 }
 
-@DriftDatabase(tables: [Measurements, AppSettings])
+/// Vom Nutzer bestaetigte Entscheidungen ueber Messanlaesse.
+///
+/// Die Gruppierung selbst wird gerechnet (lib/stats/occasion_grouping.dart)
+/// und nicht gespeichert — nur wo ein Mensch einen Grenzfall entschieden hat,
+/// muss das ueberdauern. Sonst wuerde eine spaetere Regelaenderung seine
+/// Entscheidung stillschweigend ueberschreiben.
+@DataClassName('OccasionDecision')
+class OccasionDecisions extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// 1 oder 2, wie am Geraet beschriftet. Der Zaehler laeuft je Platz.
+  IntColumn get userSlot => integer()();
+
+  /// Die Messung, ueber deren Anschluss an ihren Vorgaenger entschieden wurde.
+  IntColumn get deviceSequence => integer()();
+
+  /// 'join' oder 'split' — angeschlossen oder getrennt.
+  TextColumn get decision => text()();
+
+  DateTimeColumn get decidedAt => dateTime()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {userSlot, deviceSequence},
+      ];
+}
+
+/// Ein benannter Lebensabschnitt, gegen den Messungen verglichen werden.
+///
+/// Nur das Konzept „Phase" nutzt sie; die Tabelle bleibt leer, solange
+/// niemand eine anlegt. Ein Kalenderfilter sagt nicht, warum sich etwas
+/// geaendert hat — ein Name schon.
+@DataClassName('Phase')
+class Phases extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// Frei vergeben: „Ramipril 5 mg", „Urlaub", „nach der Umstellung".
+  TextColumn get name => text()();
+
+  DateTimeColumn get beginsAt => dateTime()();
+
+  /// Null, solange die Phase laeuft.
+  DateTimeColumn get endsAt => dateTime().nullable()();
+
+  /// Woher der Beginn stammt: 'jetzt' (App-Zeit beim Anlegen) oder
+  /// 'bestaetigt' (vom Nutzer gesetztes Datum). Die Quelle gehoert dazu,
+  /// weil die Geraeteuhr als Anker ausscheidet.
+  TextColumn get anchor => text()();
+
+  DateTimeColumn get createdAt => dateTime()();
+}
+
+@DriftDatabase(tables: [Measurements, AppSettings, OccasionDecisions, Phases])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -67,6 +119,12 @@ class AppDatabase extends _$AppDatabase {
         onUpgrade: (m, from, to) async {
           if (from < 2) {
             await m.createTable(appSettings);
+          }
+          if (from < 3) {
+            // Eine Migration fuer beide Tabellen: Sie kommen zusammen, weil
+            // die Konzepte zusammen gebaut werden.
+            await m.createTable(occasionDecisions);
+            await m.createTable(phases);
           }
         },
       );
