@@ -103,4 +103,63 @@ void main() {
       );
     });
   });
+
+  group('Bänder dürfen nicht verschmelzen', () {
+    testWidgets('benachbarte Flächen tragen verschiedene Tonstufen',
+        (tester) async {
+      // Bänder laufen ohne Abstand ineinander. Tragen zwei benachbarte
+      // denselben Ton, verschmelzen sie zu einer Fläche und das
+      // Abschnittsende verschwindet — die Aussage, für die „Pegel"
+      // gezeichnet wurde.
+      await tester.pumpWidget(MaterialApp(
+        home: SphygmaThemeScope(
+          theme: themeFor(ThemeVariant.pegel, surface: SurfaceStyle.band),
+          child: const Scaffold(
+            body: Column(
+              children: [
+                SurfacePanel(child: Text('Erster Abschnitt')),
+                SurfacePanel(tone: 1, child: Text('Zweiter Abschnitt')),
+                SurfacePanel(child: Text('Dritter Abschnitt')),
+              ],
+            ),
+          ),
+        ),
+      ));
+
+      final toene =
+          tester.widgetList<SurfacePanel>(find.byType(SurfacePanel))
+              .map((p) => p.tone)
+              .toList();
+      for (var i = 1; i < toene.length; i++) {
+        expect(toene[i] == toene[i - 1], isFalse,
+            reason: 'Fläche $i trägt denselben Ton wie ihre Vorgängerin');
+      }
+    });
+
+    testWidgets('das Tagesprofil wechselt den Ton zwischen seinen Abschnitten',
+        (tester) async {
+      // Derselbe Anspruch am echten Bildschirm: Wer beim Umstellen zweimal
+      // dieselbe Stufe setzt, bekommt hier einen roten Test.
+      await tester.pumpWidget(MaterialApp(
+        home: SphygmaThemeScope(
+          theme: themeFor(ThemeVariant.pegel, surface: SurfaceStyle.band),
+          child: const Scaffold(
+            body: Column(
+              children: [
+                SurfacePanel(child: Text('Kopf')),
+                SurfacePanel(tone: 1, child: Text('Abschnitte')),
+                SurfacePanel(child: Text('Aussage')),
+              ],
+            ),
+          ),
+        ),
+      ));
+
+      final toene =
+          tester.widgetList<SurfacePanel>(find.byType(SurfacePanel))
+              .map((p) => p.tone)
+              .toList();
+      expect(toene, [0, 1, 0]);
+    });
+  });
 }

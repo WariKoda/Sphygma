@@ -24,6 +24,12 @@ class SurfacePanel extends StatelessWidget {
   /// „Aura" braucht zwei Stufen (4,5 % und 2,5 % Weiß), „Pegel" wechselt den
   /// Ton, um einen Abschnitt zu beenden. Bei [SurfaceStyle.linie] bleibt die
   /// Stufe folgenlos — dort gibt es keine Flächen, die sich abheben könnten.
+  ///
+  /// **Zwei Flächen direkt untereinander müssen verschiedene Stufen tragen.**
+  /// Bänder laufen ohne Abstand ineinander; bei gleichem Ton verschmelzen sie
+  /// zu einer Fläche, und das Abschnittsende wird unsichtbar — genau die
+  /// Aussage, für die „Pegel" gezeichnet wurde. `surface_style_test.dart`
+  /// prüft das für jeden Bildschirm.
   final int tone;
 
   final EdgeInsetsGeometry? padding;
