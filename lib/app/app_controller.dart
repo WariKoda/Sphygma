@@ -10,16 +10,23 @@ import '../ble/omron_session.dart';
 import '../ble/pairing_key_store.dart';
 import '../db/app_database.dart';
 import '../db/measurement_repository.dart';
+import '../db/occasion_repository.dart';
 import '../db/settings_repository.dart';
+import 'concept.dart';
 import '../protocol/exceptions.dart';
+import '../stats/occasion_grouping.dart';
+import '../stats/phase_grouping.dart';
+import '../stats/period.dart';
 import '../sync/export_service.dart';
 import '../sync/sync_service.dart';
+import '../ui/theme/variants.dart';
 
 class AppController extends ChangeNotifier {
   AppController({
     required this.settings,
     required this.keyStore,
     required this.repository,
+    required this.occasionRepository,
     required this.syncService,
     required this.exportService,
     Stream<OmronAdvertisedStatus> Function()? statusStream,
@@ -44,6 +51,13 @@ class AppController extends ChangeNotifier {
   final SettingsRepository settings;
   final PairingKeyStore keyStore;
   final MeasurementRepository repository;
+
+  /// Die Entscheidungen des Nutzers zur Gruppierung und seine Phasen.
+  /// Beides gehört keinem einzelnen Konzept: „Messanlass" braucht die
+  /// Gruppierung, „Phase" die Lebensabschnitte, und beide arbeiten auf
+  /// demselben Bestand wie alle anderen.
+  final OccasionRepository occasionRepository;
+
   final SyncService syncService;
   final ExportService exportService;
 
@@ -54,6 +68,64 @@ class AppController extends ChangeNotifier {
   List<Measurement> measurements = const [];
   int pendingExport = 0;
 
+  /// Gewaehlter Zeitraum im Verlauf.
+  Period period = Period.week;
+
+  /// Gewaehlte Gestaltung. Wird in [init] aus der DB geladen.
+  ThemeVariant themeVariant = ThemeVariant.instrument;
+
+  /// Die zweite Achse: wie die App geordnet ist. Frei mit der Gestaltung
+  /// kombinierbar — jedes Konzept trägt denselben Funktionsumfang.
+  AppConcept concept = AppConcept.klassisch;
+
+  /// Die Messanlässe des gewählten Speicherplatzes: Rohmessungen, die kurz
+  /// nacheinander entstanden sind, gehören zu einem Messen. Abgeleitet, nicht
+  /// gespeichert — nur die Entscheidungen des Nutzers liegen in der DB.
+  List<MeasurementOccasion> occasions = const [];
+
+  /// Die benannten Lebensabschnitte, neueste zuerst.
+  List<Phase> phases = const [];
+
+  /// Welche Messung zu welcher Phase gehört — abgeleitet aus Zeiträumen und
+  /// den Entscheidungen des Nutzers. Null, solange kein Speicherplatz
+  /// gewählt ist.
+  PhaseGrouping? phaseGrouping;
+
+  /// Anlässe, bei denen die Regel keine eindeutige Antwort gibt. Sie werden
+  /// nicht still zusammengefasst — eine zugedeckte Frage ist schlimmer als
+  /// eine unbeantwortete.
+  Iterable<MeasurementOccasion> get openOccasions =>
+      occasions.where((o) => o.state == OccasionState.zuPruefen);
+
+  /// Die neueste Messung, unabhaengig vom Zeitraum. Null heisst: noch
+  /// keine Messung gespeichert - ein echter Zustand, kein Fehler.
+  Measurement? get latest => measurements.isEmpty ? null : measurements.first;
+
+  /// Messungen im gewaehlten Zeitraum, aelteste zuerst.
+  List<Measurement> get measurementsInPeriod =>
+      filterByPeriod(measurements, period, DateTime.now());
+
+  Future<void> setPeriod(Period value) async {
+    period = value;
+    notifyListeners();
+  }
+
+  Future<void> setConcept(AppConcept value) async {
+    await settings.setConcept(value);
+    concept = value;
+    notifyListeners();
+  }
+
+  Future<void> setThemeVariant(ThemeVariant value) async {
+    await settings.setThemeVariant(value);
+    themeVariant = value;
+    notifyListeners();
+  }
+
+  /// Nur fuer Tests: erzwingt das Neuladen aus der DB.
+  @visibleForTesting
+  Future<void> refreshForTest() => _refresh();
+
   /// Deutet auf eine falsch gehende Geraeteuhr hin (Protokollreferenz §8.2):
   /// die neueste Messung liegt weit in der Vergangenheit oder in der Zukunft.
   bool clockLooksWrong = false;
@@ -61,6 +133,8 @@ class AppController extends ChangeNotifier {
   Future<void> init() async {
     userSlot = await settings.userSlot();
     paired = await keyStore.load() != null;
+    themeVariant = await settings.themeVariant();
+    concept = await settings.concept();
     await _refresh();
     _startWatching();
   }
@@ -113,7 +187,7 @@ class AppController extends ChangeNotifier {
 
     _lastAutoSyncAttempt = onDevice;
     debugPrint(
-      '[Sphygma] Autosync: Geraet meldet $onDevice, bekannt ${known ?? "nichts"}',
+      '[Sphygma] Autosync: Gerät meldet $onDevice, bekannt ${known ?? "nichts"}',
     );
     try {
       await sync();
@@ -133,7 +207,7 @@ class AppController extends ChangeNotifier {
     debugPrint('[Sphygma] Autosync-Scan: $error');
     _watch = null;
     if (_disposed) return;
-    status = 'Automatischer Abgleich nicht verfuegbar: $error';
+    status = 'Automatischer Abgleich nicht verfügbar: $error';
     notifyListeners();
   }
 
@@ -182,7 +256,7 @@ class AppController extends ChangeNotifier {
           // passt nicht mehr (z. B. nach Neuinstallation, Risiko R-4).
           if (e.message.contains('Entsperren')) {
             paired = false;
-            status = 'Das Geraet kennt diesen Key nicht mehr - bitte neu pairen.';
+            status = 'Das Gerät kennt diesen Key nicht mehr - bitte neu pairen.';
           }
           rethrow;
         }
@@ -213,7 +287,7 @@ class AppController extends ChangeNotifier {
   int _requireSlot() {
     final slot = userSlot;
     if (slot == null) {
-      throw StateError('Kein User-Slot gewaehlt.');
+      throw StateError('Kein User-Slot gewählt.');
     }
     return slot;
   }
@@ -247,26 +321,125 @@ class AppController extends ChangeNotifier {
       measurements = const [];
       pendingExport = 0;
       clockLooksWrong = false;
+      occasions = const [];
+      phases = const [];
+      phaseGrouping = null;
     } else {
       measurements = (await repository.allForSlot(slot)).reversed.toList();
       pendingExport = (await repository.pendingExport(slot)).length;
       clockLooksWrong = _clockLooksWrong(measurements);
+      occasions = proposeOccasions(
+        measurements,
+        confirmedJoins: await occasionRepository.confirmedJoins(slot),
+        confirmedSplits: await occasionRepository.confirmedSplits(slot),
+      );
+      phases = await occasionRepository.phases();
+      phaseGrouping = groupByPhase(
+        measurements,
+        phases: phases,
+        assignments: await occasionRepository.phaseAssignments(slot),
+        now: DateTime.now(),
+      );
     }
     notifyListeners();
   }
 
-  static bool _clockLooksWrong(List<Measurement> newestFirst) {
-    if (newestFirst.isEmpty) return false;
-    final newest = newestFirst.first.measuredAt;
+  /// Der Nutzer entscheidet einen Grenzfall: Diese Messung gehört zum
+  /// vorherigen Anlass.
+  Future<void> confirmJoin(int deviceSequence) async {
+    await occasionRepository.confirmJoin(
+      userSlot: _requireSlot(),
+      deviceSequence: deviceSequence,
+    );
+    await _refresh();
+  }
+
+  /// Der Nutzer entscheidet einen Grenzfall: Diese Messung ist ein eigener
+  /// Anlass.
+  Future<void> confirmSplit(int deviceSequence) async {
+    await occasionRepository.confirmSplit(
+      userSlot: _requireSlot(),
+      deviceSequence: deviceSequence,
+    );
+    await _refresh();
+  }
+
+  /// Nimmt eine Entscheidung zurück — die Regel gilt wieder.
+  Future<void> clearOccasionDecision(int deviceSequence) async {
+    await occasionRepository.clearDecision(
+      userSlot: _requireSlot(),
+      deviceSequence: deviceSequence,
+    );
+    await _refresh();
+  }
+
+  /// Ordnet eine Messung ausdrücklich einer Phase zu — oder keiner.
+  Future<void> assignToPhase({
+    required int deviceSequence,
+    required int? phaseId,
+  }) async {
+    await occasionRepository.assignToPhase(
+      userSlot: _requireSlot(),
+      deviceSequence: deviceSequence,
+      phaseId: phaseId,
+    );
+    await _refresh();
+  }
+
+  /// Nimmt eine Zuordnung zurück — der Zeitraum entscheidet wieder.
+  Future<void> clearPhaseAssignment(int deviceSequence) async {
+    await occasionRepository.clearAssignment(
+      userSlot: _requireSlot(),
+      deviceSequence: deviceSequence,
+    );
+    await _refresh();
+  }
+
+  Future<void> startPhase({
+    required String name,
+    required PhaseAnchor anchor,
+    DateTime? begin,
+  }) async {
+    await occasionRepository.startPhase(
+      name: name,
+      anchor: anchor,
+      begin: begin,
+    );
+    await _refresh();
+  }
+
+  Future<void> endPhase(int id, {required DateTime at}) async {
+    await occasionRepository.endPhase(id, at: at);
+    await _refresh();
+  }
+
+  Future<void> deletePhase(int id) async {
+    await occasionRepository.deletePhase(id);
+    await _refresh();
+  }
+
+  /// Geht die Geraeteuhr falsch?
+  ///
+  /// Massgeblich ist die **zuletzt gemessene** Messung, und das ist die mit
+  /// der hoechsten Geraetenummer - nicht die mit dem spaetesten Datum. Genau
+  /// darin liegt der Fall: Bei falscher Uhr traegt die frischeste Messung ein
+  /// altes Datum und stuende in einer nach Datum sortierten Liste weit hinten.
+  /// Die Anzeige sortiert nach Datum, diese Pruefung nach Zaehler.
+  static bool _clockLooksWrong(List<Measurement> all) {
+    if (all.isEmpty) return false;
+    var newest = all.first;
+    for (final m in all) {
+      if (m.deviceSequence > newest.deviceSequence) newest = m;
+    }
     final now = DateTime.now();
-    return newest.isAfter(now.add(const Duration(days: 1))) ||
-        newest.isBefore(now.subtract(const Duration(days: 365)));
+    return newest.measuredAt.isAfter(now.add(const Duration(days: 1))) ||
+        newest.measuredAt.isBefore(now.subtract(const Duration(days: 365)));
   }
 
   /// Nur zur Anzeige: erklaert die Ausnahme aus dem BLE-Scan.
   static String describe(Object error) {
     if (error is DeviceNotFoundException) {
-      return 'Kein Omron gefunden. Bluetooth-Taste am Geraet kurz druecken '
+      return 'Kein Omron gefunden. Bluetooth-Taste am Gerät kurz drücken '
           'und erneut versuchen.';
     }
     return error.toString();

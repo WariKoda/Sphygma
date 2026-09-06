@@ -79,7 +79,14 @@ class MeasurementRepository {
   Future<List<Measurement>> allForSlot(int userSlot) {
     final query = _db.select(_db.measurements)
       ..where((m) => m.userSlot.equals(userSlot))
-      ..orderBy([(m) => OrderingTerm.asc(m.deviceSequence)]);
+      ..orderBy([
+        // Nach Datum, wie am Geraet abgelesen. Der Gerätezähler dient dem
+        // Dedup und der Uhr-Prüfung, nicht der Anzeige-Reihenfolge; bei
+        // gleichem Zeitstempel entscheidet er dennoch, damit die Reihenfolge
+        // eindeutig bleibt.
+        (m) => OrderingTerm.asc(m.measuredAt),
+        (m) => OrderingTerm.asc(m.deviceSequence),
+      ]);
     return query.get();
   }
 
@@ -87,7 +94,14 @@ class MeasurementRepository {
   Future<List<Measurement>> pendingExport(int userSlot) {
     final query = _db.select(_db.measurements)
       ..where((m) => m.userSlot.equals(userSlot) & m.exportedAt.isNull())
-      ..orderBy([(m) => OrderingTerm.asc(m.deviceSequence)]);
+      ..orderBy([
+        // Nach Datum, wie am Geraet abgelesen. Der Gerätezähler dient dem
+        // Dedup und der Uhr-Prüfung, nicht der Anzeige-Reihenfolge; bei
+        // gleichem Zeitstempel entscheidet er dennoch, damit die Reihenfolge
+        // eindeutig bleibt.
+        (m) => OrderingTerm.asc(m.measuredAt),
+        (m) => OrderingTerm.asc(m.deviceSequence),
+      ]);
     return query.get();
   }
 
@@ -95,7 +109,14 @@ class MeasurementRepository {
   Future<List<Measurement>> exported(int userSlot) {
     final query = _db.select(_db.measurements)
       ..where((m) => m.userSlot.equals(userSlot) & m.exportedAt.isNotNull())
-      ..orderBy([(m) => OrderingTerm.asc(m.deviceSequence)]);
+      ..orderBy([
+        // Nach Datum, wie am Geraet abgelesen. Der Gerätezähler dient dem
+        // Dedup und der Uhr-Prüfung, nicht der Anzeige-Reihenfolge; bei
+        // gleichem Zeitstempel entscheidet er dennoch, damit die Reihenfolge
+        // eindeutig bleibt.
+        (m) => OrderingTerm.asc(m.measuredAt),
+        (m) => OrderingTerm.asc(m.deviceSequence),
+      ]);
     return query.get();
   }
 
