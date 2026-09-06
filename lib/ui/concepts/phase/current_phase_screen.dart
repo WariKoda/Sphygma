@@ -164,7 +164,7 @@ class _Laufende extends StatelessWidget {
             '${mittel.systolic} / ${mittel.diastolic}',
             style: TextStyle(
               fontSize: t.headlineSize,
-              fontWeight: FontWeight.w300,
+              fontWeight: t.headlineWeight,
               color: t.onSurface,
               height: 1,
               fontFeatures: const [FontFeature.tabularFigures()],

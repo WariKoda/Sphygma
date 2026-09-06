@@ -43,7 +43,7 @@ class ReadingHeadline extends StatelessWidget {
           style: TextStyle(
             fontSize: t.headlineSize,
             height: 1,
-            fontWeight: FontWeight.w300,
+            fontWeight: t.headlineWeight,
             letterSpacing: -1.5,
             color: t.onSurface,
             fontFeatures: const [FontFeature.tabularFigures()],

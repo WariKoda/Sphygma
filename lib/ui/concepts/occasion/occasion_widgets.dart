@@ -36,7 +36,7 @@ class OccasionResult extends StatelessWidget {
           '${r.systolic} / ${r.diastolic}',
           style: TextStyle(
             fontSize: large ? t.headlineSize : 24,
-            fontWeight: FontWeight.w300,
+            fontWeight: t.headlineWeight,
             color: t.onSurface,
             height: 1,
             fontFeatures: const [FontFeature.tabularFigures()],
@@ -171,9 +171,7 @@ class _RohZeile extends StatelessWidget {
       onTap: onTap == null ? null : () => onTap!(m),
       child: Container(
         padding: EdgeInsets.symmetric(vertical: t.gapSmall / 2),
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: t.line)),
-        ),
+        decoration: t.rowDivider,
         child: Row(
           children: [
             SizedBox(

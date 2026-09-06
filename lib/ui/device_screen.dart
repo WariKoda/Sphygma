@@ -160,9 +160,7 @@ class _Row extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.symmetric(vertical: t.gapSmall + 2),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: t.line)),
-      ),
+      decoration: t.rowDivider,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

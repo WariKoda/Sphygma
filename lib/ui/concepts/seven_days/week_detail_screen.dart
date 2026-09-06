@@ -100,7 +100,7 @@ class WeekDetailScreen extends StatelessWidget {
               '${a.systolic} / ${a.diastolic}',
               style: TextStyle(
                 fontSize: t.headlineSize,
-                fontWeight: FontWeight.w300,
+                fontWeight: t.headlineWeight,
                 color: t.onSurface,
                 height: 1,
                 fontFeatures: const [FontFeature.tabularFigures()],
@@ -220,10 +220,8 @@ class _Zeile extends StatelessWidget {
         measurementId: m.id,
       ),
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: t.gapSmall),
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: t.line)),
-        ),
+        padding: EdgeInsets.symmetric(vertical: t.rowGap),
+        decoration: t.rowDivider,
         child: Row(
           children: [
             Expanded(

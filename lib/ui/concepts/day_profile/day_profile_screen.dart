@@ -153,10 +153,8 @@ class _BandRow extends StatelessWidget {
         ),
       ),
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: t.gapSmall),
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: t.line)),
-        ),
+        padding: EdgeInsets.symmetric(vertical: t.rowGap),
+        decoration: t.rowDivider,
         child: Row(
           children: [
             Expanded(

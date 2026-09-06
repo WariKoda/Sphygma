@@ -118,7 +118,7 @@ class _EmptyState extends StatelessWidget {
             'Noch keine Messung',
             style: TextStyle(
               fontSize: 20,
-              fontWeight: FontWeight.w300,
+              fontWeight: t.headlineWeight,
               color: t.onSurface,
             ),
           ),
@@ -149,9 +149,7 @@ class _RecentRow extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.symmetric(vertical: t.gapSmall + 2),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: t.line)),
-      ),
+      decoration: t.rowDivider,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
