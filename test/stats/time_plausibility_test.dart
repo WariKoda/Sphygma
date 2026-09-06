@@ -162,6 +162,35 @@ void main() {
       );
     });
 
+    test('Messungen zweier Speicherplätze zugleich sind ein Fehler', () {
+      // Der Gerätezähler läuft je Platz: Nummer 100 auf Benutzer 1 und
+      // Nummer 100 auf Benutzer 2 sind verschiedene Messungen. Ein Urteil
+      // über beide Zeitachsen zugleich wäre bedeutungslos.
+      final gemischt = [
+        _m(100, DateTime(2026, 9, 1, 7)),
+        Measurement(
+          id: 999,
+          userSlot: 2,
+          deviceSequence: 100,
+          systolic: 120,
+          diastolic: 80,
+          pulse: 70,
+          measuredAt: DateTime(2026, 9, 2, 7),
+          movement: false,
+          arrhythmia: false,
+          rawBytes: Uint8List(14),
+          importedAt: DateTime(2026, 9, 5, 23, 58),
+          exportedAt: null,
+        ),
+      ];
+
+      expect(() => judgeTimestamps(gemischt, now: _jetzt), throwsArgumentError);
+      expect(
+        () => deviceClockLooksWrong(gemischt, now: _jetzt),
+        throwsArgumentError,
+      );
+    });
+
     test('ein Urteil über eine unbekannte Nummer gibt es nicht', () {
       final urteil = judgeTimestamps([
         _m(100, DateTime(2026, 9, 1, 7)),

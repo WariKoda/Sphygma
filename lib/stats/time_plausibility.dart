@@ -55,13 +55,29 @@ Map<int, TimestampVerdict> judgeTimestamps(
   final sortiert = [...measurements]
     ..sort((a, b) => a.deviceSequence.compareTo(b.deviceSequence));
 
+  // Der Gerätezähler läuft je Speicherplatz: Nummer 500 auf Benutzer 1 und
+  // Nummer 500 auf Benutzer 2 sind zwei verschiedene Messungen, und der
+  // Dedup-Schlüssel der Datenbank ist entsprechend (userSlot, deviceSequence).
+  // Ein Urteil über beide Plätze zugleich wäre bedeutungslos — die Zeitachse
+  // eines Geräts hat nichts mit der des anderen zu tun.
+  final slots = {for (final m in measurements) m.userSlot};
+  if (slots.length > 1) {
+    throw ArgumentError.value(
+      slots.toList()..sort(),
+      'measurements',
+      'enthält mehrere Speicherplätze — die Zeitplausibilität gilt je Platz, '
+          'weil der Gerätezähler je Platz läuft. Vorher nach Platz trennen.',
+    );
+  }
+
   for (var i = 1; i < sortiert.length; i++) {
     if (sortiert[i].deviceSequence == sortiert[i - 1].deviceSequence) {
       throw ArgumentError.value(
         sortiert[i].deviceSequence,
         'deviceSequence',
-        'kommt doppelt vor — die Nummer ist Teil des Dedup-Schlüssels und '
-            'kann nur durch einen Fehler beim Einlesen doppelt sein',
+        'kommt innerhalb eines Speicherplatzes doppelt vor — zusammen mit '
+            'dem Platz ist die Nummer der Dedup-Schlüssel und kann nur durch '
+            'einen Fehler beim Einlesen doppelt sein',
       );
     }
   }
@@ -139,6 +155,16 @@ bool deviceClockLooksWrong(
   required DateTime now,
 }) {
   if (measurements.isEmpty) return false;
+
+  final slots = {for (final m in measurements) m.userSlot};
+  if (slots.length > 1) {
+    throw ArgumentError.value(
+      slots.toList()..sort(),
+      'measurements',
+      'enthält mehrere Speicherplätze — die höchste Gerätenummer wäre über '
+          'zwei Zähler hinweg nicht aussagekräftig. Vorher nach Platz trennen.',
+    );
+  }
 
   var neueste = measurements.first;
   for (final m in measurements) {
