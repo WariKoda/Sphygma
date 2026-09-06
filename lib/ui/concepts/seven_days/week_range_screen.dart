@@ -15,6 +15,7 @@ import '../../format.dart';
 import '../../theme/sphygma_theme.dart';
 import '../../widgets/classification_scale.dart';
 import '../../widgets/section_header.dart';
+import '../../widgets/surface_panel.dart';
 import 'week_detail_screen.dart';
 
 class WeekRangeScreen extends StatefulWidget {
@@ -230,8 +231,11 @@ class _WeekRangeScreenState extends State<WeekRangeScreen> {
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(t.gapLarge),
-        child: child,
+        padding: t.listPadding,
+        // Eine Fläche für die ganze Auswertung: Sie ist eine Aussage, keine
+        // Folge von Abschnitten. Mehrere Flächen müssten hier den Ton
+        // wechseln, ohne dass der Wechsel etwas bedeutete.
+        child: SurfacePanel(child: child),
       ),
     );
   }

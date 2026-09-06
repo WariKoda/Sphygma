@@ -9,6 +9,7 @@ import '../../../stats/occasion_grouping.dart';
 import '../../../stats/target_range.dart';
 import '../../theme/sphygma_theme.dart';
 import '../../theme/zone_color.dart';
+import '../../widgets/surface_panel.dart';
 import 'occasion_detail_screen.dart';
 import 'occasion_range_screen.dart';
 import 'occasion_widgets.dart';
@@ -37,32 +38,45 @@ class OccasionArchiveScreen extends StatelessWidget {
         }
 
         return ListView(
-          padding: EdgeInsets.all(t.gapLarge),
+          padding: t.listPadding,
           children: [
-            Text(
-              '${anlaesse.length} '
-              '${anlaesse.length == 1 ? "Messanlass" : "Messanlässe"} aus '
-              '${controller.measurements.length} Rohmessungen',
-              style: TextStyle(fontSize: 14, color: t.onSurface),
-            ),
-            SizedBox(height: t.gapSmall),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton(
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => SphygmaThemeScope(
-                      theme: t,
-                      child: OccasionRangeScreen(controller: controller),
+            SurfacePanel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${anlaesse.length} '
+                    '${anlaesse.length == 1 ? "Messanlass" : "Messanlässe"} aus '
+                    '${controller.measurements.length} Rohmessungen',
+                    style: TextStyle(fontSize: 14, color: t.onSurface),
+                  ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => SphygmaThemeScope(
+                            theme: t,
+                            child: OccasionRangeScreen(controller: controller),
+                          ),
+                        ),
+                      ),
+                      child: const Text('Anlässe auswerten'),
                     ),
                   ),
-                ),
-                child: const Text('Anlässe auswerten'),
+                ],
               ),
             ),
-            SizedBox(height: t.gapSmall),
-            for (final o in anlaesse)
-              _AnlassZeile(controller: controller, occasion: o),
+            SurfacePanel(
+              tone: 1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final o in anlaesse)
+                    _AnlassZeile(controller: controller, occasion: o),
+                ],
+              ),
+            ),
           ],
         );
       },

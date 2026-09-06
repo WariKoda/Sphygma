@@ -38,6 +38,12 @@ class SurfacePanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
 
+    // Bedienelemente wie ListTile malen ihre Tinteneffekte auf dem nächsten
+    // Material-Vorfahren. Liegt eine gefärbte Fläche dazwischen, verschwinden
+    // sie darunter — Flutter meldet das als Zusicherung. Ein durchsichtiges
+    // Material innerhalb der Fläche fängt sie wieder auf.
+    final inhalt = Material(type: MaterialType.transparency, child: child);
+
     return switch (t.surfaceStyle) {
       // Keine Fläche: Der Inhalt steht auf dem Grund, gegliedert wird durch
       // Haarlinien und Weißraum. Der Abstand nach unten ist deshalb kein
@@ -47,7 +53,7 @@ class SurfacePanel extends StatelessWidget {
       SurfaceStyle.linie => Container(
           margin: EdgeInsets.only(bottom: t.gapLarge),
           padding: padding ?? EdgeInsets.zero,
-          child: child,
+          child: inhalt,
         ),
 
       // Abgesetzte Fläche mit Radius und Abstand nach unten.
@@ -62,7 +68,7 @@ class SurfacePanel extends StatelessWidget {
                 : Border.all(color: t.panelBorder!),
             boxShadow: t.panelShadow,
           ),
-          child: child,
+          child: inhalt,
         ),
 
       // Ganzflächiges Band: kein Radius, kein Rand, kein Abstand. Der
@@ -75,7 +81,7 @@ class SurfacePanel extends StatelessWidget {
                 vertical: t.gapLarge * 0.7,
               ),
           color: t.panel(tone),
-          child: child,
+          child: inhalt,
         ),
     };
   }

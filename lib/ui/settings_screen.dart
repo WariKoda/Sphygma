@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import '../app/app_controller.dart';
 import '../app/concept.dart';
 import 'theme/sphygma_theme.dart';
+import 'widgets/surface_panel.dart';
 import 'theme/surface_style.dart';
 import 'theme/variants.dart';
 import 'widgets/section_header.dart';
@@ -38,112 +39,120 @@ class SettingsScreen extends StatelessWidget {
           elevation: 0,
         ),
         body: SingleChildScrollView(
-          padding: EdgeInsets.all(t.gapLarge),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SectionHeader(title: 'Konzept'),
-              _Erklaerung(
-                text: 'Andere Konzepte ordnen denselben Bestand neu. Keine '
-                    'Messung wird dabei kopiert oder entfernt.',
-              ),
-              RadioGroup<AppConcept>(
-                groupValue: controller.concept,
-                onChanged: (chosen) =>
-                    chosen == null ? null : controller.setConcept(chosen),
-                child: Column(
-                  children: [
-                    for (final k in allConcepts)
-                      RadioListTile<AppConcept>(
-                        value: k,
-                        title: Text(
-                          k.label,
-                          style: TextStyle(fontSize: 14, color: t.onSurface),
-                        ),
-                        subtitle: Text(
-                          '${k.unit} · ${k.description}',
-                          style: TextStyle(fontSize: 11, color: t.muted),
-                        ),
-                        contentPadding: EdgeInsets.zero,
-                        dense: true,
-                      ),
-                  ],
+          padding: t.listPadding,
+          child: SurfacePanel(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SectionHeader(title: 'Konzept'),
+                _Erklaerung(
+                  text:
+                      'Andere Konzepte ordnen denselben Bestand neu. Keine '
+                      'Messung wird dabei kopiert oder entfernt.',
                 ),
-              ),
-              const SectionHeader(title: 'Flächen'),
-              _Erklaerung(
-                text: 'Worauf der Inhalt steht. Jede Gestaltung bringt eine '
-                    'Vorgabe mit; wer eine Form wählt, behält sie über einen '
-                    'Gestaltungswechsel hinweg.',
-              ),
-              RadioGroup<String>(
-                groupValue: controller.surfaceStyle?.name ?? _vorgabe,
-                onChanged: (chosen) {
-                  if (chosen == null) return;
-                  controller.setSurfaceStyle(
-                    chosen == _vorgabe
-                        ? null
-                        : allSurfaceStyles.firstWhere((f) => f.name == chosen),
-                  );
-                },
-                child: Column(
-                  children: [
-                    RadioListTile<String>(
-                      value: _vorgabe,
-                      title: Text(
-                        'Wie die Gestaltung es vorsieht',
-                        style: TextStyle(fontSize: 14, color: t.onSurface),
-                      ),
-                      subtitle: Text(
-                        'Zurzeit: '
-                        '${defaultSurfaceFor(controller.themeVariant).label}',
-                        style: TextStyle(fontSize: 11, color: t.muted),
-                      ),
-                      contentPadding: EdgeInsets.zero,
-                      dense: true,
-                    ),
-                    for (final f in allSurfaceStyles)
+                RadioGroup<AppConcept>(
+                  groupValue: controller.concept,
+                  onChanged: (chosen) =>
+                      chosen == null ? null : controller.setConcept(chosen),
+                  child: Column(
+                    children: [
+                      for (final k in allConcepts)
+                        RadioListTile<AppConcept>(
+                          value: k,
+                          title: Text(
+                            k.label,
+                            style: TextStyle(fontSize: 14, color: t.onSurface),
+                          ),
+                          subtitle: Text(
+                            '${k.unit} · ${k.description}',
+                            style: TextStyle(fontSize: 11, color: t.muted),
+                          ),
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                        ),
+                    ],
+                  ),
+                ),
+                const SectionHeader(title: 'Flächen'),
+                _Erklaerung(
+                  text:
+                      'Worauf der Inhalt steht. Jede Gestaltung bringt eine '
+                      'Vorgabe mit; wer eine Form wählt, behält sie über einen '
+                      'Gestaltungswechsel hinweg.',
+                ),
+                RadioGroup<String>(
+                  groupValue: controller.surfaceStyle?.name ?? _vorgabe,
+                  onChanged: (chosen) {
+                    if (chosen == null) return;
+                    controller.setSurfaceStyle(
+                      chosen == _vorgabe
+                          ? null
+                          : allSurfaceStyles.firstWhere(
+                              (f) => f.name == chosen,
+                            ),
+                    );
+                  },
+                  child: Column(
+                    children: [
                       RadioListTile<String>(
-                        value: f.name,
+                        value: _vorgabe,
                         title: Text(
-                          f.label,
+                          'Wie die Gestaltung es vorsieht',
                           style: TextStyle(fontSize: 14, color: t.onSurface),
                         ),
                         subtitle: Text(
-                          f.description,
+                          'Zurzeit: '
+                          '${defaultSurfaceFor(controller.themeVariant).label}',
                           style: TextStyle(fontSize: 11, color: t.muted),
                         ),
                         contentPadding: EdgeInsets.zero,
                         dense: true,
                       ),
-                  ],
-                ),
-              ),
-              const SectionHeader(title: 'Gestaltung'),
-              _Erklaerung(
-                text: 'Ändert Typografie, Abstände und Tonstufen, nicht die '
-                    'Messdaten.',
-              ),
-              RadioGroup<ThemeVariant>(
-                groupValue: controller.themeVariant,
-                onChanged: (chosen) =>
-                    chosen == null ? null : controller.setThemeVariant(chosen),
-                child: Column(
-                  children: [
-                    for (final v in allVariants)
-                      RadioListTile<ThemeVariant>(
-                        value: v,
-                        title: Text(
-                          themeFor(v).name,
-                          style: TextStyle(fontSize: 14, color: t.onSurface),
+                      for (final f in allSurfaceStyles)
+                        RadioListTile<String>(
+                          value: f.name,
+                          title: Text(
+                            f.label,
+                            style: TextStyle(fontSize: 14, color: t.onSurface),
+                          ),
+                          subtitle: Text(
+                            f.description,
+                            style: TextStyle(fontSize: 11, color: t.muted),
+                          ),
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
                         ),
-                        contentPadding: EdgeInsets.zero,
-                        dense: true,
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                const SectionHeader(title: 'Gestaltung'),
+                _Erklaerung(
+                  text:
+                      'Ändert Typografie, Abstände und Tonstufen, nicht die '
+                      'Messdaten.',
+                ),
+                RadioGroup<ThemeVariant>(
+                  groupValue: controller.themeVariant,
+                  onChanged: (chosen) => chosen == null
+                      ? null
+                      : controller.setThemeVariant(chosen),
+                  child: Column(
+                    children: [
+                      for (final v in allVariants)
+                        RadioListTile<ThemeVariant>(
+                          value: v,
+                          title: Text(
+                            themeFor(v).name,
+                            style: TextStyle(fontSize: 14, color: t.onSurface),
+                          ),
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

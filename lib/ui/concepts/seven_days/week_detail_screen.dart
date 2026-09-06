@@ -17,6 +17,7 @@ import '../../measurement_sheet.dart';
 import '../../theme/sphygma_theme.dart';
 import '../../widgets/classification_scale.dart';
 import '../../widgets/section_header.dart';
+import '../../widgets/surface_panel.dart';
 import 'week_grid.dart';
 
 class WeekDetailScreen extends StatelessWidget {
@@ -36,15 +37,15 @@ class WeekDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-        listenable: controller,
-        builder: (context, _) {
-          final wochen = buildWeeks(controller.measurements);
-          for (final w in wochen) {
-            if (w.beginsAt == weekStart) return _inhalt(context, w);
-          }
-          return _keineWoche(context);
-        },
-      );
+    listenable: controller,
+    builder: (context, _) {
+      final wochen = buildWeeks(controller.measurements);
+      for (final w in wochen) {
+        if (w.beginsAt == weekStart) return _inhalt(context, w);
+      }
+      return _keineWoche(context);
+    },
+  );
 
   Widget _keineWoche(BuildContext context) {
     final t = SphygmaTheme.of(context);
@@ -86,7 +87,7 @@ class WeekDetailScreen extends StatelessWidget {
         elevation: 0,
       ),
       body: ListView(
-        padding: EdgeInsets.all(t.gapLarge),
+        padding: t.listPadding,
         children: [
           Text(
             week.isComplete
@@ -150,21 +151,35 @@ class WeekDetailScreen extends StatelessWidget {
             children: [
               if (week.morningAverage case final m?)
                 Expanded(
-                  child: _Halbtag(label: 'Morgens', text: '${m.systolic}/${m.diastolic}'),
+                  child: _Halbtag(
+                    label: 'Morgens',
+                    text: '${m.systolic}/${m.diastolic}',
+                  ),
                 ),
               if (week.eveningAverage case final a?)
                 Expanded(
-                  child: _Halbtag(label: 'Abends', text: '${a.systolic}/${a.diastolic}'),
+                  child: _Halbtag(
+                    label: 'Abends',
+                    text: '${a.systolic}/${a.diastolic}',
+                  ),
                 ),
             ],
           ),
-          const SectionHeader(title: 'Alle Messungen dieser Woche'),
-          for (final m in week.measurements)
-            _Zeile(
-              controller: controller,
-              measurement: m,
-              fraglich: fraglich.contains(m.deviceSequence),
+          SurfacePanel(
+            tone: 1,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SectionHeader(title: 'Alle Messungen dieser Woche'),
+                for (final m in week.measurements)
+                  _Zeile(
+                    controller: controller,
+                    measurement: m,
+                    fraglich: fraglich.contains(m.deviceSequence),
+                  ),
+              ],
             ),
+          ),
         ],
       ),
     );

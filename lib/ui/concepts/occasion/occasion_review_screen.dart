@@ -10,6 +10,7 @@ import '../../../db/app_database.dart';
 import '../../../stats/occasion_grouping.dart';
 import '../../format.dart';
 import '../../theme/sphygma_theme.dart';
+import '../../widgets/surface_panel.dart';
 
 class OccasionReviewScreen extends StatelessWidget {
   const OccasionReviewScreen({super.key, required this.controller});
@@ -53,7 +54,7 @@ class OccasionReviewScreen extends StatelessWidget {
         }
 
         return ListView(
-          padding: EdgeInsets.all(t.gapLarge),
+          padding: t.listPadding,
           children: [
             Text(
               '${offen.length} ${offen.length == 1 ? "Grenzfall" : "Grenzfälle"}. '
@@ -62,8 +63,14 @@ class OccasionReviewScreen extends StatelessWidget {
               style: TextStyle(fontSize: 12, color: t.muted, height: 1.5),
             ),
             SizedBox(height: t.gapLarge),
-            for (final o in offen)
-              _Grenzfall(controller: controller, occasion: o),
+            // Der Ton wechselt von Kachel zu Kachel: Bei „Band" verschmölzen
+            // zwei gleichfarbige Flächen sonst zu einer, und die Grenze
+            // zwischen zwei offenen Fragen verschwände.
+            for (final (i, o) in offen.indexed)
+              SurfacePanel(
+                tone: i % 2,
+                child: _Grenzfall(controller: controller, occasion: o),
+              ),
           ],
         );
       },
@@ -88,49 +95,41 @@ class _Grenzfall extends StatelessWidget {
     final letzte = occasion.measurements.last;
     final abstand = folge?.measuredAt.difference(letzte.measuredAt).abs();
 
-    return Container(
-      margin: EdgeInsets.only(bottom: t.gapLarge),
-      padding: EdgeInsets.all(t.gapSmall),
-      decoration: BoxDecoration(
-        border: Border.all(color: t.line),
-        borderRadius: BorderRadius.circular(t.radius),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Gehören diese zusammen?',
+          style: TextStyle(fontSize: 15, color: t.onSurface),
+        ),
+        if (abstand != null)
           Text(
-            'Gehören diese zusammen?',
-            style: TextStyle(fontSize: 15, color: t.onSurface),
+            'Der Abstand von ${abstand.inMinutes} Minuten liegt im '
+            'Grenzbereich. Die Nummern folgen aufeinander.',
+            style: TextStyle(fontSize: 12, color: t.muted, height: 1.5),
           ),
-          if (abstand != null)
-            Text(
-              'Der Abstand von ${abstand.inMinutes} Minuten liegt im '
-              'Grenzbereich. Die Nummern folgen aufeinander.',
-              style: TextStyle(fontSize: 12, color: t.muted, height: 1.5),
+        SizedBox(height: t.gapSmall),
+        _Zeile(measurement: letzte),
+        if (folge != null) _Zeile(measurement: folge),
+        SizedBox(height: t.gapSmall),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => controller.confirmSplit(naht),
+                child: const Text('Zwei getrennte'),
+              ),
             ),
-          SizedBox(height: t.gapSmall),
-          _Zeile(measurement: letzte),
-          if (folge != null) _Zeile(measurement: folge),
-          SizedBox(height: t.gapSmall),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => controller.confirmSplit(naht),
-                  child: const Text('Zwei getrennte'),
-                ),
+            SizedBox(width: t.gapSmall),
+            Expanded(
+              child: FilledButton(
+                onPressed: () => controller.confirmJoin(naht),
+                child: const Text('Ein Anlass'),
               ),
-              SizedBox(width: t.gapSmall),
-              Expanded(
-                child: FilledButton(
-                  onPressed: () => controller.confirmJoin(naht),
-                  child: const Text('Ein Anlass'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 

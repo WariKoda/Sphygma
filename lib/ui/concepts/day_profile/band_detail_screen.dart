@@ -13,6 +13,7 @@ import '../../../stats/time_plausibility.dart';
 import '../../format.dart';
 import '../../measurement_sheet.dart';
 import '../../theme/sphygma_theme.dart';
+import '../../widgets/surface_panel.dart';
 
 class BandDetailScreen extends StatelessWidget {
   const BandDetailScreen({
@@ -51,7 +52,7 @@ class BandDetailScreen extends StatelessWidget {
             elevation: 0,
           ),
           body: ListView(
-            padding: EdgeInsets.all(t.gapLarge),
+            padding: t.listPadding,
             children: [
               if (mittel[band] case final a?) ...[
                 Text(
@@ -72,19 +73,30 @@ class BandDetailScreen extends StatelessWidget {
                 ),
                 SizedBox(height: t.gapLarge),
               ],
-              Text(
-                'MESSUNGEN UM DIESE ZEIT',
-                style:
-                    TextStyle(fontSize: 10, letterSpacing: 1.6, color: t.muted),
-              ),
-              // Neueste zuerst: Wer den Abschnitt öffnet, sucht meist zuerst
-              // das Jüngste.
-              for (final m in messungen.reversed)
-                _Zeile(
-                  controller: controller,
-                  measurement: m,
-                  fraglich: fraglich.contains(m.deviceSequence),
+              SurfacePanel(
+                tone: 1,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'MESSUNGEN UM DIESE ZEIT',
+                      style: TextStyle(
+                        fontSize: 10,
+                        letterSpacing: 1.6,
+                        color: t.muted,
+                      ),
+                    ),
+                    // Neueste zuerst: Wer den Abschnitt öffnet, sucht meist zuerst
+                    // das Jüngste.
+                    for (final m in messungen.reversed)
+                      _Zeile(
+                        controller: controller,
+                        measurement: m,
+                        fraglich: fraglich.contains(m.deviceSequence),
+                      ),
+                  ],
                 ),
+              ),
             ],
           ),
         );

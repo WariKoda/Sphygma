@@ -12,6 +12,7 @@ import '../stats/trend_stats.dart';
 import 'format.dart';
 import 'measurement_sheet.dart';
 import 'theme/sphygma_theme.dart';
+import 'widgets/surface_panel.dart';
 import 'widgets/trend_chart.dart';
 
 class HistoryScreen extends StatelessWidget {
@@ -30,32 +31,48 @@ class HistoryScreen extends StatelessWidget {
         final averages = PeriodAverages.of(inPeriod);
 
         return ListView(
-          padding: EdgeInsets.all(t.gapLarge),
+          padding: t.listPadding,
           children: [
-            _PeriodPicker(controller: controller),
+            SurfacePanel(child: _PeriodPicker(controller: controller)),
             if (inPeriod.isEmpty)
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: t.gapLarge * 2),
-                child: Text(
-                  'Keine Messungen in diesem Zeitraum.',
-                  style: TextStyle(fontSize: 14, color: t.muted),
+              SurfacePanel(
+                tone: 1,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: t.gapLarge * 2),
+                  child: Text(
+                    'Keine Messungen in diesem Zeitraum.',
+                    style: TextStyle(fontSize: 14, color: t.muted),
+                  ),
                 ),
               )
             else ...[
-              SizedBox(height: t.gapLarge),
-              TrendChart(measurements: inPeriod),
-              SizedBox(height: t.gapLarge),
-              const _Section(title: 'MITTELWERTE'),
-              _AverageRow(label: 'Gesamt', average: averages.overall),
-              _AverageRow(label: 'Morgens', average: averages.morning),
-              _AverageRow(label: 'Abends', average: averages.evening),
-              SizedBox(height: t.gapLarge),
-              const _Section(title: 'MESSUNGEN'),
-              for (final group in groupByDay(inPeriod)) ...[
-                DayHeading(day: group.day),
-                for (final m in group.measurements)
-                  MeasurementRow(controller: controller, measurement: m),
-              ],
+              SurfacePanel(
+                tone: 1,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TrendChart(measurements: inPeriod),
+                    SizedBox(height: t.gapLarge),
+                    const _Section(title: 'MITTELWERTE'),
+                    _AverageRow(label: 'Gesamt', average: averages.overall),
+                    _AverageRow(label: 'Morgens', average: averages.morning),
+                    _AverageRow(label: 'Abends', average: averages.evening),
+                  ],
+                ),
+              ),
+              SurfacePanel(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _Section(title: 'MESSUNGEN'),
+                    for (final group in groupByDay(inPeriod)) ...[
+                      DayHeading(day: group.day),
+                      for (final m in group.measurements)
+                        MeasurementRow(controller: controller, measurement: m),
+                    ],
+                  ],
+                ),
+              ),
             ],
           ],
         );
@@ -144,9 +161,7 @@ class _AverageRow extends StatelessWidget {
         children: [
           Text(label, style: TextStyle(fontSize: 13, color: t.muted)),
           Text(
-            a == null
-                ? '–'
-                : '${a.systolic}/${a.diastolic} · ${a.pulse}',
+            a == null ? '–' : '${a.systolic}/${a.diastolic} · ${a.pulse}',
             style: TextStyle(
               fontSize: 13,
               color: t.onSurface,

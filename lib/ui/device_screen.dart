@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../app/app_controller.dart';
 import 'theme/sphygma_theme.dart';
+import 'widgets/surface_panel.dart';
 import 'widgets/section_header.dart';
 
 class DeviceScreen extends StatefulWidget {
@@ -34,99 +35,101 @@ class _DeviceScreenState extends State<DeviceScreen> {
     return Material(
       color: t.surface,
       child: SingleChildScrollView(
-        padding: EdgeInsets.all(t.gapLarge),
-        child: Column(
-          children: [
-            const SectionHeader(title: 'Gerät'),
-            _Row(
-              label: 'RS7 Intelli IT',
-              value: c.paired ? 'gekoppelt' : 'nicht gekoppelt',
-            ),
-            if (c.userSlot != null)
-              _Row(label: 'Speicherplatz', value: 'Benutzer ${c.userSlot}'),
-            if (c.paired && !_pairingOpen)
+        padding: t.listPadding,
+        child: SurfacePanel(
+          child: Column(
+            children: [
+              const SectionHeader(title: 'Gerät'),
+              _Row(
+                label: 'RS7 Intelli IT',
+                value: c.paired ? 'gekoppelt' : 'nicht gekoppelt',
+              ),
+              if (c.userSlot != null)
+                _Row(label: 'Speicherplatz', value: 'Benutzer ${c.userSlot}'),
+              if (c.paired && !_pairingOpen)
+                _Button(
+                  label: 'Neu koppeln',
+                  onPressed: c.busy
+                      ? null
+                      : () => setState(() => _pairingOpen = true),
+                ),
+              if (showPairing) ...[
+                SizedBox(height: t.gapSmall),
+                Text(
+                  'Welcher Speicherplatz gehört dir am Gerät?',
+                  style: TextStyle(fontSize: 12, color: t.muted),
+                ),
+                SizedBox(height: t.gapSmall),
+                SegmentedButton<int>(
+                  segments: const [
+                    ButtonSegment(value: 1, label: Text('Benutzer 1')),
+                    ButtonSegment(value: 2, label: Text('Benutzer 2')),
+                  ],
+                  // Ohne gewaehlten Slot ist nichts ausgewaehlt. Ein
+                  // vorgetaeuschtes "Benutzer 1" liesse sich nicht antippen:
+                  // SegmentedButton meldet keinen Wechsel auf das bereits
+                  // ausgewaehlte einzige Segment (segmented_button.dart:489).
+                  emptySelectionAllowed: true,
+                  selected: c.userSlot == null ? const <int>{} : {c.userSlot!},
+                  onSelectionChanged: (s) =>
+                      s.isEmpty ? null : c.setUserSlot(s.first),
+                ),
+                SizedBox(height: t.gapSmall),
+                Text(
+                  'Zum Koppeln die Bluetooth-Taste am Gerät lange drücken, '
+                  'bis "-P-" blinkt.',
+                  style: TextStyle(fontSize: 12, color: t.muted),
+                ),
+                _Button(
+                  label: 'Koppeln',
+                  filled: true,
+                  onPressed: c.busy || c.userSlot == null
+                      ? null
+                      : () => _start(c.pair),
+                ),
+              ],
+
+              const SectionHeader(title: 'Abgleich'),
+              _Row(
+                label: 'Automatischer Abgleich',
+                value: c.autoSyncActive ? 'wartet auf Messungen' : 'aus',
+                dot: c.autoSyncActive,
+              ),
+              _Row(
+                label: 'Gespeichert',
+                value: '${c.measurements.length} Messungen',
+              ),
               _Button(
-                label: 'Neu koppeln',
-                onPressed: c.busy
-                    ? null
-                    : () => setState(() => _pairingOpen = true),
-              ),
-            if (showPairing) ...[
-              SizedBox(height: t.gapSmall),
-              Text(
-                'Welcher Speicherplatz gehört dir am Gerät?',
-                style: TextStyle(fontSize: 12, color: t.muted),
-              ),
-              SizedBox(height: t.gapSmall),
-              SegmentedButton<int>(
-                segments: const [
-                  ButtonSegment(value: 1, label: Text('Benutzer 1')),
-                  ButtonSegment(value: 2, label: Text('Benutzer 2')),
-                ],
-                // Ohne gewaehlten Slot ist nichts ausgewaehlt. Ein
-                // vorgetaeuschtes "Benutzer 1" liesse sich nicht antippen:
-                // SegmentedButton meldet keinen Wechsel auf das bereits
-                // ausgewaehlte einzige Segment (segmented_button.dart:489).
-                emptySelectionAllowed: true,
-                selected: c.userSlot == null ? const <int>{} : {c.userSlot!},
-                onSelectionChanged: (s) =>
-                    s.isEmpty ? null : c.setUserSlot(s.first),
-              ),
-              SizedBox(height: t.gapSmall),
-              Text(
-                'Zum Koppeln die Bluetooth-Taste am Gerät lange drücken, '
-                'bis "-P-" blinkt.',
-                style: TextStyle(fontSize: 12, color: t.muted),
-              ),
-              _Button(
-                label: 'Koppeln',
+                label: 'Jetzt abgleichen',
                 filled: true,
+                onPressed: c.busy || !c.paired ? null : () => _start(c.sync),
+              ),
+              if (c.status != null) ...[
+                SizedBox(height: t.gapSmall),
+                Text(c.status!, style: TextStyle(fontSize: 12, color: t.muted)),
+              ],
+
+              const SectionHeader(title: 'Health Connect'),
+              _Row(
+                label: 'Übertragen',
+                value:
+                    '${c.measurements.length - c.pendingExport} '
+                    'von ${c.measurements.length}',
+              ),
+              _Button(
+                label: 'Alle übertragen',
+                onPressed: c.busy || c.pendingExport == 0
+                    ? null
+                    : () => _start(c.exportAll),
+              ),
+              _Button(
+                label: 'Übertragene entfernen',
                 onPressed: c.busy || c.userSlot == null
                     ? null
-                    : () => _start(c.pair),
+                    : () => _start(c.retractAll),
               ),
             ],
-
-            const SectionHeader(title: 'Abgleich'),
-            _Row(
-              label: 'Automatischer Abgleich',
-              value: c.autoSyncActive ? 'wartet auf Messungen' : 'aus',
-              dot: c.autoSyncActive,
-            ),
-            _Row(
-              label: 'Gespeichert',
-              value: '${c.measurements.length} Messungen',
-            ),
-            _Button(
-              label: 'Jetzt abgleichen',
-              filled: true,
-              onPressed: c.busy || !c.paired ? null : () => _start(c.sync),
-            ),
-            if (c.status != null) ...[
-              SizedBox(height: t.gapSmall),
-              Text(c.status!, style: TextStyle(fontSize: 12, color: t.muted)),
-            ],
-
-            const SectionHeader(title: 'Health Connect'),
-            _Row(
-              label: 'Übertragen',
-              value:
-                  '${c.measurements.length - c.pendingExport} '
-                  'von ${c.measurements.length}',
-            ),
-            _Button(
-              label: 'Alle übertragen',
-              onPressed:
-                  c.busy || c.pendingExport == 0 ? null : () => _start(c.exportAll),
-            ),
-            _Button(
-              label: 'Übertragene entfernen',
-              onPressed: c.busy || c.userSlot == null
-                  ? null
-                  : () => _start(c.retractAll),
-            ),
-
-          ],
+          ),
         ),
       ),
     );
@@ -139,9 +142,11 @@ class _DeviceScreenState extends State<DeviceScreen> {
   /// Fehler als unbeobachtete Ausnahme in die Zone und ruecke damit nirgends
   /// mehr in Sicht.
   static void _start(Future<void> Function() action) {
-    unawaited(action().catchError((Object e) {
-      debugPrint('[Sphygma] Aktion fehlgeschlagen: $e');
-    }));
+    unawaited(
+      action().catchError((Object e) {
+        debugPrint('[Sphygma] Aktion fehlgeschlagen: $e');
+      }),
+    );
   }
 }
 

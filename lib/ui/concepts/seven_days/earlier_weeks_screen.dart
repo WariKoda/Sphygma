@@ -11,6 +11,7 @@ import '../../../stats/target_range.dart';
 import '../../format.dart';
 import '../../theme/sphygma_theme.dart';
 import '../../theme/zone_color.dart';
+import '../../widgets/surface_panel.dart';
 import 'week_detail_screen.dart';
 import 'week_range_screen.dart';
 
@@ -60,15 +61,24 @@ class EarlierWeeksScreen extends StatelessWidget {
                   ),
                 )
               : ListView(
-                  padding: EdgeInsets.all(t.gapLarge),
+                  padding: t.listPadding,
                   children: [
-                    Text(
-                      'Vollständige Wochen sind für die Praxis brauchbar.',
-                      style: TextStyle(fontSize: 12, color: t.muted),
+                    SurfacePanel(
+                      child: Text(
+                        'Vollständige Wochen sind für die Praxis brauchbar.',
+                        style: TextStyle(fontSize: 12, color: t.muted),
+                      ),
                     ),
-                    SizedBox(height: t.gapLarge),
-                    for (final w in wochen)
-                      _WochenZeile(controller: controller, week: w),
+                    SurfacePanel(
+                      tone: 1,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (final w in wochen)
+                            _WochenZeile(controller: controller, week: w),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
         );
