@@ -168,4 +168,74 @@ void main() {
       expect(spaet.morningAverage!.systolic, 140);
     });
   });
+
+  group('Die vierzehn Felder', () {
+    test('gibt es immer alle, auch die leeren', () {
+      final woche = buildWeeks([
+        _m(1, _montag.add(const Duration(hours: 7))),
+      ]).single;
+
+      // Ein leeres Feld ist die Aussage "hier wurde nicht gemessen" — es
+      // fehlt nicht, es steht leer da.
+      expect(woche.fields, hasLength(14));
+      expect(woche.fields.where((f) => f.isFilled), hasLength(1));
+    });
+
+    test('stehen in Tagesreihenfolge, je Tag erst morgens', () {
+      final woche = buildWeeks(_volleWoche(_montag)).single;
+
+      expect(woche.fields.first.weekday, DateTime.monday);
+      expect(woche.fields.first.band, TimeBand.morgens);
+      expect(woche.fields[1].band, TimeBand.abends);
+      expect(woche.fields.last.weekday, DateTime.sunday);
+    });
+
+    test('ein Feld führt zu seinen Messungen', () {
+      final ms = _volleWoche(_montag)
+        ..add(_m(99, _montag.add(const Duration(hours: 7, minutes: 2))));
+      final woche = buildWeeks(ms).single;
+
+      final feld =
+          woche.fieldAt(weekday: DateTime.monday, band: TimeBand.morgens);
+      expect(feld.measurements, hasLength(2), reason: 'ein Messen, zwei Werte');
+      expect(feld.average, isNotNull);
+    });
+
+    test('der Zähler zählt dieselben Felder, die das Raster zeichnet', () {
+      final ms = _volleWoche(_montag)..removeAt(3);
+      final woche = buildWeeks(ms).single;
+
+      expect(woche.filledFields, woche.fields.where((f) => f.isFilled).length);
+    });
+  });
+
+  group('Wochengrenzen halten auch über Zeitumstellungen', () {
+    test('jeder Tag eines Jahres findet seinen Montag um Mitternacht', () {
+      // Sieben Tage sind in der Umstellungswoche nicht 168 Stunden. Ein Abzug
+      // in Stunden landet dann eine Stunde vor Mitternacht — und damit einen
+      // Tag zu früh. Die Prüfung gilt in jeder Zeitzone, in der umgestellt
+      // wird, ohne eine bestimmte vorauszusetzen.
+      for (var tag = DateTime(2026); tag.year == 2026;
+          tag = DateTime(tag.year, tag.month, tag.day + 1)) {
+        final montag = mondayOf(tag);
+        expect(montag.weekday, DateTime.monday, reason: '$tag');
+        expect(montag.hour, 0, reason: '$tag');
+        expect(montag.minute, 0, reason: '$tag');
+        expect(tag.difference(montag).inDays, lessThan(7), reason: '$tag');
+        expect(montag.isAfter(tag), isFalse, reason: '$tag');
+      }
+    });
+
+    test('die Vorwoche liegt genau einen Montag zurück', () {
+      for (var tag = DateTime(2026); tag.year == 2026;
+          tag = DateTime(tag.year, tag.month, tag.day + 1)) {
+        final montag = mondayOf(tag);
+        final davor = previousMonday(montag);
+        expect(davor.weekday, DateTime.monday, reason: '$tag');
+        expect(mondayOf(DateTime(davor.year, davor.month, davor.day + 7)),
+            montag,
+            reason: '$tag');
+      }
+    });
+  });
 }
