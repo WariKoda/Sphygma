@@ -9,6 +9,7 @@ import '../../../app/app_controller.dart';
 import '../../measurement_sheet.dart';
 import '../../theme/sphygma_theme.dart';
 import '../../widgets/notice_card.dart';
+import '../../widgets/surface_panel.dart';
 import '../../widgets/section_header.dart';
 import 'occasion_widgets.dart';
 
@@ -63,23 +64,38 @@ class LastOccasionScreen extends StatelessWidget {
         final offen = controller.openOccasions.length;
 
         return ListView(
-          padding: EdgeInsets.all(t.gapLarge),
+          padding: t.listPadding,
           children: [
-            Text(
-              occasionWhen(letzter),
-              style: TextStyle(fontSize: 12, color: t.muted),
+            SurfacePanel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    occasionWhen(letzter),
+                    style: TextStyle(fontSize: 12, color: t.muted),
+                  ),
+                  SizedBox(height: t.gapSmall),
+                  OccasionResult(occasion: letzter),
+                  SizedBox(height: t.gapLarge),
+                  QualityChips(occasion: letzter),
+                ],
+              ),
             ),
-            SizedBox(height: t.gapSmall),
-            OccasionResult(occasion: letzter),
-            SizedBox(height: t.gapLarge),
-            QualityChips(occasion: letzter),
-            const SectionHeader(title: 'Rohwerte'),
-            RawMeasurementList(
-              occasion: letzter,
-              onTap: (m) => showMeasurementSheet(
-                context,
-                controller: controller,
-                measurementId: m.id,
+            SurfacePanel(
+              tone: 1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SectionHeader(title: 'Rohwerte'),
+                  RawMeasurementList(
+                    occasion: letzter,
+                    onTap: (m) => showMeasurementSheet(
+                      context,
+                      controller: controller,
+                      measurementId: m.id,
+                    ),
+                  ),
+                ],
               ),
             ),
             if (!controller.paired) ...[

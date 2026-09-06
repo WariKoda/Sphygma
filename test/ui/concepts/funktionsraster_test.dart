@@ -44,7 +44,9 @@ import 'package:sphygma/sync/health_sink.dart';
 import 'package:sphygma/sync/sync_service.dart';
 import 'package:sphygma/ui/concepts/concept_home.dart';
 import 'package:sphygma/ui/theme/sphygma_theme.dart';
+import 'package:sphygma/ui/theme/surface_style.dart';
 import 'package:sphygma/ui/theme/variants.dart';
+import 'package:sphygma/ui/widgets/surface_panel.dart';
 
 class _NoopSink implements HealthSink {
   @override
@@ -252,11 +254,15 @@ void main() {
     await controller.refreshForTest();
   }
 
-  Future<void> pump(WidgetTester tester, AppConcept k) async {
+  Future<void> pump(
+    WidgetTester tester,
+    AppConcept k, {
+    SurfaceStyle? form,
+  }) async {
     await controller.setConcept(k);
     await tester.pumpWidget(MaterialApp(
       home: SphygmaThemeScope(
-        theme: themeFor(ThemeVariant.instrument),
+        theme: themeFor(ThemeVariant.instrument, surface: form),
         child: conceptHome(
           concept: k,
           controller: controller,
@@ -347,6 +353,28 @@ void main() {
           find.textContaining(RegExp('Geräteuhr|ungeklärt')),
           reason: 'F11 fehlt in ${k.name}',
         );
+      });
+
+
+      testWidgets('die Flächenform wirkt auch in diesem Konzept',
+          (tester) async {
+        await boot();
+
+        // Erst ohne Flächen: Der Einstieg baut Panels, sie zeichnen aber
+        // nichts.
+        await pump(tester, k, form: SurfaceStyle.linie);
+        expect(find.byType(SurfacePanel), findsWidgets,
+            reason: '${k.name} wickelt seine Abschnitte nicht in Flächen — '
+                'die dritte Achse bliebe dort wirkungslos');
+
+        // Dann als Karte: Jetzt muss mindestens eine Fläche wirklich
+        // gezeichnet sein.
+        await pump(tester, k, form: SurfaceStyle.karte);
+        final flaechen = find.descendant(
+          of: find.byType(SurfacePanel),
+          matching: find.byType(Container),
+        );
+        expect(flaechen, findsWidgets, reason: '${k.name} zeigt keine Karten');
       });
 
       testWidgets('F12 — ohne Kopplung sagt das Konzept, wo man koppelt',

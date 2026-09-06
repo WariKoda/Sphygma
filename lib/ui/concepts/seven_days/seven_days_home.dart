@@ -25,6 +25,7 @@ import '../../settings_screen.dart';
 import '../../theme/sphygma_theme.dart';
 import '../../widgets/classification_scale.dart';
 import '../../widgets/notice_card.dart';
+import '../../widgets/surface_panel.dart';
 import 'earlier_weeks_screen.dart';
 import 'week_detail_screen.dart';
 import 'week_grid.dart';
@@ -120,24 +121,27 @@ class _SevenDaysHomeState extends State<SevenDaysHome> {
             ],
           ),
           body: ListView(
-            padding: EdgeInsets.all(t.gapLarge),
+            padding: t.listPadding,
             children: [
-              _Statuszeile(controller: widget.controller),
-              SizedBox(height: t.gapLarge),
-              if (wochen.isEmpty)
-                _NochNichtsGemessen(paired: widget.controller.paired)
-              else if (laufende == null)
-                _LangePause(
-                  controller: widget.controller,
-                  letzte: wochen.first,
-                  jetzt: jetzt,
-                )
-              else
-                _LaufendeWoche(
-                  controller: widget.controller,
-                  week: laufende,
-                  jetzt: jetzt,
-                ),
+              SurfacePanel(
+                child: _Statuszeile(controller: widget.controller),
+              ),
+              SurfacePanel(
+                tone: 1,
+                child: wochen.isEmpty
+                    ? _NochNichtsGemessen(paired: widget.controller.paired)
+                    : laufende == null
+                        ? _LangePause(
+                            controller: widget.controller,
+                            letzte: wochen.first,
+                            jetzt: jetzt,
+                          )
+                        : _LaufendeWoche(
+                            controller: widget.controller,
+                            week: laufende,
+                            jetzt: jetzt,
+                          ),
+              ),
               ..._hinweise(context),
               SizedBox(height: t.gapLarge),
               _Verweis(

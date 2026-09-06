@@ -14,6 +14,7 @@ import '../../format.dart';
 import '../../theme/sphygma_theme.dart';
 import '../../widgets/classification_scale.dart';
 import '../../widgets/notice_card.dart';
+import '../../widgets/surface_panel.dart';
 import 'new_phase_sheet.dart';
 import 'phase_compare_screen.dart';
 
@@ -40,16 +41,17 @@ class CurrentPhaseScreen extends StatelessWidget {
         final laufend = _laufende(gruppen);
 
         return ListView(
-          padding: EdgeInsets.all(t.gapLarge),
+          padding: t.listPadding,
           children: [
-            if (laufend == null)
-              _KeineLaufende(controller: controller)
-            else
-              _Laufende(
-                controller: controller,
-                laufend: laufend,
-                davor: _davor(gruppen!, laufend),
-              ),
+            SurfacePanel(
+              child: laufend == null
+                  ? _KeineLaufende(controller: controller)
+                  : _Laufende(
+                      controller: controller,
+                      laufend: laufend,
+                      davor: _davor(gruppen!, laufend),
+                    ),
+            ),
             if (gruppen != null && gruppen.unclear.isNotEmpty) ...[
               SizedBox(height: t.gapLarge),
               Container(

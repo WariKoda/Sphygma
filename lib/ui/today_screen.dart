@@ -9,6 +9,7 @@ import 'theme/sphygma_theme.dart';
 import 'widgets/classification_scale.dart';
 import 'widgets/notice_card.dart';
 import 'widgets/reading_headline.dart';
+import 'widgets/surface_panel.dart';
 
 /// Die Schritte aus dem Handbuch HEM-6232T-E. Die Uhr laesst sich nicht
 /// per Bluetooth stellen (docs/protocol/hem-6232t.md §8.7), also bleibt
@@ -36,41 +37,55 @@ class TodayScreen extends StatelessWidget {
     return Container(
       color: t.surface,
       child: ListView(
-        padding: EdgeInsets.all(t.gapLarge),
+        padding: t.listPadding,
         children: [
-          if (latest == null)
-            _EmptyState(paired: controller.paired)
-          else ...[
-            ReadingHeadline(
-              systolic: latest.systolic,
-              diastolic: latest.diastolic,
-              pulse: latest.pulse,
-              measuredAt: latest.measuredAt,
+          SurfacePanel(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (latest == null)
+                  _EmptyState(paired: controller.paired)
+                else ...[
+                  ReadingHeadline(
+                    systolic: latest.systolic,
+                    diastolic: latest.diastolic,
+                    pulse: latest.pulse,
+                    measuredAt: latest.measuredAt,
+                  ),
+                  if (escClassificationEnabled) ...[
+                    SizedBox(height: t.gapLarge),
+                    ClassificationScale(
+                      category: classifyOffice(
+                        systolic: latest.systolic,
+                        diastolic: latest.diastolic,
+                      ),
+                    ),
+                  ],
+                ],
+              ],
             ),
-            if (escClassificationEnabled) ...[
-              SizedBox(height: t.gapLarge),
-              ClassificationScale(
-                category: classifyOffice(
-                  systolic: latest.systolic,
-                  diastolic: latest.diastolic,
-                ),
-              ),
-            ],
-          ],
+          ),
           ..._notices(),
-          if (controller.measurements.length > 1) ...[
-            SizedBox(height: t.gapLarge),
-            Text(
-              'LETZTE TAGE',
-              style: TextStyle(
-                fontSize: 10,
-                letterSpacing: 1.6,
-                color: t.muted,
+          if (controller.measurements.length > 1)
+            SurfacePanel(
+              tone: 1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'LETZTE TAGE',
+                    style: TextStyle(
+                      fontSize: 10,
+                      letterSpacing: 1.6,
+                      color: t.muted,
+                    ),
+                  ),
+                  for (final m
+                      in controller.measurements.skip(1).take(_recentCount))
+                    _RecentRow(measurement: m),
+                ],
               ),
             ),
-            for (final m in controller.measurements.skip(1).take(_recentCount))
-              _RecentRow(measurement: m),
-          ],
         ],
       ),
     );
