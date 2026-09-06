@@ -616,3 +616,29 @@ F-Droid-Metadaten und einen etwaigen Play-Eintrag.
   neben einem gestalterischen.
 * Die drei Handschriften haben je eine eigene Farbwelt. Das Symbol gehört
   keiner davon; es steht außerhalb und muss auf allen dreien tragen.
+
+### 9.5 Konfigurierbarer Bericht für die Praxis
+
+F5 aus dem Funktionsraster, bisher in **keinem** Konzept gebaut. Neu daran ist
+das „konfigurierbar": Was im Bericht steht, wählt der Nutzer.
+
+* Jedes Konzept erzeugt ihn aus seiner eigenen Auswahl — „Sieben Tage" aus
+  einer Folge von Messwochen, „Messanlass" aus einem Bereich zwischen zwei
+  Anlässen, „Phase" als Vergleich zweier Abschnitte. Der Bericht ist damit
+  kein gemeinsamer Bildschirm, sondern eine Ausgabe je Konzept auf einer
+  gemeinsamen Grundlage.
+* Wählbar sollten mindestens sein: Zeitraum, ob Einzelmessungen als Anhang
+  mitgehen, ob Gerätekennzeichen (Bewegung, unregelmäßiger Puls) erscheinen
+  und ob die Zeitprovenienz ausgewiesen wird.
+* **Nicht wählbar:** dass eine Zahl anders zustande kommt, als sie in der App
+  zustande kommt. Wer den ersten Tag einer Woche einrechnen könnte, bekäme
+  einen Bericht, der der Anzeige widerspricht. Konfigurierbar ist der Umfang,
+  nicht die Rechnung.
+* Abweichende Gerätezeiten gehören sichtbar in den Bericht, nicht in eine
+  Fußnote. Sie sind der Grund, warum eine Zahl anzuzweifeln wäre.
+* MDR (§3.2): Ein Bericht, der Messwerte und ihre Herkunft wiedergibt, ist
+  Dokumentation. Sobald er eine Einordnung mitliefert, gilt dieselbe Frage wie
+  bei der ESC-Klassifikation — dann hinter dasselbe Flag.
+* Offen: Ausgabeformat. Ein Blatt zum Mitnehmen und eine Tabelle zum
+  Weiterrechnen sind zwei verschiedene Anforderungen; welche zuerst kommt, ist
+  nicht entschieden.
