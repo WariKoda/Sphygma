@@ -3694,14 +3694,14 @@ void main() {
   });
 
   testWidgets('die gewählte Gestaltung liegt über dem Baum', (tester) async {
-    await controller.setThemeVariant(ThemeVariant.journal);
+    await controller.setThemeVariant(ThemeVariant.diary);
     await tester.pumpWidget(SphygmaApp(controller: controller));
     await tester.pumpAndSettle();
 
     final context = tester.element(find.byType(TodayScreen));
     expect(
       SphygmaTheme.of(context).name,
-      themeFor(ThemeVariant.journal).name,
+      themeFor(ThemeVariant.diary).name,
     );
   });
 
