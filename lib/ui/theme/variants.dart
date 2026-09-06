@@ -3,6 +3,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../../stats/esc_classification.dart';
+import 'surface_style.dart';
 import 'sphygma_theme.dart';
 
 enum ThemeVariant { instrument, diary, material, aura, pulseGrid, pegel }
@@ -56,8 +57,8 @@ const Map<EscCategory, Color> _vividScale = {
   EscCategory.grade3: Color(0xFFC33A2E),
 };
 
-SphygmaTheme themeFor(ThemeVariant variant) => switch (variant) {
-      ThemeVariant.instrument => const SphygmaTheme(
+SphygmaTheme themeFor(ThemeVariant variant, {SurfaceStyle? surface}) => switch (variant) {
+      ThemeVariant.instrument => SphygmaTheme(
           name: 'Messinstrument',
           surface: Color(0xFFFAF9F7),
           onSurface: Color(0xFF1B1B1A),
@@ -73,8 +74,13 @@ SphygmaTheme themeFor(ThemeVariant variant) => switch (variant) {
           headlineWeight: FontWeight.w300,
           useRoundedCards: false,
           showDividers: true,
+          surfaceStyle: surface ?? defaultSurfaceFor(variant),
+          panelBase: Color(0xFFFFFFFF),
+          panelRaised: Color(0xFFFAF9F7),
+          panelBorder: Color(0xFFE4E1DB),
+          panelShadow: null,
         ),
-      ThemeVariant.diary => const SphygmaTheme(
+      ThemeVariant.diary => SphygmaTheme(
           name: 'Tagebuch',
           surface: Color(0xFFF2F5FB),
           onSurface: Color(0xFF182034),
@@ -90,8 +96,13 @@ SphygmaTheme themeFor(ThemeVariant variant) => switch (variant) {
           headlineWeight: FontWeight.w700,
           useRoundedCards: true,
           showDividers: true,
+          surfaceStyle: surface ?? defaultSurfaceFor(variant),
+          panelBase: Color(0xFFFFFFFF),
+          panelRaised: Color(0xFFFFFFFF),
+          panelBorder: null,
+          panelShadow: [BoxShadow(color: Color(0x264F7FD8), blurRadius: 20, offset: Offset(0, 8))],
         ),
-      ThemeVariant.material => const SphygmaTheme(
+      ThemeVariant.material => SphygmaTheme(
           name: 'Material',
           surface: Color(0xFFFEF7FF),
           onSurface: Color(0xFF1D1B20),
@@ -107,6 +118,11 @@ SphygmaTheme themeFor(ThemeVariant variant) => switch (variant) {
           headlineWeight: FontWeight.w400,
           useRoundedCards: true,
           showDividers: true,
+          surfaceStyle: surface ?? defaultSurfaceFor(variant),
+          panelBase: Color(0xFFE8DEF8),
+          panelRaised: Color(0xFFFEF7FF),
+          panelBorder: null,
+          panelShadow: null,
         ),
       // Aus dem Entwurf docs/design/handschriften.html übernommen, nicht
       // erfunden: Grundfarben und Maße stehen dort im CSS je Handschrift.
@@ -114,7 +130,7 @@ SphygmaTheme themeFor(ThemeVariant variant) => switch (variant) {
       // Die einzige dunkle Handschrift. Der Entwurf hält fest, dass sie fest
       // dunkel bleibt — dem Systemmodus zu folgen bräuchte eine zweite
       // Farbtafel, die die Theme-Schicht heute nicht kennt.
-      ThemeVariant.aura => const SphygmaTheme(
+      ThemeVariant.aura => SphygmaTheme(
           name: 'Aura',
           surface: Color(0xFF14181F),
           onSurface: Color(0xFFE8ECF2),
@@ -132,8 +148,13 @@ SphygmaTheme themeFor(ThemeVariant variant) => switch (variant) {
           useRoundedCards: true,
           // „Zeilen ohne Trennstrich; Luft gliedert, nicht der Strich."
           showDividers: false,
+          surfaceStyle: surface ?? defaultSurfaceFor(variant),
+          panelBase: Color(0x0BFFFFFF),
+          panelRaised: Color(0x06FFFFFF),
+          panelBorder: Color(0x12FFFFFF),
+          panelShadow: null,
         ),
-      ThemeVariant.pulseGrid => const SphygmaTheme(
+      ThemeVariant.pulseGrid => SphygmaTheme(
           name: 'Pulse Grid',
           surface: Color(0xFFF5F6F4),
           onSurface: Color(0xFF171A1C),
@@ -150,8 +171,13 @@ SphygmaTheme themeFor(ThemeVariant variant) => switch (variant) {
           headlineWeight: FontWeight.w400,
           useRoundedCards: false,
           showDividers: true,
+          surfaceStyle: surface ?? defaultSurfaceFor(variant),
+          panelBase: Color(0xFFFFFFFF),
+          panelRaised: Color(0xFFF5F6F4),
+          panelBorder: Color(0xFFDEE0DC),
+          panelShadow: null,
         ),
-      ThemeVariant.pegel => const SphygmaTheme(
+      ThemeVariant.pegel => SphygmaTheme(
           name: 'Pegel',
           surface: Color(0xFFECEEEB),
           onSurface: Color(0xFF16211F),
@@ -169,5 +195,10 @@ SphygmaTheme themeFor(ThemeVariant variant) => switch (variant) {
           useRoundedCards: false,
           // „Ein Abschnitt endet, wo die Fläche ihren Ton wechselt."
           showDividers: false,
+          surfaceStyle: surface ?? defaultSurfaceFor(variant),
+          panelBase: Color(0xFFFFFFFF),
+          panelRaised: Color(0xFFECEEEB),
+          panelBorder: null,
+          panelShadow: null,
         ),
     };

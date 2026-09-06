@@ -18,6 +18,7 @@ import '../../../stats/trend_stats.dart';
 import '../../theme/sphygma_theme.dart';
 import '../../widgets/classification_scale.dart';
 import '../../widgets/notice_card.dart';
+import '../../widgets/surface_panel.dart';
 import 'band_detail_screen.dart';
 
 class DayProfileScreen extends StatelessWidget {
@@ -46,27 +47,44 @@ class DayProfileScreen extends StatelessWidget {
         ];
 
         return ListView(
-          padding: EdgeInsets.all(t.gapLarge),
+          padding: t.listPadding,
           children: [
-            Text(
-              'DEIN TAGESMUSTER',
-              style: TextStyle(fontSize: 10, letterSpacing: 1.6, color: t.muted),
-            ),
-            SizedBox(height: t.gapSmall),
-            Text(
-              '${messungen.length} Messungen nach Uhrzeit',
-              style: TextStyle(fontSize: 13, color: t.onSurface),
+            SurfacePanel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'DEIN TAGESMUSTER',
+                    style: TextStyle(
+                      fontSize: 10,
+                      letterSpacing: 1.6,
+                      color: t.muted,
+                    ),
+                  ),
+                  SizedBox(height: t.gapSmall),
+                  Text(
+                    '${messungen.length} Messungen nach Uhrzeit',
+                    style: TextStyle(fontSize: 13, color: t.onSurface),
+                  ),
+                ],
+              ),
             ),
             ..._hinweise(context),
-            SizedBox(height: t.gapLarge),
-            for (final band in abschnitte)
-              _BandRow(
-                controller: controller,
-                band: band,
-                average: mittel[band]!,
+            SurfacePanel(
+              tone: 1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final band in abschnitte)
+                    _BandRow(
+                      controller: controller,
+                      band: band,
+                      average: mittel[band]!,
+                    ),
+                ],
               ),
-            SizedBox(height: t.gapLarge),
-            _Unterschied(mittel: mittel),
+            ),
+            SurfacePanel(child: _Unterschied(mittel: mittel)),
             // F4 gehört auch hierher. Eingeordnet wird der höchste
             // Abschnittswert: Er ist der, um den es geht, wenn man ein
             // Tagesmuster liest.

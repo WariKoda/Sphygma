@@ -4,6 +4,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../../stats/esc_classification.dart';
+import 'surface_style.dart';
 
 @immutable
 class SphygmaTheme {
@@ -22,6 +23,11 @@ class SphygmaTheme {
     required this.headlineWeight,
     required this.useRoundedCards,
     required this.showDividers,
+    required this.surfaceStyle,
+    required this.panelBase,
+    required this.panelRaised,
+    required this.panelBorder,
+    required this.panelShadow,
   });
 
   /// Sichtbarer Name in der Auswahl.
@@ -63,6 +69,40 @@ class SphygmaTheme {
   /// Farbunterschied, sondern ein struktureller — und ohne dieses Feld wären
   /// die beiden Handschriften nur andere Farben auf derselben Zeichnung.
   final bool showDividers;
+
+  /// Die dritte Achse: Karte, Band oder gar keine Fläche.
+  ///
+  /// Sie steht hier und nicht in [ThemeVariant], weil sie frei wählbar ist —
+  /// jede Handschrift lässt sich in jeder Form zeigen. Die Vorgabe liefert
+  /// [defaultSurfaceFor].
+  final SurfaceStyle surfaceStyle;
+
+  /// Die Grundfläche, auf der Inhalt steht.
+  final Color panelBase;
+
+  /// Eine Tonstufe darüber — „Aura" trägt zwei, „Pegel" wechselt damit den
+  /// Abschnitt.
+  final Color panelRaised;
+
+  /// Kante einer Fläche, oder null. „Aura" hat eine aus 7 % Weiß, die
+  /// Kartenhandschriften kommen ohne aus.
+  final Color? panelBorder;
+
+  /// Schatten einer Fläche, oder null. Nur „Tagebuch" wirft einen.
+  final List<BoxShadow>? panelShadow;
+
+  /// Das Randpolster einer Liste.
+  ///
+  /// Bänder laufen bis an den Rand — dort polstert die Fläche selbst, sonst
+  /// entstünde ein Streifen Grund neben dem Band, und die Zäsur durch den
+  /// Tonwechsel ginge verloren.
+  EdgeInsets get listPadding => surfaceStyle == SurfaceStyle.band
+      ? EdgeInsets.symmetric(vertical: gapSmall)
+      : EdgeInsets.all(gapLarge);
+
+  /// Die Fläche einer Tonstufe. Zwei Stufen genügen; ein Index kann deshalb
+  /// nicht danebengreifen.
+  Color panel(int tone) => tone <= 0 ? panelBase : panelRaised;
 
   /// Der Abschluss einer Listenzeile: eine Haarlinie, oder nichts.
   ///

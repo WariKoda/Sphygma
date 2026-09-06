@@ -19,7 +19,10 @@ class SphygmaApp extends StatelessWidget {
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
-        final theme = themeFor(controller.themeVariant);
+        final theme = themeFor(
+          controller.themeVariant,
+          surface: controller.surfaceStyle,
+        );
         return MaterialApp(
           title: 'Sphygma',
           theme: ThemeData(

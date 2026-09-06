@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sphygma/stats/esc_classification.dart';
 import 'package:sphygma/ui/theme/sphygma_theme.dart';
+import 'package:sphygma/ui/theme/surface_style.dart';
 
 const _t = SphygmaTheme(
   name: 'Prüfmuster',
@@ -25,6 +26,11 @@ const _t = SphygmaTheme(
   headlineWeight: FontWeight.w300,
   useRoundedCards: false,
   showDividers: true,
+  surfaceStyle: SurfaceStyle.linie,
+  panelBase: Color(0xFFFFFFFF),
+  panelRaised: Color(0xFFF2F2F2),
+  panelBorder: null,
+  panelShadow: null,
 );
 
 void main() {
@@ -80,6 +86,11 @@ void main() {
         headlineWeight: FontWeight.w300,
         useRoundedCards: false,
         showDividers: true,
+        surfaceStyle: SurfaceStyle.linie,
+        panelBase: Color(0xFFFFFFFF),
+        panelRaised: Color(0xFFF2F2F2),
+        panelBorder: null,
+        panelShadow: null,
       );
 
       expect(mitStrich.rowDivider.border, isNotNull);
@@ -113,6 +124,11 @@ void main() {
         headlineWeight: FontWeight.w300,
         useRoundedCards: true,
         showDividers: false,
+        surfaceStyle: SurfaceStyle.linie,
+        panelBase: Color(0xFFFFFFFF),
+        panelRaised: Color(0xFFF2F2F2),
+        panelBorder: null,
+        panelShadow: null,
       );
 
       expect(ohneStrich.rowDivider.border, isNull);
