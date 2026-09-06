@@ -163,7 +163,7 @@ void main() {
 
       final spaet = buildWeeks(
         ms,
-        grid: BandGrid.grobMit(schnitt: TimeOfDayMinutes(15, 0)),
+        schnitt: TimeOfDayMinutes(15, 0),
       ).single;
       expect(spaet.morningAverage!.systolic, 140);
     });

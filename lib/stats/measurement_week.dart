@@ -56,11 +56,17 @@ class MeasurementWeek {
 
 /// Bildet Messwochen von Montag bis Sonntag, die jüngste zuerst.
 ///
-/// [grid] bestimmt, wo morgens endet und abends beginnt — standardmäßig um
+/// [schnitt] bestimmt, wo morgens endet und abends beginnt — standardmäßig um
 /// 12 Uhr, verschiebbar für Schichtdienst.
+///
+/// Bewusst **nur der Schnittpunkt**, kein ganzes [BandGrid]: Die vierzehn
+/// Felder einer Woche sind sieben Tage mal zwei Tageshälften. Ein feineres
+/// Raster würde weitere Bänder zählen, während [MeasurementWeek.isComplete]
+/// weiter auf vierzehn prüft, und Messungen fielen aus beiden Bandmitteln
+/// heraus. Was nicht übergeben werden kann, kann auch nicht falsch sein.
 List<MeasurementWeek> buildWeeks(
   List<Measurement> measurements, {
-  BandGrid? grid,
+  TimeOfDayMinutes? schnitt,
 }) {
   if (measurements.isEmpty) return const [];
 
@@ -74,7 +80,8 @@ List<MeasurementWeek> buildWeeks(
     );
   }
 
-  final raster = grid ?? BandGrid.grob;
+  final raster =
+      schnitt == null ? BandGrid.grob : BandGrid.grobMit(schnitt: schnitt);
 
   final nachWoche = <DateTime, List<Measurement>>{};
   for (final m in measurements) {
