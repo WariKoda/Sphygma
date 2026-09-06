@@ -17,13 +17,20 @@ import 'tabbed_home.dart';
 Widget conceptHome({
   required AppConcept concept,
   required AppController controller,
+  DateTime Function()? clock,
 }) =>
     switch (concept) {
       // Tagesprofil teilt die Reiter mit dem klassischen Konzept und füllt
       // nur den ersten anders.
       // Sieben Tage bringt einen Weg statt vier Reiter mit: ein Einstieg,
       // von dem alles andere aufgerufen wird.
-      AppConcept.siebenTage => SevenDaysHome(controller: controller),
+      AppConcept.siebenTage => SevenDaysHome(
+          controller: controller,
+          // Nur „Sieben Tage" hängt am Kalendertag; die anderen Konzepte
+          // ordnen nach Nummer, Uhrzeit oder Phase. Ohne Angabe gilt die
+          // echte Uhr.
+          clock: clock ?? DateTime.now,
+        ),
       // Messanlass braucht einen eigenen Ort für offene Grenzfälle — einen
       // vierten Bereich, dessen Anzahl am Reiter steht.
       AppConcept.messanlass => OccasionHome(controller: controller),
