@@ -6,11 +6,14 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/app_controller.dart';
+import '../../../app/feature_flags.dart';
+import '../../../stats/esc_classification.dart';
 import '../../../stats/measurement_week.dart';
 import '../../../stats/target_range.dart';
 import '../../../stats/trend_stats.dart';
 import '../../format.dart';
 import '../../theme/sphygma_theme.dart';
+import '../../widgets/classification_scale.dart';
 import '../../widgets/section_header.dart';
 import 'week_detail_screen.dart';
 
@@ -129,6 +132,15 @@ class _WeekRangeScreenState extends State<WeekRangeScreen> {
                   '${TargetRange.heim.classify(systolic: mittel.systolic, diastolic: mittel.diastolic).label}',
                   style: TextStyle(fontSize: 12, color: t.muted, height: 1.5),
                 ),
+                if (escClassificationEnabled) ...[
+                  SizedBox(height: t.gapLarge),
+                  ClassificationScale(
+                    category: classifyOffice(
+                      systolic: mittel.systolic,
+                      diastolic: mittel.diastolic,
+                    ),
+                  ),
+                ],
               ],
               const SectionHeader(title: 'Trend'),
               if (aelteste == null || juengste == null || gewaehlt.length < 2)

@@ -6,10 +6,13 @@
 // Bildschirm.
 import 'package:flutter/material.dart';
 
+import '../../../app/feature_flags.dart';
 import '../../../db/app_database.dart';
+import '../../../stats/esc_classification.dart';
 import '../../../stats/occasion_grouping.dart';
 import '../../../stats/target_range.dart';
 import '../../format.dart';
+import '../../widgets/classification_scale.dart';
 import '../../theme/sphygma_theme.dart';
 
 /// Das Ergebnis eines Anlasses, groß.
@@ -48,6 +51,15 @@ class OccasionResult extends StatelessWidget {
           occasion.rule,
           style: TextStyle(fontSize: 11, color: t.muted, height: 1.5),
         ),
+        if (escClassificationEnabled) ...[
+          SizedBox(height: t.gapLarge),
+          ClassificationScale(
+            category: classifyOffice(
+              systolic: r.systolic,
+              diastolic: r.diastolic,
+            ),
+          ),
+        ],
       ],
     );
   }

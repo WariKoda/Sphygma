@@ -10,10 +10,13 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/app_controller.dart';
+import '../../../app/feature_flags.dart';
+import '../../../stats/esc_classification.dart';
 import '../../../stats/target_range.dart';
 import '../../../stats/time_of_day_band.dart';
 import '../../../stats/trend_stats.dart';
 import '../../theme/sphygma_theme.dart';
+import '../../widgets/classification_scale.dart';
 import '../../widgets/notice_card.dart';
 import 'band_detail_screen.dart';
 
@@ -64,11 +67,27 @@ class DayProfileScreen extends StatelessWidget {
               ),
             SizedBox(height: t.gapLarge),
             _Unterschied(mittel: mittel),
+            // F4 gehört auch hierher. Eingeordnet wird der höchste
+            // Abschnittswert: Er ist der, um den es geht, wenn man ein
+            // Tagesmuster liest.
+            if (escClassificationEnabled && mittel.isNotEmpty) ...[
+              SizedBox(height: t.gapLarge),
+              ClassificationScale(
+                category: classifyOffice(
+                  systolic: _hoechster(mittel).systolic,
+                  diastolic: _hoechster(mittel).diastolic,
+                ),
+              ),
+            ],
           ],
         );
       },
     );
   }
+
+  /// Der Abschnitt mit dem höchsten systolischen Mittel.
+  static Average _hoechster(Map<TimeBand, Average> mittel) => mittel.values
+      .reduce((a, b) => a.systolic >= b.systolic ? a : b);
 
   static const List<TimeBand> _tagesfolge = [
     TimeBand.morgens,

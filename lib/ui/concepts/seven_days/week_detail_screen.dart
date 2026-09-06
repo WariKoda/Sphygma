@@ -6,13 +6,16 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/app_controller.dart';
+import '../../../app/feature_flags.dart';
 import '../../../db/app_database.dart';
 import '../../../stats/measurement_week.dart';
+import '../../../stats/esc_classification.dart';
 import '../../../stats/target_range.dart';
 import '../../../stats/time_plausibility.dart';
 import '../../format.dart';
 import '../../measurement_sheet.dart';
 import '../../theme/sphygma_theme.dart';
+import '../../widgets/classification_scale.dart';
 import '../../widgets/section_header.dart';
 import 'week_grid.dart';
 
@@ -114,6 +117,15 @@ class WeekDetailScreen extends StatelessWidget {
                 'Über alle sieben Tage: ${voll.systolic}/${voll.diastolic}',
                 style: TextStyle(fontSize: 11, color: t.muted),
               ),
+            if (escClassificationEnabled) ...[
+              SizedBox(height: t.gapLarge),
+              ClassificationScale(
+                category: classifyOffice(
+                  systolic: a.systolic,
+                  diastolic: a.diastolic,
+                ),
+              ),
+            ],
           ] else
             Text(
               'Diese Woche hat nur einen gemessenen Tag. Der Wochenwert lässt '

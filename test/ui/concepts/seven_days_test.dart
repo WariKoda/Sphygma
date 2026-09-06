@@ -173,6 +173,11 @@ void main() {
 
     await pumpWith(tester, ThemeVariant.instrument);
 
+    // Die Verweise stehen unter dem Raster. Mit eingeschalteter Einordnung
+    // wird der Bildschirm länger als das Testfenster, deshalb erst dorthin
+    // scrollen — sonst prüft der Test nur, was zufällig ins Fenster passt.
+    await tester.scrollUntilVisible(find.text('Gerät und Übertragung'), 200);
+
     expect(find.text('Frühere Wochen'), findsOneWidget);
     expect(find.text('Gerät und Übertragung'), findsOneWidget);
   });

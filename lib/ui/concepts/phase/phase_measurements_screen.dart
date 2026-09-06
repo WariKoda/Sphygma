@@ -2,10 +2,13 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/app_controller.dart';
+import '../../../app/feature_flags.dart';
+import '../../../stats/esc_classification.dart';
 import '../../../stats/phase_grouping.dart';
 import '../../format.dart';
 import '../../measurement_sheet.dart';
 import '../../theme/sphygma_theme.dart';
+import '../../widgets/classification_scale.dart';
 import '../../widgets/section_header.dart';
 
 class PhaseMeasurementsScreen extends StatelessWidget {
@@ -94,6 +97,15 @@ class PhaseMeasurementsScreen extends StatelessWidget {
                   'Mittel aus ${treffer.count} Messungen · Puls ${mittel.pulse}',
                   style: TextStyle(fontSize: 12, color: t.muted),
                 ),
+                if (escClassificationEnabled) ...[
+                  SizedBox(height: t.gapLarge),
+                  ClassificationScale(
+                    category: classifyOffice(
+                      systolic: mittel.systolic,
+                      diastolic: mittel.diastolic,
+                    ),
+                  ),
+                ],
               ] else
                 Text(
                   'Dieser Phase ist keine Messung zugeordnet.',

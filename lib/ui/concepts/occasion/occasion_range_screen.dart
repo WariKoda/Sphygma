@@ -7,10 +7,13 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/app_controller.dart';
+import '../../../app/feature_flags.dart';
+import '../../../stats/esc_classification.dart';
 import '../../../stats/occasion_grouping.dart';
 import '../../../stats/target_range.dart';
 import '../../../stats/trend_stats.dart';
 import '../../theme/sphygma_theme.dart';
+import '../../widgets/classification_scale.dart';
 import '../../widgets/section_header.dart';
 import 'occasion_detail_screen.dart';
 import 'occasion_widgets.dart';
@@ -117,6 +120,15 @@ class _OccasionRangeScreenState extends State<OccasionRangeScreen> {
                   '${TargetRange.heim.classify(systolic: mittel.systolic, diastolic: mittel.diastolic).label}',
                   style: TextStyle(fontSize: 12, color: t.muted, height: 1.5),
                 ),
+                if (escClassificationEnabled) ...[
+                  SizedBox(height: t.gapLarge),
+                  ClassificationScale(
+                    category: classifyOffice(
+                      systolic: mittel.systolic,
+                      diastolic: mittel.diastolic,
+                    ),
+                  ),
+                ],
               ],
               const SectionHeader(title: 'Umfang'),
               Text(

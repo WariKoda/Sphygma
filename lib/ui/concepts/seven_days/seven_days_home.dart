@@ -13,7 +13,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../app/app_controller.dart';
+import '../../../app/feature_flags.dart';
 import '../../../stats/measurement_week.dart';
+import '../../../stats/esc_classification.dart';
 import '../../../stats/target_range.dart';
 import '../../../stats/time_of_day_band.dart';
 import '../../device_screen.dart';
@@ -21,6 +23,7 @@ import '../../format.dart';
 import '../../measurement_sheet.dart';
 import '../../settings_screen.dart';
 import '../../theme/sphygma_theme.dart';
+import '../../widgets/classification_scale.dart';
 import '../../widgets/notice_card.dart';
 import 'earlier_weeks_screen.dart';
 import 'week_detail_screen.dart';
@@ -299,6 +302,15 @@ class _LaufendeWoche extends StatelessWidget {
             '${TargetRange.heim.classify(systolic: mittel.systolic, diastolic: mittel.diastolic).label}',
             style: TextStyle(fontSize: 12, color: t.muted),
           ),
+          if (escClassificationEnabled) ...[
+            SizedBox(height: t.gapLarge),
+            ClassificationScale(
+              category: classifyOffice(
+                systolic: mittel.systolic,
+                diastolic: mittel.diastolic,
+              ),
+            ),
+          ],
         ],
         SizedBox(height: t.gapLarge),
         WeekGrid(
