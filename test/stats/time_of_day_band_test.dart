@@ -80,6 +80,30 @@ void main() {
     test('ein leeres Raster ist ein Fehler, kein leerer Tag', () {
       expect(() => BandGrid(const []), throwsArgumentError);
     });
+
+    test('die geprüften Grenzen lassen sich nachträglich nicht ändern', () {
+      // Sonst wäre die Prüfung wertlos — und weil fein und grob statisch
+      // sind, wäre der Schaden global und dauerhaft.
+      expect(() => BandGrid.fein.boundaries.clear(), throwsUnsupportedError);
+      expect(
+        () => BandGrid.fein.boundaries.add(
+          BandBoundary(TimeOfDayMinutes(3, 0), TimeBand.nachts),
+        ),
+        throwsUnsupportedError,
+      );
+    });
+
+    test('eine von außen geänderte Liste erreicht das Raster nicht', () {
+      final eingabe = [
+        BandBoundary(TimeOfDayMinutes(6, 0), TimeBand.morgens),
+        BandBoundary(TimeOfDayMinutes(18, 0), TimeBand.abends),
+      ];
+      final grid = BandGrid(eingabe);
+      eingabe.clear();
+
+      expect(grid.boundaries.length, 2);
+      expect(grid.bandAt(TimeOfDayMinutes(7, 0)), TimeBand.morgens);
+    });
   });
 
   group('Messungen einordnen', () {

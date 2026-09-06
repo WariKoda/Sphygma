@@ -80,21 +80,25 @@ class BandBoundary {
 /// ersten — deshalb ist die Nacht als einziger Abschnitt zusammenhängend,
 /// obwohl sie den Tageswechsel überspannt.
 class BandGrid {
-  BandGrid(this.boundaries) {
-    if (boundaries.isEmpty) {
+  /// Die Grenzen werden geprüft **und** festgehalten: Eine nachträglich
+  /// geleerte oder umsortierte Liste würde die Prüfung wertlos machen, und
+  /// weil [fein] und [grob] statisch sind, wäre der Schaden global.
+  BandGrid(List<BandBoundary> boundaries)
+      : boundaries = List.unmodifiable(boundaries) {
+    if (this.boundaries.isEmpty) {
       throw ArgumentError.value(
         boundaries,
         'boundaries',
         'ein Raster ohne Grenzen teilt nichts — mindestens eine wird gebraucht',
       );
     }
-    for (var i = 1; i < boundaries.length; i++) {
-      if (boundaries[i].from.compareTo(boundaries[i - 1].from) <= 0) {
+    for (var i = 1; i < this.boundaries.length; i++) {
+      if (this.boundaries[i].from.compareTo(this.boundaries[i - 1].from) <= 0) {
         throw ArgumentError.value(
           boundaries,
           'boundaries',
           'Grenzen müssen aufsteigend und verschieden sein: '
-              '${boundaries[i - 1].from} vor ${boundaries[i].from}',
+              '${this.boundaries[i - 1].from} vor ${this.boundaries[i].from}',
         );
       }
     }
