@@ -1,16 +1,13 @@
 // lib/ui/sphygma_app.dart
-// Drei Bereiche: Heute, Verlauf, Geraet. Die Gestaltung liegt als Scope
-// darueber; kein Bildschirm holt sich Farben woanders her.
+// Die Gestaltung liegt als Scope über allem; kein Bildschirm holt sich Farben
+// woanders her. Wie die App organisiert ist, bestimmt dagegen das Konzept —
+// diese Hülle hält nur noch das Fenster und die Meldungen des Steuerungsteils.
 import 'package:flutter/material.dart';
 
 import '../app/app_controller.dart';
-import '../app/concept.dart';
-import 'concepts/day_profile/day_profile_screen.dart';
-import 'device_screen.dart';
-import 'history_screen.dart';
+import 'concepts/concept_home.dart';
 import 'theme/sphygma_theme.dart';
 import 'theme/variants.dart';
-import 'today_screen.dart';
 
 class SphygmaApp extends StatelessWidget {
   const SphygmaApp({super.key, required this.controller});
@@ -50,8 +47,6 @@ class _Shell extends StatefulWidget {
 }
 
 class _ShellState extends State<_Shell> {
-  int _index = 0;
-
   /// Zuletzt angezeigte Meldung, damit dieselbe nicht bei jedem Neubau
   /// erneut aufpoppt.
   String? _shownStatus;
@@ -79,57 +74,11 @@ class _ShellState extends State<_Shell> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final t = SphygmaTheme.of(context);
-    final titles = [
-      widget.controller.concept == AppConcept.tagesprofil ? 'Muster' : 'Heute',
-      'Verlauf',
-      'Gerät',
-    ];
-
-    return ListenableBuilder(
-      listenable: widget.controller,
-      builder: (context, _) => Scaffold(
-        backgroundColor: t.surface,
-        appBar: AppBar(
-          title: Text(titles[_index]),
-          backgroundColor: t.surface,
-          foregroundColor: t.onSurface,
-          elevation: 0,
+  Widget build(BuildContext context) => ListenableBuilder(
+        listenable: widget.controller,
+        builder: (context, _) => conceptHome(
+          concept: widget.controller.concept,
+          controller: widget.controller,
         ),
-        // Das Konzept bestimmt, was auf dem ersten Reiter steht. Der
-        // Gerätebereich bleibt in jedem Konzept derselbe — dort wird das
-        // Konzept ja auch gewechselt.
-        body: switch ((widget.controller.concept, _index)) {
-          (AppConcept.tagesprofil, 0) =>
-            DayProfileScreen(controller: widget.controller),
-          (_, 0) => TodayScreen(controller: widget.controller),
-          (_, 1) => HistoryScreen(controller: widget.controller),
-          _ => DeviceScreen(controller: widget.controller),
-        },
-        bottomNavigationBar: NavigationBar(
-          backgroundColor: t.surface,
-          selectedIndex: _index,
-          onDestinationSelected: (i) => setState(() => _index = i),
-          destinations: [
-            NavigationDestination(
-              // Dieselbe Beschriftung wie oben in der Titelzeile: Ein Reiter,
-              // der „Heute" heißt und das Muster aller Messungen zeigt, würde
-              // einen Tagesfilter versprechen, den es dort nicht gibt.
-              icon: const Icon(Icons.favorite_outline),
-              label: titles[0],
-            ),
-            const NavigationDestination(
-              icon: Icon(Icons.show_chart),
-              label: 'Verlauf',
-            ),
-            const NavigationDestination(
-              icon: Icon(Icons.bluetooth),
-              label: 'Gerät',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+      );
 }
