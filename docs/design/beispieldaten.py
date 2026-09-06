@@ -4,6 +4,7 @@ Alle Entwurfstafeln zeigen dieselben 114 Messungen. Ohne das laufen die
 Zahlen zwischen den Dateien auseinander — genau das ist passiert.
 """
 import random, json, datetime as dt
+from pathlib import Path
 
 random.seed(4711)
 JETZT = dt.datetime(2026, 9, 5, 23, 59)
@@ -86,8 +87,13 @@ for m in mess[:14]:
 for m in mess[14:]:
     m.append(False)
 
-json.dump([[m[0], m[1].isoformat()] + m[2:] for m in mess],
-          open('/tmp/beispieldaten.json', 'w'), ensure_ascii=False)
+# Neben das Skript, nicht nach /tmp: Wer Zahlen ändert, soll die alte und
+# die neue Fassung nebeneinander sehen können. In /tmp ist die Datei nach dem
+# nächsten Neustart weg, unter Windows gibt es den Pfad gar nicht.
+ZIEL = Path(__file__).with_name('beispieldaten.json')
+with ZIEL.open('w', encoding='utf-8') as f:
+    json.dump([[m[0], m[1].isoformat()] + m[2:] for m in mess], f,
+              ensure_ascii=False, indent=1)
 
 
 def mit(ms, i):
