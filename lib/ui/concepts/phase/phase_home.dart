@@ -11,7 +11,6 @@ import 'package:flutter/material.dart';
 
 import '../../../app/app_controller.dart';
 import '../../device_screen.dart';
-import '../../settings_screen.dart';
 import '../../theme/sphygma_theme.dart';
 import 'current_phase_screen.dart';
 import 'phase_assign_screen.dart';
@@ -47,17 +46,6 @@ class _PhaseHomeState extends State<PhaseHome> {
             backgroundColor: t.surface,
             foregroundColor: t.onSurface,
             elevation: 0,
-            actions: [
-              IconButton(
-                tooltip: 'Phasen-Einstellungen',
-                icon: const Icon(Icons.tune),
-                onPressed: () => showSettings(
-                  context,
-                  controller: widget.controller,
-                  title: 'Phasen-Einstellungen',
-                ),
-              ),
-            ],
           ),
           body: switch (_index) {
             0 => CurrentPhaseScreen(

@@ -245,15 +245,17 @@ void main() {
     );
   });
 
-  testWidgets('die Einstellungen heißen hier Phasen-Einstellungen',
+  testWidgets('die Konzeptwahl ist über den Gerätereiter erreichbar',
       (tester) async {
     await boot();
 
     await pumpWith(tester, ThemeVariant.instrument);
-    await tester.tap(find.byIcon(Icons.tune));
+    await tester.tap(find.text('Gerät'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Konzept und Gestaltung ändern'));
+    await tester.tap(find.text('Konzept und Gestaltung ändern'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Phasen-Einstellungen'), findsOneWidget);
     expect(find.text('KONZEPT'), findsOneWidget);
   });
 

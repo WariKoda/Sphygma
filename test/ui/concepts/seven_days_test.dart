@@ -177,17 +177,20 @@ void main() {
     expect(find.text('Gerät und Übertragung'), findsOneWidget);
   });
 
-  testWidgets('die Einstellungen heißen hier Wochen-Einstellungen',
+  testWidgets('die Konzeptwahl ist über den Gerätebereich erreichbar',
       (tester) async {
     await boot();
     await teilwoche();
 
     await pumpWith(tester, ThemeVariant.instrument);
-    await tester.tap(find.byIcon(Icons.tune));
+    // Ohne Reiterleiste führt der Verweis dorthin.
+    await tester.tap(find.text('Gerät und Übertragung'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Konzept und Gestaltung ändern'));
+    await tester.tap(find.text('Konzept und Gestaltung ändern'));
     await tester.pumpAndSettle();
 
-    // F14 und F15 bleiben erreichbar — in der Sprache des Konzepts.
-    expect(find.text('Wochen-Einstellungen'), findsOneWidget);
+    // F14 und F15 bleiben erreichbar — an einem Ort, nicht an vieren.
     expect(find.text('KONZEPT'), findsOneWidget);
     expect(find.text('GESTALTUNG'), findsOneWidget);
   });

@@ -45,16 +45,12 @@ void main() {
     await controller.setUserSlot(1);
   }
 
-  Future<void> pumpWith(
-    WidgetTester tester,
-    ThemeVariant v, {
-    String title = 'Einstellungen',
-  }) =>
+  Future<void> pumpWith(WidgetTester tester, ThemeVariant v) =>
       tester.pumpWidget(
         MaterialApp(
           home: SphygmaThemeScope(
             theme: themeFor(v),
-            child: SettingsScreen(controller: controller, title: title),
+            child: SettingsScreen(controller: controller),
           ),
         ),
       );
@@ -128,13 +124,4 @@ void main() {
         findsOneWidget);
   });
 
-  testWidgets('jedes Konzept darf das Blatt in seiner Sprache benennen',
-      (tester) async {
-    await boot();
-
-    await pumpWith(tester, ThemeVariant.instrument,
-        title: 'Wochen-Einstellungen');
-
-    expect(find.text('Wochen-Einstellungen'), findsOneWidget);
-  });
 }

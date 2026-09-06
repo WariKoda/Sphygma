@@ -12,7 +12,6 @@ import 'package:flutter/material.dart';
 
 import '../../../app/app_controller.dart';
 import '../../device_screen.dart';
-import '../../settings_screen.dart';
 import '../../theme/sphygma_theme.dart';
 import 'last_occasion_screen.dart';
 import 'occasion_archive_screen.dart';
@@ -48,17 +47,6 @@ class _OccasionHomeState extends State<OccasionHome> {
             backgroundColor: t.surface,
             foregroundColor: t.onSurface,
             elevation: 0,
-            actions: [
-              IconButton(
-                tooltip: 'Anlass-Einstellungen',
-                icon: const Icon(Icons.tune),
-                onPressed: () => showSettings(
-                  context,
-                  controller: widget.controller,
-                  title: 'Anlass-Einstellungen',
-                ),
-              ),
-            ],
           ),
           body: switch (_index) {
             0 => LastOccasionScreen(

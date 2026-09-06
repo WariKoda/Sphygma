@@ -212,16 +212,18 @@ void main() {
     expect(find.textContaining('160/100'), findsOneWidget);
   });
 
-  testWidgets('die Einstellungen heißen hier Anlass-Einstellungen',
+  testWidgets('die Konzeptwahl ist über den Gerätereiter erreichbar',
       (tester) async {
     await boot();
     await bestand();
 
     await pumpWith(tester, ThemeVariant.instrument);
-    await tester.tap(find.byIcon(Icons.tune));
+    await tester.tap(find.text('Gerät'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Konzept und Gestaltung ändern'));
+    await tester.tap(find.text('Konzept und Gestaltung ändern'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Anlass-Einstellungen'), findsOneWidget);
     expect(find.text('KONZEPT'), findsOneWidget);
   });
 

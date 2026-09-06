@@ -14,17 +14,9 @@ import 'theme/variants.dart';
 import 'widgets/section_header.dart';
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({
-    super.key,
-    required this.controller,
-    this.title = 'Einstellungen',
-  });
+  const SettingsScreen({super.key, required this.controller});
 
   final AppController controller;
-
-  /// Jedes Konzept darf das Blatt in seiner eigenen Sprache benennen —
-  /// „Wochen-Einstellungen" bei Sieben Tage.
-  final String title;
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +27,7 @@ class SettingsScreen extends StatelessWidget {
       builder: (context, _) => Scaffold(
         backgroundColor: t.surface,
         appBar: AppBar(
-          title: Text(title),
+          title: const Text('Einstellungen'),
           backgroundColor: t.surface,
           foregroundColor: t.onSurface,
           elevation: 0,
@@ -107,17 +99,20 @@ class SettingsScreen extends StatelessWidget {
 
 /// Öffnet die Einstellungen und nimmt die Gestaltung mit — eine geschobene
 /// Route liegt außerhalb des bisherigen Baums und fände den Scope sonst nicht.
+///
+/// Ein Weg, nicht vier: Bis zum 06.09.2026 trug jede Konzepthülle zusätzlich
+/// ein Zahnrad in der Titelzeile, und das Blatt hieß je Konzept anders. Vier
+/// Zugänge zu einer Wahl, die man einmal trifft, sind drei zu viel.
 Future<void> showSettings(
   BuildContext context, {
   required AppController controller,
-  String title = 'Einstellungen',
 }) {
   final t = SphygmaTheme.of(context);
   return Navigator.of(context).push(
     MaterialPageRoute<void>(
       builder: (_) => SphygmaThemeScope(
         theme: t,
-        child: SettingsScreen(controller: controller, title: title),
+        child: SettingsScreen(controller: controller),
       ),
     ),
   );

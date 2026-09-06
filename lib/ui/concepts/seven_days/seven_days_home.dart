@@ -19,7 +19,6 @@ import '../../../stats/time_of_day_band.dart';
 import '../../device_screen.dart';
 import '../../format.dart';
 import '../../measurement_sheet.dart';
-import '../../settings_screen.dart';
 import '../../theme/sphygma_theme.dart';
 import '../../widgets/notice_card.dart';
 import 'earlier_weeks_screen.dart';
@@ -107,17 +106,6 @@ class _SevenDaysHomeState extends State<SevenDaysHome> {
             backgroundColor: t.surface,
             foregroundColor: t.onSurface,
             elevation: 0,
-            actions: [
-              IconButton(
-                tooltip: 'Wochen-Einstellungen',
-                icon: const Icon(Icons.tune),
-                onPressed: () => showSettings(
-                  context,
-                  controller: widget.controller,
-                  title: 'Wochen-Einstellungen',
-                ),
-              ),
-            ],
           ),
           body: ListView(
             padding: EdgeInsets.all(t.gapLarge),
