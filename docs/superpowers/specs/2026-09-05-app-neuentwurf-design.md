@@ -3,6 +3,10 @@
 Stand 2026-09-05. Ersetzt das gewachsene Gerüst aus M6, das als Rohentwurf taugte,
 aber keinen Schwerpunkt hatte.
 
+**Entwürfe:** `docs/design/entwuerfe.html` — die drei Gestaltungen und die drei
+Bereiche als Bild, im Browser zu öffnen. Die Farbwerte daraus stehen im
+Umsetzungsplan.
+
 ## Zweck
 
 Sphygma ist ein **Blutdruck-Tagebuch**. Beim Öffnen steht vorn, wie es um den
@@ -145,8 +149,17 @@ eingeschaltet ist.
 
 ### Kurve
 
-`fl_chart` 1.2.0. Alternative wäre eigenes Zeichnen über `CustomPainter`; das
-Paket spart erheblichen Aufwand bei Achsen, Beschriftung und Berührungspunkten.
+**Eigenes Zeichnen über `CustomPainter`**, kein Diagrammpaket.
+
+Ursprünglich war `fl_chart` vorgesehen. Beim Ausarbeiten des Umsetzungsplans
+revidiert: Gebraucht werden zwei Linien und eine gestrichelte Schwelle. Ein
+Diagrammpaket bringt Achsenlogik, Legenden, Berührungspunkte, Animationen und
+Zoom — alles ungenutzt. Dafür eine weitere Abhängigkeit in einer App, die
+Gesundheitsdaten führt, und eine fremde API, deren Brüche wir mitschleppen.
+
+Der Zeichencode ist überschaubar und vollständig unter unserer Kontrolle. Die
+Umrechnung von Messwerten in Bildpunkte ist reine Rechnung und ohne Flutter
+prüfbar.
 
 ## Was aus dem Bestand bleibt
 

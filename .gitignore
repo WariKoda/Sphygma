@@ -70,3 +70,7 @@ docs/images/
 
 # Visueller Begleiter des brainstorming-Skills
 .superpowers/
+
+# Eigene PDF-Ausdrucke der Entwürfe. Die HTML-Quellen liegen im Repo;
+# die PDFs sind daraus erzeugt und würden es nur aufblähen.
+docs/saved/

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sphygma · Konzept 4: Messanlass</title>
+<style>
+  :root{--ink:#1c1d1b;--muted:#686b66;--line:#dedfdb;--soft:#f3f3f0;--accent:#315d50;--accent-soft:#e6eeea;--warn:#885514;--warn-soft:#f7eddd;--bad:#8c4332}
+  *{box-sizing:border-box} body{margin:0;background:#fff;color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums}
+  .wrap{max-width:1160px;margin:auto;padding:60px 28px 96px}.kicker{font-size:13px;color:var(--accent);letter-spacing:.08em;text-transform:uppercase}h1{font-size:46px;line-height:1.05;letter-spacing:-.03em;margin:8px 0 20px;font-weight:600}h2{font-size:23px;margin:0}.lede{max-width:70ch;color:#30322f;font-size:17px}.lede strong{font-weight:650}.section-head{border-bottom:1px solid var(--line);margin:68px 0 28px;padding-bottom:10px;display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}.section-head p{margin:0;color:var(--muted);font-size:14px}
+  .screens{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:38px 26px;align-items:start}.slot{text-align:center}.caption{max-width:34ch;margin:11px auto 0;color:var(--muted);font-size:13px}.caption b{display:block;color:var(--ink)}
+  .phone{width:320px;min-height:610px;margin:auto;border:1px solid var(--line);border-radius:24px;overflow:hidden;text-align:left;background:#fff;display:flex;flex-direction:column}.status{display:flex;justify-content:space-between;padding:13px 18px 0;color:var(--muted);font-size:11px}.pad{padding:0 18px}.title{font-size:20px;font-weight:650;margin:18px 0 2px}.sub{font-size:12.5px;color:var(--muted);margin:0}.hero{font-size:39px;line-height:1;margin:18px 0 5px;letter-spacing:-.04em}.hero small{font-size:16px;color:var(--muted);letter-spacing:0}.label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:21px 0 5px}.row{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding:9px 0;font-size:13.5px}.row span:last-child{font-weight:600;text-align:right}.row small{display:block;color:var(--muted);font-weight:400}.result{background:var(--accent-soft);padding:12px 18px;margin-top:15px;font-size:13px}.result b{display:block}.warning{background:var(--warn-soft);color:#6f430d;padding:12px 18px;margin-top:15px;font-size:12.5px}.warning b{display:block}.quality{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.tag{padding:4px 7px;background:var(--soft);font-size:11px}.tag.good{background:var(--accent-soft);color:var(--accent)}.tag.warn{background:var(--warn-soft);color:var(--warn)}.grow{flex:1}.button{padding:14px 16px;text-align:center;border-top:1px solid var(--line);font-size:14px;font-weight:600}.button.primary{background:var(--ink);color:#fff}.split{display:grid;grid-template-columns:1fr 1fr}.split .button+ .button{border-left:1px solid var(--line)}.nav{display:flex;border-top:1px solid var(--line);padding:10px 5px;font-size:11px}.nav span{flex:1;text-align:center;color:#999}.nav .on{color:var(--ink);font-weight:650}.meta{color:var(--muted);font-size:12px;margin-top:8px}.strike{text-decoration:line-through;color:var(--muted)}
+  table{width:100%;border-collapse:collapse}th{text-align:left;color:var(--muted);font-size:13px;font-weight:500;border-bottom:1px solid var(--line);padding:0 14px 8px 0}td{vertical-align:top;border-bottom:1px solid #ededeb;padding:12px 14px 12px 0;font-size:14px}td:first-child{width:23%;font-weight:650}ul{max-width:75ch;padding-left:21px}li{margin:9px 0}.clock{border-left:3px solid var(--warn);background:var(--warn-soft);padding:18px 20px;max-width:78ch}.clock p{margin:0 0 9px}.clock p:last-child{margin:0}.estimate{color:var(--warn);font-weight:600}
+  @media(max-width:420px){.wrap{padding:34px 12px 70px}h1{font-size:38px}.phone{width:100%}} @media print{.slot,.phone{break-inside:avoid}.wrap{padding:0}.section-head{margin-top:35px}}
+</style>
+</head>
+<body><main class="wrap">
+  <p class="kicker">Sphygma · Konzept 4 · 2026-09-05</p>
+  <h1>Messanlass</h1>
+  <p class="lede"><strong>Die Einheit ist das einzelne Messen, nicht die einzelne Zahl.</strong> Ein Messanlass umfasst eine oder mehrere kurz nacheinander entstandene Rohmessungen. Er hat genau ein Ergebnis, eine nachvollziehbare Zusammenfassungsregel und eine Aussage über seine Güte.</p>
+  <p class="lede">Die These: Wer zweimal hintereinander misst, will nicht zwei gleichberechtigte Listeneinträge, sondern eine belastbarere Antwort. Messungsnummer und zeitliche Nähe liefern einen Vorschlag; bei Grenzfällen entscheidet der Mensch. Bewegung und unregelmäßiger Puls werden nicht als Randnotizen archiviert, sondern erklären, wie verlässlich dieser Anlass ist.</p>
+
+  <div class="section-head"><h2>Neun Bildschirme</h2><p>114 Rohmessungen bleiben erhalten; daraus entstehen geschätzt 89 Anlässe</p></div>
+  <section class="screens">
+    <div class="slot"><div class="phone">
+      <div class="status"><span>RS7 verbunden</span><span>vor 10 Min.</span></div><div class="pad">
+      <p class="title">Letztes Messen</p><p class="sub">Heute, laut Gerät 23:55–23:57</p><p class="hero">126/87 <small>· Puls 82</small></p><p class="sub">Mittel aus zwei Messungen</p>
+      <p class="label">Rohwerte</p><div class="row"><span>1. Messung<small>Nr. 541 · 23:55</small></span><span>123/87<small>Puls 81</small></span></div><div class="row"><span>2. Messung<small>Nr. 542 · 23:57</small></span><span>128/87<small>Puls 82</small></span></div>
+      <div class="quality"><span class="tag good">keine Bewegung</span><span class="tag good">Puls regelmäßig</span></div><p class="meta">Automatisch gruppiert: fortlaufende Nummern, 2 Minuten Abstand.</p></div><div class="grow"></div><div class="button">Gruppierung ändern</div><div class="nav"><span class="on">Letztes</span><span>Archiv</span><span>Prüfen</span><span>Gerät</span></div>
+    </div><p class="caption"><b>Ein Anlass, ein Ergebnis.</b>Die Liste der Rohwerte beweist, wie die Zahl entstanden ist.</p></div>
+
+    <div class="slot"><div class="phone">
+      <div class="status"><span>Archiv</span><span>geschätzt</span></div><div class="pad"><p class="title">89 Messanlässe</p><p class="sub">aus 114 Rohmessungen</p>
+      <p class="label">September</p><div class="row"><span>Heute · 23:55<small>2 Messungen · gute Güte</small></span><span>126/87</span></div><div class="row"><span>Gestern · 19:41<small>1 Messung</small></span><span>115/82</span></div><div class="row"><span>Gestern · 08:04<small>3 Messungen · Bewegung</small></span><span>124/84</span></div><div class="row"><span>3. September · 07:12<small>2 Messungen · Puls-Hinweis</small></span><span>128/86</span></div><div class="row"><span>2. September · 20:06<small>2 Messungen</small></span><span>129/88</span></div>
+      <p class="meta">Alle Anzahlen sind aus dem Beispieldatensatz gerechnet.</p></div><div class="grow"></div><div class="nav"><span>Letztes</span><span class="on">Archiv</span><span>Prüfen</span><span>Gerät</span></div>
+    </div><p class="caption"><b>Das Archiv zählt Situationen.</b>Eine Zeile steht für das Messen, „2×“ ist eine Eigenschaft davon.</p></div>
+
+    <div class="slot"><div class="phone">
+      <div class="status"><span>Zu prüfen</span><span>4 geschätzt</span></div><div class="pad"><p class="title">Gehören diese zusammen?</p><p class="sub">Der Abstand von 11 Minuten liegt im Grenzbereich.</p>
+      <div class="warning"><b>Kein stiller Mittelwert</b>Die Automatik macht hier keinen Anlass fertig, bevor du entschieden hast.</div>
+      <p class="label">Vorschlag</p><div class="row"><span>Nr. 533 · 20:12<small>Bewegung erkannt</small></span><span>133/91<small>Puls 78</small></span></div><div class="row"><span>Nr. 534 · 20:23<small>keine Bewegung</small></span><span>128/86<small>Puls 76</small></span></div>
+      <p class="meta">Nummern folgen aufeinander, die Zeitnähe ist uneindeutig.</p></div><div class="grow"></div><div class="split"><div class="button">Zwei getrennte</div><div class="button primary">Ein Anlass</div></div><div class="nav"><span>Letztes</span><span>Archiv</span><span class="on">Prüfen</span><span>Gerät</span></div>
+    </div><p class="caption"><b>Grenzfälle bleiben offen.</b>Die Entscheidung ist eine gespeicherte Korrektur, kein flüchtiger Dialog.</p></div>
+
+    <div class="slot"><div class="phone">
+      <div class="status"><span>Messanlass</span><span>gestern 08:04</span></div><div class="pad"><p class="title">124/84 · Puls 79</p><p class="sub">Ergebnis aus drei Rohmessungen</p>
+      <div class="warning"><b>Güte eingeschränkt</b>Bei der ersten Messung erkannte das Gerät Bewegung. Das Ergebnis nutzt deshalb die zwei unauffälligen Messungen.</div>
+      <p class="label">Verwendet</p><div class="row"><span>2. Messung · Nr. 476</span><span>129/83</span></div><div class="row"><span>3. Messung · Nr. 476</span><span>129/83</span></div><p class="label">Nicht verwendet</p><div class="row"><span class="strike">1. Messung · Nr. 475</span><span>128/90<small>Bewegung</small></span></div>
+      <div class="result"><b>Regel dieses Anlasses</b>Mittel der zwei Messungen ohne Gerätewarnung.</div></div><div class="grow"></div><div class="button">Auswahl bearbeiten</div>
+    </div><p class="caption"><b>Kennzeichen verändern die Güte, nicht die Historie.</b>Kein Rohwert wird gelöscht; seine Rolle im Ergebnis wird erklärt.</p></div>
+
+    <div class="slot"><div class="phone">
+      <div class="status"><span>Einzelmessung</span><span>Nr. 526</span></div><div class="pad"><p class="title">115/82 · Puls 79</p><p class="sub">Ein Anlass mit nur einer Messung</p><p class="hero">115/82</p>
+      <div class="quality"><span class="tag good">keine Bewegung</span><span class="tag warn">unregelmäßiger Puls</span></div><div class="warning"><b>Nur ein Rohwert</b>Das Ergebnis kann nicht durch eine zweite Messung bestätigt werden. Der Puls-Hinweis stammt vom Gerät und ist keine Diagnose.</div>
+      <p class="label">Herkunft</p><div class="row"><span>Gerätezeit</span><span>04.09.2026, 19:41</span></div><div class="row"><span>Importiert</span><span>05.09.2026, 23:58</span></div><div class="row"><span>Health Connect</span><span>noch offen</span></div></div><div class="grow"></div><div class="button primary">Rohmessung übertragen</div>
+    </div><p class="caption"><b>Einzelwerte bleiben gültige Anlässe.</b>Das Konzept verspricht keine Verdichtung, wo keine Wiederholung existiert.</p></div>
+
+    <div class="slot"><div class="phone">
+      <div class="status"><span>Gerät</span><span>RS7 Intelli IT</span></div><div class="pad"><p class="title">Abgleich und Übertragung</p><p class="sub">Zwei Speicherplätze · je höchstens 100 Records</p>
+      <p class="label">Bestand</p><div class="row"><span>Gespeichert</span><span>114 Rohmessungen</span></div><div class="row"><span>Wochenschnitt</span><span>124/85</span></div><div class="row"><span>Daraus gebildet</span><span>89 Anlässe<small>geschätzt</small></span></div><div class="row"><span>Health Connect</span><span>14 übertragen<small>100 offen</small></span></div>
+      <div class="result"><b>Neue Messung erkannt</b>Das Advertising meldet neue Daten. Sphygma gleicht nach dem Messen automatisch ab.</div><p class="meta">Gerät neu koppeln · Übertragene aus Health Connect zurücknehmen</p><div class="warning"><b>Auf dem Gerät bleibt alles erhalten</b>Das Omron RS7 kann Messungen nicht löschen. Auch die Geräteuhr lässt sich per Bluetooth nicht stellen.</div></div><div class="grow"></div><div class="button">Jetzt abgleichen</div><div class="button primary">100 offene übertragen</div>
+    </div><p class="caption"><b>Rohdaten und Transport bleiben sichtbar.</b>Anlässe ersetzen weder Gerätespeicher noch einzelne Health-Connect-Datensätze.</p></div>
+
+    <div class="slot"><div class="phone">
+      <div class="status"><span>Auswertung</span><span>geschätzte Verteilung</span></div><div class="pad"><p class="title">Anlässe auswählen</p><p class="sub">Erster und letzter Messanlass bilden den Zeitraum.</p>
+      <p class="label">Grenzen</p><div class="row"><span>Erster Anlass</span><span>18. August · 08:03</span></div><div class="row"><span>Letzter Anlass</span><span>5. September · 23:55</span></div>
+      <p class="hero">126/86 <small>· Puls 80</small></p><p class="sub">Mittel der Anlass-Ergebnisse · geschätzt</p><div class="row"><span>Umfang</span><span>24 Anlässe<small>41 Rohmessungen · geschätzt</small></span></div><div class="row"><span>Trend</span><span>−3/−1 mmHg<small>geschätzt</small></span></div></div><div class="grow"></div><div class="button">Enthaltene Anlässe</div><div class="button primary">Praxisbericht erstellen</div>
+    </div><p class="caption"><b>Der Zeitraum beginnt und endet mit einem Messen.</b>F2 übernimmt keine willkürlichen Uhrzeiten, sondern Grenzen aus der Logik des Konzepts.</p></div>
+
+    <div class="slot"><div class="phone">
+      <div class="status"><span>Praxisbericht</span><span>Entwurf</span></div><div class="pad"><p class="title">18. August bis 5. September</p><p class="sub">Auswahl: erster bis letzter Messanlass</p>
+      <p class="label">Zusammenfassung</p><div class="row"><span>Mittelwert</span><span>126/86<small>Puls 80 · geschätzt</small></span></div><div class="row"><span>Umfang</span><span>24 Anlässe<small>41 Rohmessungen · geschätzt</small></span></div><div class="row"><span>Güte</span><span>20 unauffällig<small>4 mit Hinweis · geschätzt</small></span></div>
+      <div class="result"><b>Beigefügt</b>Anlassliste mit Ergebnisregel, Rohwerten, Bewegung, Arrhythmie-Hinweis und Zeitprovenienz.</div><div class="warning"><b>Gerätezeit prüfen</b>Abweichende Geräte- und Importzeiten werden im Bericht sichtbar ausgewiesen.</div></div><div class="grow"></div><div class="button">Vorschau</div><div class="button primary">Bericht ausgeben</div>
+    </div><p class="caption"><b>F5 ist aus der Auswahl erzeugbar.</b>Der Bericht verdichtet Anlässe, lässt seine einzelnen Rohmessungen aber prüfbar.</p></div>
+
+    <div class="slot"><div class="phone">
+      <div class="status"><span>Zurück</span><span>Anlass-Einstellungen</span></div><div class="pad"><p class="title">Anlass-Einstellungen</p><p class="sub">Darstellung und Organisation derselben Daten</p>
+      <p class="label">App</p><div class="row"><span>Gestaltung</span><span>Klar</span></div><div class="row"><span>Konzept</span><span>Messanlass</span></div><p class="meta">Die Konzeptwahl gruppiert die vorhandenen 114 Messungen neu; sie erzeugt und löscht keine Messdaten.</p>
+      <p class="label">Gruppierung</p><div class="row"><span>Sichere Zeitnähe</span><span>bis 5 Minuten</span></div><div class="row"><span>Grenzfälle</span><span>immer prüfen</span></div></div><div class="grow"></div><div class="button">Gestaltung wählen</div><div class="button primary">Konzept wählen</div>
+    </div><p class="caption"><b>F14 und F15 sitzen in den Anlass-Einstellungen.</b>Die Gruppierungsregeln bleiben davon getrennt und nachvollziehbar.</p></div>
+  </section>
+
+  <div class="section-head"><h2>Wo jede Funktion sitzt</h2><p>Vollständige App, organisiert über Messanlässe</p></div>
+  <table><thead><tr><th>Nummer</th><th>Funktion</th><th>Ort in diesem Konzept</th></tr></thead><tbody>
+    <tr><td>F1</td><td>Messwerte ansehen</td><td>„Letztes Messen“ und das Anlassarchiv.</td></tr>
+    <tr><td>F2</td><td>Auswertung über einen Zeitraum</td><td>„Anlässe auswählen“ mit erstem und letztem Messanlass, Mittel und Trend.</td></tr>
+    <tr><td>F3</td><td>Eine einzelne Messung im Detail</td><td>Rohwertliste eines Anlasses und „Einzelmessung“ mit Gerätenummer um 540.</td></tr>
+    <tr><td>F4</td><td>Einordnung des Werts</td><td>Ergebnis- und Gütehinweise im geöffneten Anlass und in der Einzelmessung.</td></tr>
+    <tr><td>F5</td><td>Bericht für die Praxis</td><td>„Praxisbericht“, erzeugbar aus der Auswahl zwischen zwei Messanlässen.</td></tr>
+    <tr><td>F6</td><td>Gerät koppeln</td><td>„Abgleich und Übertragung“, einschließlich Speicherplatzwahl.</td></tr>
+    <tr><td>F7</td><td>Abgleich, selbst ausgelöst</td><td>„Jetzt abgleichen“ im Gerätebildschirm.</td></tr>
+    <tr><td>F8</td><td>Abgleich, automatisch — und sein Zustand</td><td>Verbindungsstatus bei „Letztes Messen“ und Advertising-Hinweis im Gerätebildschirm.</td></tr>
+    <tr><td>F9</td><td>Health Connect, alle</td><td>Bestand und Aktion „100 offene übertragen“ im Gerätebildschirm; dort auch die Rücknahme.</td></tr>
+    <tr><td>F10</td><td>Health Connect, einzeln</td><td>Status und „Rohmessung übertragen“ in der Einzelmessung.</td></tr>
+    <tr><td>F11</td><td>Hinweis: Geräteuhr geht falsch</td><td>Zeitprovenienz im Anlass und Warnung im Gerätebildschirm; die Uhr lässt sich nicht per Bluetooth stellen.</td></tr>
+    <tr><td>F12</td><td>Hinweis: nicht gekoppelt</td><td>Statuszeile und Kopplungsweg in „Abgleich und Übertragung“.</td></tr>
+    <tr><td>F13</td><td>Meldungen des Steuerungsteils</td><td>Statuszeilen, Ergebnis- und Warnflächen an Anlass, Prüfung und Gerät.</td></tr>
+    <tr><td>F14</td><td>Gestaltung wählen</td><td>„Anlass-Einstellungen“.</td></tr>
+    <tr><td>F15</td><td>Konzept wählen</td><td>„Anlass-Einstellungen“; der Datenbestand bleibt derselbe.</td></tr>
+  </tbody></table>
+
+  <div class="section-head"><h2>Was das Konzept vom Datenmodell verlangt</h2><p>Die Gruppierung muss erklärbar und reversibel sein</p></div>
+  <table><thead><tr><th>Baustein</th><th>Was gebraucht wird</th><th>Warum</th></tr></thead><tbody>
+    <tr><td>Messanlass</td><td>Eigene stabile Identität mit Ergebnis, Gütestatus und Entstehungsart: automatisch, bestätigt oder manuell.</td><td>Sonst ist der Anlass nur eine wechselnde Abfrage und Nutzerkorrekturen gehen verloren.</td></tr>
+    <tr><td>Mitgliedschaft</td><td>Geordnete Zuordnung mehrerer Rohmessungen zu genau einem Anlass; Rohmessungen bleiben unverändert.</td><td>Messungsnummern, Zeitabstände und Kennzeichen müssen nachvollziehbar bleiben.</td></tr>
+    <tr><td>Gruppierungsregel</td><td>Versionierte Regel aus gleichem Speicherplatz, fortlaufender Messungsnummer und Zeitnähe. Harte Treffer werden gruppiert, Grenzfälle erhalten den Zustand „zu prüfen“.</td><td>Eine spätere Regeländerung darf bestätigte Nutzerentscheidungen nicht überschreiben.</td></tr>
+    <tr><td>Ergebnisregel</td><td>Gespeichert wird, welche Rohwerte einfließen und ob Mittelwert, letzter Wert oder Einzelwert gilt.</td><td>Das Ergebnis muss reproduzierbar sein; Bewegung darf einen Wert nicht heimlich entfernen.</td></tr>
+    <tr><td>Güte</td><td>Bewegung und unregelmäßiger Puls je Rohmessung sowie ein abgeleiteter Anlassstatus mit Begründung.</td><td>Die Kennzeichen beschreiben die Verlässlichkeit dieses Messens, nicht bloß eine Zahl.</td></tr>
+    <tr><td>Health Connect</td><td>Übertragungsstatus bleibt an der Rohmessung. Zusätzlich braucht die App eine klare Exportregel; hier: Rohmessungen exportieren, Anlass nur in Sphygma verdichten.</td><td>So entstehen keine erfundenen Messungen, und die vorhandenen 14/100 Statuswerte bleiben eindeutig.</td></tr>
+    <tr><td>Zeitprovenienz</td><td>Gerätezeit und Importzeitpunkt getrennt speichern; manuelle Zeitkorrekturen als weitere, markierte Angabe.</td><td>Gruppieren darf die zwei Zeitquellen nicht verwechseln.</td></tr>
+  </tbody></table>
+
+  <div class="section-head"><h2>Was der Tausch kostet</h2><p>Was diese App danach bewusst schlechter kann</p></div>
+  <ul>
+    <li><strong>Die rohe Chronik ist nicht mehr der Einstieg.</strong> Wer jede Einzelmessung direkt vergleichen will, muss einen Anlass öffnen.</li>
+    <li><strong>Zeiträume folgen Anlassgrenzen.</strong> Ein erster und letzter Messanlass begrenzen jede Auswertung vollständig; das Wochenraster verliert nur den Vorrang.</li>
+    <li><strong>Viele Altdaten bleiben Einzelanlässe.</strong> Bei unregelmäßigem Messen bringt die neue Einheit kaum Verdichtung und enttäuscht Menschen, die eine automatische „Bereinigung“ erwarten.</li>
+    <li><strong>Grenzfälle verlangen Arbeit.</strong> Geschätzt vier offene Entscheidungen sind plausibel, aber unbekannt. Die App darf sie weder still zusammenfassen noch künstlich trennen.</li>
+    <li><strong>Health Connect erhält weiterhin Rohmessungen.</strong> Wer dort genau einen verdichteten Wert pro Anlass erwartet, bekommt ihn nicht; ein errechneter Wert wäre keine tatsächlich gemessene Geräteaufzeichnung.</li>
+  </ul>
+
+  <div class="section-head"><h2>Wie es mit der falschen Geräteuhr umgeht</h2><p>Für Gruppierung nützlich, als Kalenderwahrheit unzuverlässig</p></div>
+  <div class="clock"><p><strong>Das Konzept hängt weniger am richtigen Kalenderdatum als ein Wochen- oder Phasenkonzept, aber es erbt den Fehler trotzdem.</strong> Zeitliche Nähe hilft nur, wenn die Geräteuhr zwischen zwei Messungen nicht verstellt oder gesprungen ist.</p><p>Darum gruppiert Sphygma nie allein nach Kalenderzeit: fortlaufende Messungsnummer, gleicher Speicherplatz und Zeitabstand werden gemeinsam bewertet. Importzeitpunkte taugen beim Voll-Readout nicht zur Gruppierung, weil alte Records gemeinsam eingelesen werden. Ist die Reihenfolge widersprüchlich oder der Abstand grenzwertig, bleibt der Anlass „zu prüfen“.</p><p>Die App stellt die Geräteuhr nicht und behauptet auch nicht, sie könne es. Angezeigt werden Gerätezeit und Importzeit getrennt; eine manuelle Korrektur ändert die gespeicherte Rohzeit nicht.</p></div>
+</main></body></html>

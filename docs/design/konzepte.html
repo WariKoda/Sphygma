@@ -1,0 +1,966 @@
+<title>Sieben Konzepte</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap">
+
+<style>
+  /* ══════════════════════════════════════════════════════════════════
+     Alle Bildschirme tragen dieselbe, absichtlich unauffällige Optik.
+     Verglichen werden Strukturen, nicht Handschriften — jede
+     gestalterische Eigenheit würde hier stören.
+     ══════════════════════════════════════════════════════════════════ */
+
+  :root {
+    --ground:    #F2F2F0;
+    --panel:     #FFFFFF;
+    --ink:       #1C1C1A;
+    --ink-soft:  #61635E;
+    --ink-faint: #8E908A;
+    --rule:      #DDDDD8;
+    --accent:    #2F5D50;
+    --accent-bg: #E4EDE9;
+    --warn:      #9A6114;
+    --warn-bg:   #F7EEDF;
+
+    --gut:       #7EA77E;
+    --grenz:     #C9B45E;
+    --hoch:      #C07D5A;
+
+    --step-0: 0.9375rem;
+    --step-1: 1.0625rem;
+    --step-2: 1.375rem;
+    --step-4: 2.75rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:    #16181A;
+      --panel:     #1E2124;
+      --ink:       #E9EAE7;
+      --ink-soft:  #9DA09B;
+      --ink-faint: #71746F;
+      --rule:      #2E3235;
+      --accent:    #7FB8A5;
+      --accent-bg: #1B2A26;
+      --warn:      #D9A55C;
+      --warn-bg:   #2A2318;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:    #16181A;
+    --panel:     #1E2124;
+    --ink:       #E9EAE7;
+    --ink-soft:  #9DA09B;
+    --ink-faint: #71746F;
+    --rule:      #2E3235;
+    --accent:    #7FB8A5;
+    --accent-bg: #1B2A26;
+    --warn:      #D9A55C;
+    --warn-bg:   #2A2318;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+    font-size: var(--step-0);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .wrap {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 52px 24px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+  }
+
+  .lede { display: flex; flex-direction: column; gap: 14px; max-width: 64ch; }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); margin: 0;
+  }
+
+  h1 {
+    font-size: var(--step-4); font-weight: 300; letter-spacing: -0.025em;
+    line-height: 1.08; text-wrap: balance; margin: 0;
+  }
+
+  p { margin: 0; color: var(--ink-soft); }
+  p strong { color: var(--ink); font-weight: 600; }
+  em { font-style: italic; color: var(--ink); }
+
+  .merk {
+    border-left: 2px solid var(--accent);
+    background: var(--accent-bg);
+    padding: 15px 18px; color: var(--ink);
+  }
+
+  /* ── Übersicht: die sieben Einheiten ──────────────────────────────── */
+
+  .uebersicht { border-top: 1px solid var(--rule); }
+  .u-zeile {
+    display: grid; grid-template-columns: 2.2rem 11rem 1fr;
+    gap: 16px; padding: 15px 0; border-bottom: 1px solid var(--rule);
+    align-items: baseline;
+  }
+  @media (max-width: 700px) {
+    .u-zeile { grid-template-columns: 2rem 1fr; }
+    .u-zeile .u-frage { grid-column: 2; }
+  }
+  .u-nr {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.8125rem; color: var(--ink-faint);
+  }
+  .u-einheit { font-weight: 600; }
+  .u-einheit small { display: block; font-weight: 400; font-size: 0.8125rem; color: var(--ink-faint); }
+  .u-frage { color: var(--ink-soft); }
+  .u-zeile.alt .u-einheit, .u-zeile.alt .u-frage { opacity: 0.62; }
+
+  /* ── Konzeptblock ─────────────────────────────────────────────────── */
+
+  .konzept {
+    display: flex; flex-direction: column; gap: 20px;
+    padding-top: 40px; margin-top: 22px; border-top: 2px solid var(--ink);
+  }
+  .konzept.bestand { border-top-color: var(--rule); }
+
+  .k-kopf { display: flex; flex-direction: column; gap: 10px; max-width: 64ch; }
+  .k-nr {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.75rem; letter-spacing: 0.12em; color: var(--ink-faint);
+  }
+  .k-name { font-size: var(--step-2); font-weight: 600; letter-spacing: -0.015em; margin: 0; }
+  .k-einheit {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.8125rem; color: var(--accent);
+  }
+
+  .schirme {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(232px, 1fr));
+    gap: 20px; align-items: start;
+  }
+  .schirme.eng { grid-template-columns: repeat(auto-fit, minmax(232px, 264px)); }
+
+  .slot { display: flex; flex-direction: column; gap: 9px; }
+  .cap { font-size: 0.8125rem; color: var(--ink-faint); }
+
+  /* ── Der Bildschirm selbst: eine einzige neutrale Optik ───────────── */
+
+  .scr {
+    background: #FCFCFB; color: #1C1C1A;
+    border: 1px solid var(--rule); border-radius: 14px;
+    padding: 15px 14px; min-height: 300px;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: 12px; line-height: 1.45;
+    font-variant-numeric: tabular-nums;
+    display: flex; flex-direction: column; gap: 3px;
+    overflow: hidden;
+  }
+  /* Die Bildschirme behalten ihre helle Simulation auch im Dunkelmodus:
+     Sie stellen ein Telefon dar, nicht die Seite. Nur der Rahmen wechselt. */
+
+  .scr .t {
+    font-size: 9px; letter-spacing: 0.13em; text-transform: uppercase;
+    color: #8E908A; margin-bottom: 3px;
+  }
+  .scr .t + .t { margin-top: 10px; }
+  .scr .gross {
+    font-size: 30px; font-weight: 300; line-height: 1; letter-spacing: -0.03em;
+  }
+  .scr .mittel { font-size: 17px; font-weight: 400; }
+  .scr .klein { font-size: 11px; color: #61635E; }
+  .scr .z {
+    display: flex; justify-content: space-between; gap: 8px;
+    padding: 5px 0; border-bottom: 1px solid #EDEDE9;
+  }
+  .scr .z:last-of-type { border-bottom: 0; }
+  .scr .z span:last-child { color: #8E908A; }
+  .scr .knopf {
+    border: 1px solid #1C1C1A; border-radius: 5px; padding: 6px;
+    text-align: center; font-size: 11px; margin-top: 9px;
+  }
+  .scr .knopf.f { background: #1C1C1A; color: #FCFCFB; }
+  .scr .knopf.aus { border-color: #DDDDD8; color: #A9ABA5; }
+  .scr .grow { flex: 1; }
+  .scr .leiste {
+    display: flex; margin-top: 11px; padding-top: 7px;
+    border-top: 1px solid #EDEDE9; font-size: 9px; text-align: center;
+  }
+  .scr .leiste div { flex: 1; color: #A9ABA5; }
+  .scr .leiste .on { color: #1C1C1A; font-weight: 600; }
+  .scr .hinweis {
+    background: #F7EEDF; color: #7A4A05; border-radius: 6px;
+    padding: 7px 9px; font-size: 10px; line-height: 1.4; margin-top: 8px;
+  }
+
+  /* Messfelder-Raster, mehrfach genutzt */
+  .raster { display: grid; gap: 2px; margin-top: 4px; }
+  .raster.w7 { grid-template-columns: repeat(7, 1fr); }
+  .raster .f {
+    aspect-ratio: 1; border-radius: 2px; background: #ECECE8;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; color: #61635E;
+  }
+  .raster .f.g { background: #D6E3D6; }
+  .raster .f.m { background: #EFE7C8; }
+  .raster .f.h { background: #EDD6C8; }
+  .raster-kopf {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+    font-size: 8px; color: #A9ABA5; text-align: center; margin-top: 6px;
+  }
+
+  /* Balken für Phasenvergleich */
+  .balken { height: 7px; background: #ECECE8; border-radius: 2px; overflow: hidden; }
+  .balken i { display: block; height: 7px; background: #2F5D50; }
+
+  /* ── Faktenzeile unter jedem Konzept ──────────────────────────────── */
+
+  .fakten {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+  }
+  @media (max-width: 760px) { .fakten { grid-template-columns: 1fr; } }
+  .fakt { background: var(--panel); padding: 15px 16px; }
+  .fakt h4 {
+    margin: 0 0 6px; font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.6875rem; letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--ink-faint); font-weight: 400;
+  }
+  .fakt p { font-size: 0.875rem; line-height: 1.5; }
+  .fakt.kosten { background: var(--warn-bg); }
+  .fakt.kosten h4 { color: var(--warn); }
+  .fakt.kosten p { color: var(--ink); }
+
+  .fuer {
+    font-size: 0.875rem; color: var(--ink-soft); max-width: 64ch;
+  }
+  .fuer b { color: var(--ink); font-weight: 600; }
+
+  a { color: var(--accent); }
+</style>
+
+<div class="wrap">
+
+  <header class="lede">
+    <p class="eyebrow">Sphygma · Konzepte, 2026-09-05</p>
+    <h1>Sieben Konzepte, nicht sieben Anstriche</h1>
+    <p>Die bisherigen Entwürfe waren <strong>Handschriften</strong>: dieselben
+    Bildschirme, andere Optik. Diese Tafel zeigt etwas anderes —
+    <strong>Konzepte</strong>. Zwei Konzepte unterscheiden sich nicht darin, wie
+    der Verlauf aussieht, sondern darin, ob es überhaupt einen gibt und wovon.</p>
+    <p>Jedes Konzept gibt eine andere Antwort auf eine einzige Frage:
+    <em>Was ist die Einheit, um die die App gebaut ist?</em> Daraus folgt alles
+    Weitere — welche Bildschirme es gibt, was die Datenbank können muss, und was
+    man danach nicht mehr kann.</p>
+    <div class="merk">
+      Alle Bildschirme hier tragen absichtlich <strong>dieselbe, unauffällige
+      Optik</strong>. Sonst vergleicht man wieder Gestaltung statt Struktur. Die
+      Handschriften-Frage ist getrennt davon und bereits beantwortet.
+    </div>
+    <p>Die Eckwerte stammen aus der Datenbank: 114 Messungen, 14 nach Health
+    Connect übertragen, zuletzt 128/87 bei Puls 82, Wochenschnitt 124/85. Wie
+    sich die 114 auf Tageszeiten, Messanlässe oder Phasen verteilen, weiß heute
+    niemand — diese Zahlen sind <strong>geschätzt</strong>, damit die Bildschirme
+    nicht leer wirken.</p>
+  </header>
+
+  <section class="uebersicht">
+    <div class="u-zeile alt">
+      <span class="u-nr">1</span>
+      <span class="u-einheit">Die Einzelmessung<small>vorhanden</small></span>
+      <span class="u-frage">Was war mein letzter Wert, und wie sieht der Zeitraum aus, den ich wähle?</span>
+    </div>
+    <div class="u-zeile alt">
+      <span class="u-nr">2</span>
+      <span class="u-einheit">Die Messwoche<small>vorhanden</small></span>
+      <span class="u-frage">Habe ich eine vollständige Messwoche, die in der Sprechstunde etwas gilt?</span>
+    </div>
+    <div class="u-zeile">
+      <span class="u-nr">3</span>
+      <span class="u-einheit">Die Tageszeit</span>
+      <span class="u-frage"><em>Wann</em> ist mein Druck hoch — morgens, abends, nachts?</span>
+    </div>
+    <div class="u-zeile">
+      <span class="u-nr">4</span>
+      <span class="u-einheit">Der Messanlass</span>
+      <span class="u-frage">Was kam bei diesem Messen heraus — nicht bei dieser einen Zahl?</span>
+    </div>
+    <div class="u-zeile">
+      <span class="u-nr">5</span>
+      <span class="u-einheit">Die Phase</span>
+      <span class="u-frage">Hat die Umstellung — Medikament, Urlaub, Sport — etwas bewirkt?</span>
+    </div>
+    <div class="u-zeile">
+      <span class="u-nr">6</span>
+      <span class="u-einheit">Das Auffällige</span>
+      <span class="u-frage">Gibt es etwas, das ich mir ansehen muss? Sonst schweig.</span>
+    </div>
+    <div class="u-zeile">
+      <span class="u-nr">7</span>
+      <span class="u-einheit">Die Übertragung</span>
+      <span class="u-frage">Sind meine Werte vollständig und ohne Umweg in Health&nbsp;Connect?</span>
+    </div>
+  </section>
+
+  <!-- ══════════ 1 · BESTAND ══════════ -->
+  <section class="konzept bestand">
+    <div class="k-kopf">
+      <p class="k-nr">Konzept 1 · vorhanden</p>
+      <h2 class="k-name">Messung und Filter</h2>
+      <p class="k-einheit">Einheit: die einzelne Messung</p>
+      <p>So ist die App heute gebaut. Drei Reiter, ein Zeitraumfilter über allen
+      Messungen. Das Konzept wurde nie ausgesprochen — es ist gewachsen, weil
+      eine Liste mit Filtern die naheliegendste Form ist, wenn man eine Tabelle
+      hat.</p>
+    </div>
+    <div class="schirme eng">
+      <div class="slot">
+        <div class="scr">
+          <div class="t">Letzte 7 Tage</div>
+          <div class="gross">124/85</div>
+          <div class="klein">Puls 81 · 12 Messungen</div>
+          <div class="t">Zuletzt</div>
+          <div class="mittel">128/87</div>
+          <div class="klein">vor 10 Minuten</div>
+          <div class="t">Letzte Tage</div>
+          <div class="z"><span>126/90</span><span>gestern</span></div>
+          <div class="z"><span>126/84</span><span>gestern</span></div>
+          <div class="grow"></div>
+          <div class="leiste"><div class="on">Heute</div><div>Verlauf</div><div>Gerät</div></div>
+        </div>
+        <p class="cap">Heute</p>
+      </div>
+      <div class="slot">
+        <div class="scr">
+          <div class="z" style="border:0;padding-bottom:8px">
+            <span>Woche · <b>Monat</b> · Jahr</span><span></span>
+          </div>
+          <svg width="100%" height="76" viewBox="0 0 220 76" role="img" aria-label="Verlaufskurve über einen Monat">
+            <line x1="0" y1="75" x2="220" y2="75" stroke="#EDEDE9"/>
+            <polyline points="8,24 42,32 76,18 110,36 144,26 178,40 212,20" fill="none" stroke="#1C1C1A" stroke-width="1.3"/>
+            <polyline points="8,58 42,54 76,62 110,52 144,56 178,48 212,54" fill="none" stroke="#A9ABA5" stroke-width="1.3"/>
+          </svg>
+          <div class="t">Mittelwerte</div>
+          <div class="z"><span>Gesamt</span><span>124/85</span></div>
+          <div class="z"><span>Morgens</span><span>121/83</span></div>
+          <div class="t">Messungen</div>
+          <div class="z"><span>128/87</span><span>23:57</span></div>
+          <div class="grow"></div>
+          <div class="leiste"><div>Heute</div><div class="on">Verlauf</div><div>Gerät</div></div>
+        </div>
+        <p class="cap">Verlauf mit Zeitraumfilter</p>
+      </div>
+    </div>
+    <div class="fakten">
+      <div class="fakt">
+        <h4>Was es zeigt</h4>
+        <p>Alles. Jede Messung ist gleichberechtigt, jeder Zeitraum wählbar.</p>
+      </div>
+      <div class="fakt">
+        <h4>Datenmodell</h4>
+        <p>Vorhanden. Eine Tabelle von Messungen genügt.</p>
+      </div>
+      <div class="fakt kosten">
+        <h4>Was es kostet</h4>
+        <p>Es beantwortet keine Frage von selbst. Der Nutzer muss wissen, wonach
+        er sucht, und den passenden Filter finden. Ein einzelner Wert steht groß
+        da, obwohl er medizinisch fast nichts aussagt.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ 2 · SIEBEN TAGE ══════════ -->
+  <section class="konzept bestand">
+    <div class="k-kopf">
+      <p class="k-nr">Konzept 2 · vorhanden</p>
+      <h2 class="k-name">Sieben Tage</h2>
+      <p class="k-einheit">Einheit: die Messwoche</p>
+      <p>Sieben Tage, morgens und abends gemessen, erster Tag verworfen,
+      Heimmess-Grenzwert 135/85 statt 140/90 — so verlangt es die Leitlinie für
+      die Selbstmessung. Damit hat die App ein natürliches Objekt: Eine Woche ist
+      vollständig oder nicht, und ihr Wert gilt in der Sprechstunde.
+      <a href="sieben-tage.html">Die ausgearbeitete Fassung</a> liegt daneben.</p>
+    </div>
+    <div class="schirme eng">
+      <div class="slot">
+        <div class="scr">
+          <div class="t">Diese Woche · Tag 7 von 7</div>
+          <div class="gross">124/85</div>
+          <div class="klein">Mittel dieser Woche, Puls 81</div>
+          <div class="raster-kopf">
+            <span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span>
+          </div>
+          <div class="raster w7">
+            <div class="f g">118</div><div class="f g">121</div><div class="f g">120</div>
+            <div class="f g">118</div><div class="f g">122</div><div class="f g">121</div><div class="f"></div>
+          </div>
+          <div class="raster w7">
+            <div class="f m">128</div><div class="f m">126</div><div class="f h">130</div>
+            <div class="f m">127</div><div class="f m">128</div><div class="f m">129</div><div class="f"></div>
+          </div>
+          <div class="klein" style="margin-top:6px">Heute fehlen noch beide Messungen.</div>
+          <div class="grow"></div>
+          <div class="knopf aus">Bericht für die Praxis</div>
+        </div>
+        <p class="cap">Diese Woche · vierzehn Felder</p>
+      </div>
+      <div class="slot">
+        <div class="scr">
+          <div class="t">Frühere Wochen</div>
+          <div class="z"><span>25.–31. August</span><span>14/14 · 124/85</span></div>
+          <div class="z"><span>18.–24. August</span><span>11/14 · 127/88</span></div>
+          <div class="z"><span>11.–17. August</span><span>14/14 · 133/89</span></div>
+          <div class="z"><span>4.–10. August</span><span>2/14 · 126/87</span></div>
+          <div class="klein" style="margin-top:8px">Vollständige Wochen sind für
+          die Praxis brauchbar.</div>
+          <div class="grow"></div>
+          <div class="klein">114 Messungen · 100 offen</div>
+        </div>
+        <p class="cap">Der Verlauf ist eine Liste von Wochen</p>
+      </div>
+    </div>
+    <div class="fakten">
+      <div class="fakt">
+        <h4>Was es zeigt</h4>
+        <p>Vollständigkeit. Man sieht auf einen Blick, was gemessen wurde und was
+        fehlt.</p>
+      </div>
+      <div class="fakt">
+        <h4>Datenmodell</h4>
+        <p>Tageszeit je Messung, Woche als Objekt mit Vollständigkeit,
+        Zusammenfassung von Doppelmessungen.</p>
+      </div>
+      <div class="fakt kosten">
+        <h4>Was es kostet</h4>
+        <p>Freie Zeiträume und die Jahreskurve fallen weg. Wer unregelmäßig
+        misst, sieht überall Lücken — das kann als Vorwurf ankommen.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ 3 · TAGESPROFIL ══════════ -->
+  <section class="konzept">
+    <div class="k-kopf">
+      <p class="k-nr">Konzept 3 · neu</p>
+      <h2 class="k-name">Tagesprofil</h2>
+      <p class="k-einheit">Einheit: die Tageszeit</p>
+      <p>Die Chronologie ist nicht mehr die Achse. Alle 114 Messungen liegen übereinander auf
+      einer 24-Stunden-Achse, und was sichtbar wird, ist ein <em>Muster</em>:
+      morgens hoch, nachmittags ruhiger, abends wieder ansteigend. Die App
+      beantwortet nicht „wie war es", sondern <strong>„wann ist es".</strong>
+      Einzelne Messungen behalten ihr Datum — aber man kommt nur über die
+      Uhrzeit an sie heran, nie über den Kalender.</p>
+    </div>
+    <div class="schirme">
+      <div class="slot">
+        <div class="scr">
+          <div class="t">Dein Tagesmuster · 114 Messungen</div>
+          <svg width="100%" height="118" viewBox="0 0 224 118" role="img"
+               aria-label="Systolische Werte über den Tagesverlauf, 6 bis 24 Uhr">
+            <line x1="20" y1="30" x2="224" y2="30" stroke="#EDEDE9"/>
+            <line x1="20" y1="60" x2="224" y2="60" stroke="#EDEDE9"/>
+            <line x1="20" y1="90" x2="224" y2="90" stroke="#EDEDE9"/>
+            <text x="0" y="33" font-size="8" fill="#A9ABA5">140</text>
+            <text x="0" y="63" font-size="8" fill="#A9ABA5">125</text>
+            <text x="0" y="93" font-size="8" fill="#A9ABA5">110</text>
+            <path d="M24,42 C60,38 78,64 110,72 C142,80 170,52 216,40"
+                  fill="none" stroke="#2F5D50" stroke-width="1.8"/>
+            <path d="M24,42 C60,38 78,64 110,72 C142,80 170,52 216,40 L216,58 C170,70 142,96 110,88 C78,80 60,54 24,58 Z"
+                  fill="#2F5D50" opacity="0.10"/>
+            <circle cx="30" cy="44" r="1.6" fill="#61635E"/>
+            <circle cx="38" cy="39" r="1.6" fill="#61635E"/>
+            <circle cx="46" cy="47" r="1.6" fill="#61635E"/>
+            <circle cx="96" cy="70" r="1.6" fill="#61635E"/>
+            <circle cx="118" cy="76" r="1.6" fill="#61635E"/>
+            <circle cx="126" cy="66" r="1.6" fill="#61635E"/>
+            <circle cx="188" cy="48" r="1.6" fill="#61635E"/>
+            <circle cx="200" cy="43" r="1.6" fill="#61635E"/>
+            <circle cx="208" cy="52" r="1.6" fill="#61635E"/>
+            <text x="24" y="112" font-size="8" fill="#A9ABA5">6</text>
+            <text x="72" y="112" font-size="8" fill="#A9ABA5">12</text>
+            <text x="140" y="112" font-size="8" fill="#A9ABA5">18</text>
+            <text x="206" y="112" font-size="8" fill="#A9ABA5">24</text>
+          </svg>
+          <div class="klein" style="margin-top:4px">Morgens am höchsten. Der
+          Unterschied zwischen 7 und 15 Uhr beträgt im Mittel 14 mmHg.</div>
+          <div class="grow"></div>
+          <div class="leiste"><div class="on">Muster</div><div>Tageszeit</div><div>Gerät</div></div>
+        </div>
+        <p class="cap">Das Muster · keine Chronologie, keine Kurve über Tage</p>
+      </div>
+      <div class="slot">
+        <div class="scr">
+          <div class="t">Morgens · 6 bis 10 Uhr</div>
+          <div class="gross">131/88</div>
+          <div class="klein">41 Messungen · Puls 79</div>
+          <div class="t">Im Vergleich</div>
+          <div class="z"><span>Vormittag</span><span>126/85</span></div>
+          <div class="z"><span>Nachmittag</span><span>119/80</span></div>
+          <div class="z"><span>Abend</span><span>127/86</span></div>
+          <div class="hinweis">Morgens liegt dein Druck am höchsten — das ist
+          normal, der Körper fährt hoch. Auffällig wäre erst ein Unterschied von
+          mehr als 20 mmHg.</div>
+          <div class="grow"></div>
+          <div class="leiste"><div>Muster</div><div class="on">Tageszeit</div><div>Gerät</div></div>
+        </div>
+        <p class="cap">Eine Tageszeit im Detail</p>
+      </div>
+      <div class="slot">
+        <div class="scr">
+          <div class="t">Messungen um diese Zeit</div>
+          <div class="klein" style="margin-bottom:6px">41 Messungen zwischen 6 und 10 Uhr</div>
+          <div class="z"><span>134/91</span><span>05.09. · 07:12</span></div>
+          <div class="z"><span>128/86</span><span>03.09. · 08:04</span></div>
+          <div class="z"><span>133/89</span><span>01.09. · 06:58</span></div>
+          <div class="z"><span>129/87</span><span>28.08. · 07:41</span></div>
+          <div class="z"><span>136/92</span><span>26.08. · 07:03</span></div>
+          <div class="grow"></div>
+          <div class="knopf">Diese Auswahl als Bericht</div>
+        </div>
+        <p class="cap">Die Messungen dahinter · nach Uhrzeit, nicht nach Datum</p>
+      </div>
+    </div>
+    <div class="fakten">
+      <div class="fakt">
+        <h4>Was wegfällt</h4>
+        <p>Der chronologische Verlauf, „Heute", jede Zeitraumwahl. Es gibt keine
+        Kurve über Tage mehr — die Achse ist die Uhrzeit.</p>
+      </div>
+      <div class="fakt">
+        <h4>Datenmodell</h4>
+        <p><strong>Nichts Neues.</strong> Dieselben Daten, nur anders aggregiert.
+        Das einzige Konzept hier, das ohne Migration auskommt.</p>
+      </div>
+      <div class="fakt kosten">
+        <h4>Was es kostet</h4>
+        <p>Trends über Monate sind unsichtbar. „Geht es mir besser als im Juni"
+        lässt sich nicht beantworten. Und bei falscher Geräteuhr ist die
+        <em>Uhrzeit</em> genauso falsch wie das Datum — dieses Konzept steht und
+        fällt mit ihr.</p>
+      </div>
+    </div>
+    <p class="fuer"><b>Besser für:</b> Wer wissen will, wann er messen soll, oder
+    ob sein Medikament morgens noch wirkt. Die Frage nach der Tageszeit ist bei
+    Bluthochdruck medizinisch relevant und in keinem anderen Konzept
+    beantwortbar.</p>
+  </section>
+
+  <!-- ══════════ 4 · MESSANLASS ══════════ -->
+  <section class="konzept">
+    <div class="k-kopf">
+      <p class="k-nr">Konzept 4 · neu</p>
+      <h2 class="k-name">Messanlass</h2>
+      <p class="k-einheit">Einheit: das einzelne Messen, nicht die einzelne Zahl</p>
+      <p>Wer nach Leitlinie misst, misst zweimal hintereinander und nimmt den
+      zweiten Wert — oder den Mittelwert. Heute stehen daraus zwei Einträge in
+      der Liste, beide gleichberechtigt, und der erste ist meist der schlechtere.
+      Dieses Konzept fasst zusammen, was zusammengehört: Ein Messanlass hat
+      <em>ein</em> Ergebnis und mehrere Rohwerte darunter.</p>
+    </div>
+    <div class="schirme">
+      <div class="slot">
+        <div class="scr">
+          <div class="t">Letztes Messen · vor 10 Minuten</div>
+          <div class="gross">127/86</div>
+          <div class="klein">Mittel aus zwei Messungen</div>
+          <div class="t">Die Rohwerte</div>
+          <div class="z"><span>1. Messung · 23:55</span><span>128/87</span></div>
+          <div class="z"><span>2. Messung · 23:57</span><span>126/85</span></div>
+          <div class="klein" style="margin-top:7px">Beide innerhalb von zwei
+          Minuten — als ein Anlass gewertet.</div>
+          <div class="grow"></div>
+          <div class="leiste"><div class="on">Letztes</div><div>Archiv</div><div>Prüfen</div></div>
+        </div>
+        <p class="cap">Ein Anlass, ein Ergebnis</p>
+      </div>
+      <div class="slot">
+        <div class="scr">
+          <div class="t">Archiv · 68 Messanlässe</div>
+          <div class="z"><span>127/86</span><span>heute · 2×</span></div>
+          <div class="z"><span>124/84</span><span>gestern · 3×</span></div>
+          <div class="z"><span>131/89</span><span>gestern · 1×</span></div>
+          <div class="z"><span>122/81</span><span>vorgestern · 2×</span></div>
+          <div class="z"><span>129/88</span><span>02.09. · 2×</span></div>
+          <div class="klein" style="margin-top:7px">114 Messungen ergeben 68
+          Anlässe. Eine Zeile je Messsituation statt je Zahl.</div>
+          <div class="grow"></div>
+          <div class="leiste"><div>Letztes</div><div class="on">Archiv</div><div>Prüfen</div></div>
+        </div>
+        <p class="cap">Das Archiv zählt Anlässe, nicht Zahlen</p>
+      </div>
+      <div class="slot">
+        <div class="scr">
+          <div class="t">Zu prüfen · 4 Anlässe</div>
+          <div class="hinweis"><b>Gehören diese zusammen?</b><br>
+          Zwischen den beiden Messungen liegen 11 Minuten — knapp über der
+          Grenze. Du entscheidest.</div>
+          <div class="z" style="margin-top:8px"><span>133/91 · 14:02</span><span>Nr. 512</span></div>
+          <div class="z"><span>128/86 · 14:13</span><span>Nr. 513</span></div>
+          <div class="knopf f">Ein Anlass</div>
+          <div class="knopf">Zwei getrennte</div>
+          <div class="grow"></div>
+          <div class="leiste"><div>Letztes</div><div>Archiv</div><div class="on">Prüfen</div></div>
+        </div>
+        <p class="cap">Grenzfälle entscheidet der Nutzer, nicht die Automatik</p>
+      </div>
+    </div>
+    <div class="fakten">
+      <div class="fakt">
+        <h4>Was wegfällt</h4>
+        <p>Die Einzelmessung als Hauptelement. „Heute", der freie Verlauf und das
+        Wochenraster. Einstieg ist immer der letzte Anlass.</p>
+      </div>
+      <div class="fakt">
+        <h4>Datenmodell</h4>
+        <p>Anlass als Objekt mit mehreren Messungen, eine Gruppierungsregel nach
+        Nummernfolge und Zeitnähe, ein Zustand für Grenzfälle, eine festgelegte
+        Zusammenfassungsregel. Und die Frage, ob Health Connect die Rohwerte oder
+        das Ergebnis bekommt.</p>
+      </div>
+      <div class="fakt kosten">
+        <h4>Was es kostet</h4>
+        <p>Bei den 114 Altdaten bestehen viele Anlässe aus einer einzigen
+        Messung — dort bringt das Konzept nichts. Eine falsche Gruppierung
+        erzeugt einen irreführenden Mittelwert, deshalb bleiben Grenzfälle offen,
+        bis jemand entscheidet.</p>
+      </div>
+    </div>
+    <p class="fuer"><b>Besser für:</b> Wer nach Leitlinie misst, also mehrfach
+    hintereinander. Es ist das einzige Konzept, das die Kennzeichen Bewegung und
+    unregelmäßiger Puls sinnvoll einordnet — als Aussage über die Güte
+    <em>dieses</em> Messens.</p>
+  </section>
+
+  <!-- ══════════ 5 · PHASE ══════════ -->
+  <section class="konzept">
+    <div class="k-kopf">
+      <p class="k-nr">Konzept 5 · neu</p>
+      <h2 class="k-name">Phase</h2>
+      <p class="k-einheit">Einheit: der benannte Lebensabschnitt</p>
+      <p>Der Kalender sagt nichts darüber, warum sich etwas geändert hat. Dieses
+      Konzept lässt den Nutzer Abschnitte benennen — „Ramipril 5 mg", „Urlaub",
+      „nach der Umstellung" — und vergleicht sie. Die App beantwortet
+      <strong>„hat es gewirkt?"</strong>, und das ist die Frage, wegen der die
+      meisten Menschen überhaupt zu Hause messen.</p>
+    </div>
+    <div class="schirme">
+      <div class="slot">
+        <div class="scr">
+          <div class="t">Laufende Phase · seit 24 Tagen</div>
+          <div class="mittel">Ramipril 5 mg</div>
+          <div class="gross" style="margin-top:6px">124/85</div>
+          <div class="klein">31 Messungen in dieser Phase</div>
+          <div class="t">Davor</div>
+          <div class="z"><span>Ohne Medikament</span><span>136/91</span></div>
+          <div class="klein" style="margin-top:7px;color:#2F5D50">
+            <b>12 mmHg niedriger als in der Phase davor.</b></div>
+          <div class="grow"></div>
+          <div class="knopf">Phase beenden</div>
+          <div class="leiste"><div class="on">Jetzt</div><div>Phasen</div><div>Gerät</div></div>
+        </div>
+        <p class="cap">Die laufende Phase, gegen die vorige gestellt</p>
+      </div>
+      <div class="slot">
+        <div class="scr">
+          <div class="t">Phasen</div>
+          <div class="z" style="border:0;padding-bottom:2px"><span>Ramipril 5 mg</span><span>124/85</span></div>
+          <div class="balken"><i style="width:60%"></i></div>
+          <div class="klein" style="margin:2px 0 9px">seit 12.08. · 31 Messungen</div>
+
+          <div class="z" style="border:0;padding-bottom:2px"><span>Ohne Medikament</span><span>136/91</span></div>
+          <div class="balken"><i style="width:90%;background:#C07D5A"></i></div>
+          <div class="klein" style="margin:2px 0 9px">04.06.–11.08. · 44 Messungen</div>
+
+          <div class="z" style="border:0;padding-bottom:2px"><span>Urlaub</span><span>119/79</span></div>
+          <div class="balken"><i style="width:47%;background:#7EA77E"></i></div>
+          <div class="klein" style="margin:2px 0 9px">18.05.–02.06. · 14 Messungen</div>
+
+          <div class="z" style="border:0;padding-bottom:2px"><span>Ohne Phase</span><span>—</span></div>
+          <div class="klein" style="margin:2px 0 0">25 Messungen aus der Zeit
+          davor · keiner Phase zugeordnet</div>
+          <div class="klein" style="margin-top:7px;color:#8E908A">Balken: 100 bis
+          140 mmHg systolisch</div>
+          <div class="grow"></div>
+          <div class="knopf f">Neue Phase beginnen</div>
+        </div>
+        <p class="cap">Alle Phasen · die Länge zeigt den Mittelwert</p>
+      </div>
+      <div class="slot">
+        <div class="scr">
+          <div class="t">Vergleich</div>
+          <div class="z" style="border:0"><span></span><span>Ohne Med. → Ramipril</span></div>
+          <div class="z"><span>Systolisch</span><span>136 → 124</span></div>
+          <div class="z"><span>Diastolisch</span><span>91 → 85</span></div>
+          <div class="z"><span>Puls</span><span>84 → 81</span></div>
+          <div class="z"><span>Messungen</span><span>44 → 31</span></div>
+          <div class="hinweis">Der Vergleich zweier Phasen ist kein Beweis für
+          eine Wirkung. Jahreszeit, Messzeitpunkt und Zufall spielen mit. Nimm
+          ihn mit in die Sprechstunde, nicht als Ergebnis.</div>
+          <div class="grow"></div>
+          <div class="knopf">Als Bericht ausgeben</div>
+        </div>
+        <p class="cap">Zwei Phasen gegeneinander</p>
+      </div>
+    </div>
+    <div class="fakten">
+      <div class="fakt">
+        <h4>Was wegfällt</h4>
+        <p>Jeder Kalenderfilter — Woche, Monat, Jahr. „Heute". Messungen ohne
+        zugeordnete Phase haben keinen Ort.</p>
+      </div>
+      <div class="fakt">
+        <h4>Datenmodell</h4>
+        <p>Phase als Objekt mit Beginn, optionalem Ende und Namen, dazu die
+        Zuordnung der Messungen. Beide möglichen Anker sind fehlbar: Die
+        Gerätezeit kann falsch sein, der Importzeitpunkt wirft beim ersten
+        Voll-Readout jahrealte Messungen in die laufende Phase. Ohne eine
+        Nutzerentscheidung für Grenzfälle geht es nicht.</p>
+      </div>
+      <div class="fakt kosten">
+        <h4>Was es kostet</h4>
+        <p>Es verlangt Mitarbeit. Wer keine Phasen anlegt, hat eine leere App.
+        Rückwirkend Phasen zu setzen, ist mühsam. Und die Versuchung, aus einem
+        Vergleich eine Kausalität zu lesen, ist groß — deshalb der Hinweis.</p>
+      </div>
+    </div>
+    <p class="fuer"><b>Besser für:</b> Wer neu eingestellt wird oder etwas
+    ausprobiert — Medikament, Salzverzicht, Sport. Der einzige Entwurf, der eine
+    Frage nach dem <em>Warum</em> stellt statt nach dem Was.</p>
+  </section>
+
+  <!-- ══════════ 6 · DAS AUFFÄLLIGE ══════════ -->
+  <section class="konzept">
+    <div class="k-kopf">
+      <p class="k-nr">Konzept 6 · neu</p>
+      <h2 class="k-name">Das Auffällige</h2>
+      <p class="k-einheit">Einheit: das Ereignis, das Aufmerksamkeit verdient</p>
+      <p>Eine App, die schweigt, solange alles in Ordnung ist. Kein Verlauf,
+      keine Kurve, keine Liste — nur ein Posteingang mit dem, was auffällig war:
+      Werte über der Schwelle, Messungen mit Bewegungs- oder Arrhythmie-Kennzeichen,
+      lange Pausen. Jeder Eintrag wird einmal gelesen und abgehakt.</p>
+    </div>
+    <div class="schirme">
+      <div class="slot">
+        <div class="scr">
+          <div class="t">Eingang · 2 offen</div>
+          <div class="hinweis" style="background:#F2E4DC;color:#7A3B14">
+            <b>Über der Schwelle</b><br>
+            168/104 am 03.09. um 19:12 — der höchste Wert seit vier Monaten.
+          </div>
+          <div class="hinweis" style="margin-top:6px">
+            <b>Unregelmäßiger Puls</b><br>
+            Bei zwei Messungen am 01.09. meldete das Gerät einen unregelmäßigen
+            Puls.
+          </div>
+          <div class="klein" style="margin-top:10px">Seit 24 Tagen sonst keine
+          Auffälligkeiten.</div>
+          <div class="grow"></div>
+          <div class="leiste"><div class="on">Eingang</div><div>Erledigt</div><div>Gerät</div></div>
+        </div>
+        <p class="cap">Der Posteingang · meist leer</p>
+      </div>
+      <div class="slot">
+        <div class="scr">
+          <div class="t">168/104 · 03.09., 19:12</div>
+          <div class="gross">168/104</div>
+          <div class="klein">Puls 88 · Bewegung erkannt</div>
+          <div class="hinweis" style="margin-top:9px">Das Gerät hat während
+          dieser Messung Bewegung erkannt. Ein einzelner hoher Wert unter
+          Bewegung ist wenig belastbar — ruhig sitzen und noch einmal messen.</div>
+          <div class="t">Umfeld</div>
+          <div class="z"><span>Tag davor</span><span>127/86</span></div>
+          <div class="z"><span>Tag danach</span><span>124/85</span></div>
+          <div class="grow"></div>
+          <div class="knopf f">Gesehen, erledigt</div>
+        </div>
+        <p class="cap">Ein Ereignis · immer mit seinem Umfeld</p>
+      </div>
+      <div class="slot">
+        <div class="scr">
+          <div class="t">Erledigt</div>
+          <div class="z"><span>Wert über Schwelle</span><span>12.08.</span></div>
+          <div class="z"><span>Vier Wochen Pause</span><span>28.07.</span></div>
+          <div class="z"><span>Unregelmäßiger Puls</span><span>19.07.</span></div>
+          <div class="z"><span>Wert über Schwelle</span><span>02.07.</span></div>
+          <div class="klein" style="margin-top:8px">9 Ereignisse in diesem Jahr.
+          Das Archiv ist die einzige Statistik, die es gibt.</div>
+          <div class="grow"></div>
+          <div class="knopf">Schwellen einstellen</div>
+        </div>
+        <p class="cap">Was erledigt ist, bleibt nachlesbar</p>
+      </div>
+    </div>
+    <div class="fakten">
+      <div class="fakt">
+        <h4>Was wegfällt</h4>
+        <p>Fast alles: Verlauf, Kurve, Mittelwerte, Messliste, „Heute". Wer den
+        normalen Wert sehen will, findet ihn nicht.</p>
+      </div>
+      <div class="fakt">
+        <h4>Datenmodell</h4>
+        <p>Einstellbare Schwellen, Ereignisse als Objekte mit Lesezustand
+        („gesehen", „erledigt"). Die beiden Gerätekennzeichen werden erstmals zu
+        etwas, das Aufmerksamkeit auslöst.</p>
+      </div>
+      <div class="fakt kosten">
+        <h4>Was es kostet</h4>
+        <p>Kein Werkzeug für die Praxis — es gibt keinen Bericht über einen
+        Zeitraum. Die App wirkt bei gut eingestelltem Druck monatelang leer. Und
+        eine Schwelle zu setzen heißt zu bewerten: Das erhöht das
+        MDR-Risiko&nbsp;stärker als alles andere hier.</p>
+      </div>
+    </div>
+    <p class="fuer"><b>Besser für:</b> Wen das ständige Betrachten von Kurven
+    nervös macht, oder wer gut eingestellt ist und die App nur als Frühwarnung
+    will. Es ist das einzige Konzept, das die Aufmerksamkeit des Nutzers als
+    knappe Ressource behandelt.</p>
+  </section>
+
+  <!-- ══════════ 7 · ÜBERTRAGUNG ══════════ -->
+  <section class="konzept">
+    <div class="k-kopf">
+      <p class="k-nr">Konzept 7 · neu</p>
+      <h2 class="k-name">Übertragung</h2>
+      <p class="k-einheit">Einheit: der Abgleich zwischen Gerät und Health Connect</p>
+      <p>Die konsequenteste Antwort auf das eigentliche Motiv: Sphygma existiert,
+      weil die Hersteller-App ein Konto verlangt und alles an Omron schickt. Wenn
+      das der Grund ist, muss die App nichts weiter können, als die Werte sauber
+      und lückenlos dorthin zu bringen, wo sie hingehören. Ausgewertet wird
+      woanders.</p>
+    </div>
+    <div class="schirme">
+      <div class="slot">
+        <div class="scr">
+          <div class="t">Stand</div>
+          <div class="gross">114</div>
+          <div class="klein">Messungen gesichert</div>
+          <div class="balken" style="margin:11px 0 4px"><i style="width:12%"></i></div>
+          <div class="z" style="border:0"><span>In Health Connect</span><span>14</span></div>
+          <div class="z"><span>Noch offen</span><span>100</span></div>
+          <div class="z"><span>Auf dem Gerät</span><span>100 von 100 · Platz 1</span></div>
+          <div class="hinweis" style="margin-top:9px">Speicherplatz 1 ist voll
+          (100 von 100). Neue Messungen überschreiben dort die ältesten —
+          gesichert ist hier trotzdem alles.</div>
+          <div class="grow"></div>
+          <div class="knopf f">Jetzt übertragen</div>
+        </div>
+        <p class="cap">Ein Bildschirm sagt alles, was zählt</p>
+      </div>
+      <div class="slot">
+        <div class="scr">
+          <div class="t">Protokoll</div>
+          <div class="z"><span>Abgleich · 3 neu</span><span>heute 23:57</span></div>
+          <div class="z"><span>Health Connect · 3</span><span>heute 23:57</span></div>
+          <div class="z"><span>Abgleich · 0 neu</span><span>gestern 19:04</span></div>
+          <div class="z"><span>Abgleich · 2 neu</span><span>03.09. 08:12</span></div>
+          <div class="z"><span>Health Connect · 2</span><span>03.09. 08:12</span></div>
+          <div class="klein" style="margin-top:8px">Lückenlos seit dem
+          12.08. — kein Abgleich ist fehlgeschlagen.</div>
+          <div class="grow"></div>
+          <div class="leiste"><div class="on">Stand</div><div>Protokoll</div><div>Gerät</div></div>
+        </div>
+        <p class="cap">Was wann wohin ging</p>
+      </div>
+      <div class="slot">
+        <div class="scr">
+          <div class="t">Lücken</div>
+          <div class="z"><span>Nr. 401–412</span><span>nie gelesen</span></div>
+          <div class="z"><span>Nr. 288</span><span>überschrieben</span></div>
+          <div class="klein" style="margin-top:8px">Zwölf Messungen tragen
+          Nummern, die nie bei uns ankamen. Sie sind auf dem Gerät längst
+          überschrieben und nicht mehr zu holen.</div>
+          <div class="hinweis">Sphygma kann Lücken nicht schließen und erfindet
+          keine Ersatzwerte. Sie stehen hier, damit du weißt, dass es sie gibt.</div>
+          <div class="grow"></div>
+        </div>
+        <p class="cap">Die Messungsnummer beweist, was fehlt</p>
+      </div>
+    </div>
+    <div class="fakten">
+      <div class="fakt">
+        <h4>Was wegfällt</h4>
+        <p>Jede Auswertung. Kein Wert wird angezeigt, keine Kurve, kein
+        Mittelwert. Wer wissen will, wie es ihm geht, öffnet eine andere App.</p>
+      </div>
+      <div class="fakt">
+        <h4>Datenmodell</h4>
+        <p>Abgleichläufe und Übertragungen als Objekte. Lücken in der
+        Messungsnummer als eigenes Objekt mit Zustand — nie gelesen, vermutlich
+        überschrieben, noch holbar.</p>
+      </div>
+      <div class="fakt kosten">
+        <h4>Was es kostet</h4>
+        <p>Die App hört auf, ein Tagebuch zu sein. Alles, was in dieser Sitzung
+        an Gestaltung entstanden ist, wäre gegenstandslos — es gibt keinen
+        Bildschirm mehr, auf dem ein Blutdruckwert groß dasteht.</p>
+      </div>
+    </div>
+    <p class="fuer"><b>Besser für:</b> Wer seine Gesundheitsdaten ohnehin in
+    Health Connect oder einer anderen App führt und Sphygma nur als sauberen,
+    kontofreien Treiber für das Omron-Gerät haben will. Der ehrlichste Entwurf,
+    gemessen am ursprünglichen Motiv — und der sprödeste.</p>
+  </section>
+
+  <section class="konzept bestand">
+    <div class="k-kopf">
+      <p class="k-nr">Quer zu allen sieben</p>
+      <h2 class="k-name">Die Geräteuhr</h2>
+      <p>Sie geht nachweislich falsch, lässt sich per Bluetooth weder stellen
+      noch verlässlich lesen, und der Nutzer merkt es oft erst spät. Jedes
+      Konzept, das auf Kalenderzeit baut, erbt diesen Fehler — und das sind fast
+      alle:</p>
+    </div>
+    <div class="fakten">
+      <div class="fakt">
+        <h4>Trifft es hart</h4>
+        <p><b>1 Messung und Filter</b>, <b>2 Sieben Tage</b>, <b>6 Das
+        Auffällige</b>: Zeitraum, Kalenderwoche und Ereignisdatum stehen und
+        fallen mit der Gerätezeit. Eine falsch datierte Messung fällt aus jedem
+        Zeitraum heraus.</p>
+      </div>
+      <div class="fakt">
+        <h4>Trifft es anders</h4>
+        <p><b>3 Tagesprofil</b> braucht keine Kalenderzeit, aber die
+        <em>Uhrzeit</em> — und die ist bei falscher Uhr genauso falsch.
+        <b>4 Messanlass</b> gruppiert über die Messungsnummer und Zeitnähe und
+        kommt mit einem Zeitversatz zurecht, solange er gleichmäßig ist.
+        <b>5 Phase</b> muss sich zwischen zwei fehlbaren Ankern entscheiden.</p>
+      </div>
+      <div class="fakt kosten">
+        <h4>Trifft es kaum</h4>
+        <p><b>7 Übertragung</b> ordnet nach der Messungsnummer des Geräts. Die
+        ist lückenlos und fälschungssicher, weil sie vom Zähler kommt und nicht
+        von der Uhr. Das Konzept, das am wenigsten zeigt, ist das einzige, dem
+        die falsche Uhr nichts anhaben kann.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="konzept bestand">
+    <div class="k-kopf">
+      <p class="k-nr">Danach</p>
+      <h2 class="k-name">Wie es weitergeht</h2>
+      <p>Diese Frage steht <strong>vor</strong> der Gestaltungsfrage. Die sechs
+      Handschriften zeichnen alle einen „Heute"-Bildschirm und einen Verlauf mit
+      Zeitraumfilter — beides gibt es nur in Konzept&nbsp;1. Fällt die Wahl
+      anders aus, sind sie in ihrer jetzigen Form gegenstandslos; die Farbwelten
+      und Formsprachen bleiben brauchbar, die Bildschirme nicht.</p>
+      <p>Konzepte lassen sich auch mischen — ein Grundkonzept mit einer
+      Nebenansicht aus einem anderen. Sinnvoll ist das nur, wenn das Grundkonzept
+      vorher feststeht, sonst entsteht wieder das, was heute da ist: eine Liste
+      mit Filtern, ohne ausgesprochene Absicht.</p>
+    </div>
+    <div class="merk">
+      Nichts davon ist gebaut. Konzept 1 ist der aktuelle Code, Konzept 2 liegt
+      als eigene Tafel vor, die Konzepte 3 bis 7 sind Entwurf.
+    </div>
+  </section>
+
+</div>

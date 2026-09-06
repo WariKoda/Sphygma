@@ -1,0 +1,2133 @@
+<title>Sechs Handschriften</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;600&family=Geist:wght@300;400;500;600&family=Inter:wght@200;300;400;500;600&family=Nunito:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap">
+
+<style>
+  /* ══ Rahmen ══════════════════════════════════════════════════════════
+     Die Seite ist eine Musterkarte. Sie tritt zurueck, damit die neun
+     Entwuerfe darin ihre eigenen Farbwelten behalten koennen. */
+
+  :root {
+    --ground:    #EDEEF0;
+    --panel:     #FFFFFF;
+    --ink:       #16191D;
+    --ink-soft:  #5A6169;
+    --ink-faint: #8B929A;
+    --rule:      #D5D8DD;
+    --accent:    #8C2F39;
+    --accent-bg: #F6E9EA;
+
+    --step-0: 0.9375rem;
+    --step-1: 1.0625rem;
+    --step-2: 1.375rem;
+    --step-3: 2rem;
+    --step-4: 2.75rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:    #14171A;
+      --panel:     #1C2025;
+      --ink:       #E8EAED;
+      --ink-soft:  #9AA1A9;
+      --ink-faint: #6E767F;
+      --rule:      #2C3138;
+      --accent:    #D4767E;
+      --accent-bg: #2A1B1E;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:    #14171A;
+    --panel:     #1C2025;
+    --ink:       #E8EAED;
+    --ink-soft:  #9AA1A9;
+    --ink-faint: #6E767F;
+    --rule:      #2C3138;
+    --accent:    #D4767E;
+    --accent-bg: #2A1B1E;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+    font-size: var(--step-0);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .wrap {
+    max-width: 1900px;
+    margin: 0 auto;
+    padding: 48px 24px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 56px;
+  }
+
+  .lede { display: flex; flex-direction: column; gap: 14px; max-width: 62ch; }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0;
+  }
+
+  h1 {
+    font-size: var(--step-4);
+    font-weight: 300;
+    letter-spacing: -0.025em;
+    line-height: 1.08;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  h2 {
+    font-size: var(--step-2);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  p { margin: 0; color: var(--ink-soft); }
+  p strong { color: var(--ink); font-weight: 600; }
+
+  .note {
+    border-left: 2px solid var(--accent);
+    background: var(--accent-bg);
+    padding: 14px 18px;
+    font-size: var(--step-0);
+    color: var(--ink);
+  }
+
+  /* ══ Matrix ══════════════════════════════════════════════════════════
+     Drei Spalten = drei Handschriften, drei Zeilen = drei Bereiche.
+     Die Anordnung ist die Aussage: spaltenweise lesen heisst eine
+     Handschrift durchgehen, zeilenweise vergleichen. */
+
+  .matrix { display: flex; flex-direction: column; gap: 44px; }
+
+  .band { display: flex; flex-direction: column; gap: 18px; }
+
+  .band-head {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 10px;
+  }
+
+  .band-head h2 { font-size: var(--step-1); }
+  .band-head .hint { font-size: 0.8125rem; color: var(--ink-faint); }
+
+  .rank {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  @media (max-width: 1860px) {
+    .rank { grid-template-columns: repeat(3, minmax(0, 1fr)); justify-items: center; }
+  }
+
+  @media (max-width: 1000px) {
+    .rank { grid-template-columns: repeat(2, minmax(0, 1fr)); justify-items: center; }
+  }
+
+  @media (max-width: 680px) {
+    .rank { grid-template-columns: 1fr; }
+  }
+
+  .slot { display: flex; flex-direction: column; gap: 10px; max-width: 288px; }
+
+  .frame {
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 12px 30px rgb(0 0 0 / 0.20), 0 2px 6px rgb(0 0 0 / 0.12);
+  }
+
+  .cap {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+  }
+  .cap b { color: var(--ink-soft); font-weight: 500; }
+
+  /* ══ Gemeinsames Geruest der Bildschirme ═════════════════════════════
+     Jeder .screen setzt Grund und Schrift selbst - die Entwuerfe sind
+     eigene Farbwelten und duerfen nicht vom Seiten-Theme kippen. */
+
+  .screen {
+    min-height: 508px;
+    padding: 20px 17px;
+    box-sizing: border-box;
+    font-size: 13px;
+    line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .screen .grow { flex: 1; }
+
+  .nav {
+    display: flex;
+    margin-top: 16px;
+    padding-top: 9px;
+    font-size: 10px;
+    text-align: center;
+  }
+  .nav div { flex: 1; }
+
+  /* ── A: Messinstrument ──────────────────────────────────────────────
+     Linien statt Flaechen. Ziffern tabellarisch, Weissraum als
+     Gliederung. Farbe erscheint nur auf dem Einordnungsband. */
+
+  .a {
+    background: #FAF9F7;
+    color: #1B1B1A;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+  .a .eyebrow-s {
+    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: #1B1B1AA0; margin-bottom: 18px;
+  }
+  .a .big {
+    font-size: 58px; font-weight: 300; line-height: 0.94;
+    letter-spacing: -0.03em; font-variant-numeric: tabular-nums;
+  }
+  .a .big small { font-size: 24px; opacity: 0.38; margin: 0 3px; }
+  .a .unit { font-size: 11px; color: #1B1B1A80; margin-top: 7px; letter-spacing: 0.05em; }
+  .a .band-bar {
+    margin: 20px 0 5px; height: 3px; position: relative;
+    background: linear-gradient(90deg, #7EA77E 0 38%, #C9B45E 38% 62%, #C07D5A 62% 100%);
+  }
+  .a .band-bar i { position: absolute; top: -4px; left: 58%; width: 2px; height: 11px; background: #1B1B1A; }
+  .a .verdict { font-size: 12px; padding: 12px 0 18px; border-bottom: 1px solid #E4E1DB; }
+  .a .row {
+    display: flex; justify-content: space-between; font-size: 12px;
+    padding: 11px 0; border-bottom: 1px solid #EFEDE8;
+    font-variant-numeric: tabular-nums;
+  }
+  .a .row span:last-child { color: #1B1B1A70; }
+  .a .sec {
+    font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: #1B1B1A70; margin: 20px 0 4px;
+  }
+  .a .foot { margin-top: 16px; font-size: 10px; color: #1B1B1A66; }
+  .a .seg { display: flex; gap: 5px; }
+  .a .seg div {
+    flex: 1; text-align: center; font-size: 11px; padding: 5px 0;
+    border: 1px solid #DDD9D2; border-radius: 3px;
+  }
+  .a .seg .on { background: #1B1B1A; color: #FAF9F7; border-color: #1B1B1A; }
+  .a .kv {
+    display: flex; justify-content: space-between; font-size: 12px;
+    padding: 10px 0; border-bottom: 1px solid #EFEDE8;
+    font-variant-numeric: tabular-nums;
+  }
+  .a .kv b { font-weight: 500; }
+  .a .btn {
+    border: 1px solid #1B1B1A; border-radius: 3px; padding: 8px;
+    text-align: center; font-size: 11px; margin-top: 9px;
+  }
+  .a .btn.f { background: #1B1B1A; color: #FAF9F7; }
+  .a .nav { border-top: 1px solid #E4E1DB; }
+  .a .nav div { color: #1B1B1A55; }
+  .a .nav .on { color: #1B1B1A; font-weight: 600; }
+
+  /* ── B: Tagebuch ────────────────────────────────────────────────────
+     Flaechen statt Linien. Der Wert sitzt auf einer farbigen Karte,
+     alles Weitere in weissen Karten mit weichem Schatten. */
+
+  .b {
+    background: #F2F5FB;
+    color: #182034;
+    font-family: 'Nunito', ui-rounded, ui-sans-serif, system-ui, sans-serif;
+  }
+  .b .hi { font-size: 14px; font-weight: 700; margin-bottom: 13px; }
+  .b .hero {
+    background: linear-gradient(145deg, #4F7FD8, #7D5FD0);
+    border-radius: 22px; padding: 20px 19px; color: #fff;
+    box-shadow: 0 8px 20px rgb(79 127 216 / 0.30);
+  }
+  .b .hero .lbl { font-size: 11px; opacity: 0.86; }
+  .b .hero .big {
+    font-size: 48px; font-weight: 700; line-height: 1.05;
+    letter-spacing: -0.02em; margin: 3px 0 1px;
+    font-variant-numeric: tabular-nums;
+  }
+  .b .pill {
+    display: inline-block; margin-top: 9px; background: rgb(255 255 255 / 0.24);
+    border-radius: 999px; padding: 4px 12px; font-size: 11px; font-weight: 700;
+  }
+  .b .duo { display: flex; gap: 10px; margin-top: 12px; }
+  .b .trio { display: flex; gap: 8px; margin-top: 12px; }
+  .b .mini {
+    flex: 1; background: #fff; border-radius: 16px; padding: 12px;
+    box-shadow: 0 2px 8px rgb(24 32 52 / 0.07);
+  }
+  .b .mini .k { font-size: 10px; color: #182034A0; font-weight: 600; }
+  .b .mini .v {
+    font-size: 19px; font-weight: 700; margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .b .trio .mini .v { font-size: 15px; }
+  .b .card {
+    background: #fff; border-radius: 18px; margin-top: 12px; padding: 14px 15px;
+    box-shadow: 0 2px 8px rgb(24 32 52 / 0.07);
+  }
+  .b .card.tight { padding: 4px 15px; }
+  .b .li {
+    display: flex; justify-content: space-between; padding: 10px 0;
+    font-size: 13px; font-weight: 600; border-bottom: 1px solid #EEF1F7;
+    font-variant-numeric: tabular-nums;
+  }
+  .b .li:last-child { border: 0; }
+  .b .li span:last-child { color: #18203480; font-size: 11px; font-weight: 400; }
+  .b .pills { display: flex; gap: 6px; }
+  .b .pills div {
+    flex: 1; text-align: center; font-size: 11px; font-weight: 700;
+    padding: 6px 0; border-radius: 999px; background: #fff; color: #182034A0;
+    box-shadow: 0 1px 4px rgb(24 32 52 / 0.06);
+  }
+  .b .pills .on { background: #4F7FD8; color: #fff; }
+  .b .kv {
+    display: flex; justify-content: space-between; font-size: 12px;
+    padding: 9px 0; border-bottom: 1px solid #EEF1F7;
+  }
+  .b .kv:last-child { border: 0; }
+  .b .kv b { font-weight: 700; }
+  .b .btn {
+    background: #4F7FD8; color: #fff; border-radius: 999px; padding: 11px;
+    text-align: center; font-size: 12px; font-weight: 700; margin-top: 12px;
+    box-shadow: 0 4px 12px rgb(79 127 216 / 0.28);
+  }
+  .b .btn.ghost {
+    background: #fff; color: #4F7FD8; box-shadow: 0 1px 4px rgb(24 32 52 / 0.07);
+  }
+  .b .nav div { color: #18203466; font-weight: 600; }
+  .b .nav .on { color: #4F7FD8; }
+  .b .sec { font-size: 11px; font-weight: 700; color: #18203490; margin: 14px 0 0; }
+
+  /* ── C: Material 3 ──────────────────────────────────────────────────
+     Systemvorgaben: Karten in Sekundaerfarbe, Chips, ein Extended FAB
+     als klare Hauptaktion. */
+
+  .c {
+    background: #FEF7FF;
+    color: #1D1B20;
+    font-family: 'Roboto', ui-sans-serif, system-ui, sans-serif;
+  }
+  .c .top { font-size: 20px; font-weight: 400; margin-bottom: 16px; }
+  .c .card { background: #E8DEF8; border-radius: 12px; padding: 17px; }
+  .c .card .lbl { font-size: 11px; color: #4A4458; }
+  .c .card .big {
+    font-size: 42px; font-weight: 400; line-height: 1.1; margin: 5px 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .c .chip-o {
+    display: inline-block; border: 1px solid #79747E; border-radius: 8px;
+    padding: 4px 11px; font-size: 11px; margin-top: 5px;
+  }
+  .c .card2 {
+    background: #F7F2FA; border-radius: 12px; padding: 15px; margin-top: 11px;
+  }
+  .c .li {
+    display: flex; justify-content: space-between; padding: 10px 0;
+    font-size: 13px; border-bottom: 1px solid #E7E0EC;
+    font-variant-numeric: tabular-nums;
+  }
+  .c .li:last-child { border: 0; }
+  .c .li span:last-child { color: #49454F; font-size: 11px; }
+  .c .fab {
+    margin-top: 14px; background: #6750A4; color: #fff; border-radius: 16px;
+    padding: 13px; text-align: center; font-size: 13px; font-weight: 500;
+  }
+  .c .chips { display: flex; gap: 7px; }
+  .c .chips div {
+    flex: 1; text-align: center; font-size: 11px; padding: 5px 0;
+    border: 1px solid #79747E; border-radius: 8px; color: #49454F;
+  }
+  .c .chips .on { background: #E8DEF8; border-color: #E8DEF8; color: #1D192B; }
+  .c .sec {
+    font-size: 11px; color: #6750A4; font-weight: 500; margin: 14px 0 6px;
+  }
+  .c .kv {
+    display: flex; justify-content: space-between; font-size: 13px; padding: 11px 0;
+  }
+  .c .kv + .kv { border-top: 1px solid #E7E0EC; }
+  .c .kv b { font-weight: 500; }
+  .c .btn-t {
+    border: 1px solid #79747E; border-radius: 20px; padding: 9px;
+    text-align: center; font-size: 12px; color: #6750A4; margin-top: 9px;
+  }
+  .c .nav div { color: #49454F; }
+  .c .nav .on { color: #1D192B; font-weight: 500; }
+  .c .nav .on span {
+    background: #E8DEF8; border-radius: 999px; padding: 2px 12px; display: inline-block;
+  }
+
+
+  /* ── D: Aura ────────────────────────────────────────────────────────
+     Dunkel, tonal, ohne Trennlinien. Die Gliederung entsteht aus
+     Flaechen, die sich um eine Stufe vom Grund abheben, und aus Luft.
+     Leitfarbe Indigo fuer Bedienbares, Salbei fuer unauffaellige Werte,
+     Bernstein fuer Hinweise. Nach Vorgabe des Nutzers, 2026-09-05. */
+
+  .d {
+    background: #14181F;
+    color: #E8ECF2;
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.006em;
+  }
+  .d .eyebrow-s {
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: #94A0B0; margin-bottom: 4px;
+  }
+
+  /* Eine Stufe ueber dem Grund. Der feine helle Rand ist der einzige
+     Rest von Glas - ohne Bild dahinter traegt echter Blur nichts. */
+  .d .pane {
+    background: rgb(255 255 255 / 0.045);
+    border: 1px solid rgb(255 255 255 / 0.07);
+    border-radius: 20px;
+    padding: 17px 16px;
+  }
+  .d .pane.deep { background: rgb(255 255 255 / 0.025); border-radius: 16px; }
+  .d .pane + .pane { margin-top: 11px; }
+
+  .d .big {
+    font-size: 58px; font-weight: 200; line-height: 0.94;
+    letter-spacing: -0.035em; font-variant-numeric: tabular-nums;
+    margin-top: 2px;
+  }
+  .d .big small { font-size: 24px; color: #94A0B0; margin: 0 4px; }
+  .d .unit { font-size: 11px; color: #94A0B0; margin-top: 8px; }
+
+  .d .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgb(143 184 154 / 0.16); color: #A8CDB2;
+    border-radius: 999px; padding: 5px 12px; font-size: 11px; font-weight: 500;
+    margin-top: 12px;
+  }
+  .d .chip i {
+    width: 5px; height: 5px; border-radius: 50%; background: #8FB89A; display: block;
+  }
+
+  .d .sec {
+    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #6E7A8A; margin: 16px 0 7px;
+  }
+
+  /* Listenzeilen ohne Trennlinie - Luft statt Strich. */
+  .d .li {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 8px 0; font-size: 13px; font-variant-numeric: tabular-nums;
+  }
+  .d .li span:last-child { color: #94A0B0; font-size: 11px; }
+  .d .li.warn span:last-child { color: #D9A55C; }
+
+  .d .kv {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 8px 0; font-size: 12px; font-variant-numeric: tabular-nums;
+  }
+  .d .kv span { color: #94A0B0; }
+  .d .kv b { font-weight: 500; color: #E8ECF2; }
+
+  .d .lastline {
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .d .lastline .k { font-size: 10px; color: #6E7A8A; }
+  .d .lastline .v { font-size: 15px; font-weight: 400; font-variant-numeric: tabular-nums; }
+
+  .d .chips { display: flex; gap: 5px; }
+  .d .chips div {
+    flex: 1; text-align: center; font-size: 9px; padding: 7px 1px;
+    border-radius: 999px; color: #94A0B0;
+    background: rgb(255 255 255 / 0.04);
+  }
+  .d .chips .on { background: #6C5CE7; color: #fff; font-weight: 500; }
+
+  .d .btn {
+    background: #6C5CE7; color: #fff; border-radius: 14px; padding: 12px;
+    text-align: center; font-size: 12px; font-weight: 500; margin-top: 11px;
+  }
+  .d .btn.ghost {
+    background: rgb(255 255 255 / 0.05); color: #B6AEFA;
+  }
+
+  .d .note-s {
+    border-left: 0; border-radius: 14px; margin-top: 11px;
+    background: rgb(217 165 92 / 0.12); color: #E2C08A;
+    padding: 11px 13px; font-size: 11px; line-height: 1.5;
+  }
+  .d .note-s b { color: #F0D4A6; }
+
+  .d .empty .t { color: #E8ECF2; }
+  .d .empty .s { font-size: 11px; color: #94A0B0; }
+
+  .d .foot { margin-top: 14px; font-size: 10px; color: #6E7A8A; }
+
+  .d .nav { border-top: 1px solid rgb(255 255 255 / 0.06); }
+  .d .nav div { color: #6E7A8A; }
+  .d .nav .on { color: #B6AEFA; font-weight: 500; }
+
+
+  /* ── E: Pulse Grid ──────────────────────────────────────────────────
+     Datenraster statt Karten. Gegliedert wird durch Spalten, Weissraum
+     und kurze Fuehrungslinien; Flaechen gibt es fast keine. Zahlen sind
+     das Raster: SYS, DIA und Puls stehen in festen Spalten. Aktionen
+     sehen aus wie Befehle - Zeile mit Pfeil, Linie oben und unten.
+     Nach Vorgabe des Nutzers, 2026-09-05. */
+
+  .e {
+    background: #F5F6F4;
+    color: #171A1C;
+    font-family: 'Geist', ui-sans-serif, system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
+  .e .hi { font-size: 13px; color: #6C7377; margin-bottom: 16px; }
+  .e .sec {
+    font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: #6C7377; margin: 18px 0 8px;
+  }
+  .e .sec:first-child { margin-top: 0; }
+
+  /* Der Messwert als zwei gleichwertige Bloecke, nicht als 124/85. */
+  .e .duo-num { display: flex; gap: 26px; align-items: flex-start; }
+  .e .num { display: flex; flex-direction: column; }
+  .e .num b {
+    font-size: 52px; font-weight: 300; line-height: 0.9;
+    letter-spacing: -0.035em;
+  }
+  .e .num i {
+    font-style: normal; font-size: 9px; letter-spacing: 0.16em;
+    color: #6C7377; margin-top: 7px;
+  }
+  .e .mm { font-size: 10px; color: #6C7377; margin-top: 10px; letter-spacing: 0.05em; }
+
+  .e .lead { height: 1px; background: #DEE0DC; margin: 13px 0 10px; }
+  .e .lead.short { width: 34px; height: 2px; background: #087F78; margin: 12px 0 10px; }
+
+  .e .state { display: flex; align-items: center; gap: 7px; font-size: 12px; }
+  .e .state i { width: 6px; height: 6px; border-radius: 50%; background: #087F78; display: block; }
+  .e .meta { font-size: 11px; color: #6C7377; margin-top: 5px; }
+
+  /* Datentabelle: feste Spalten fuer SYS, DIA, Puls. */
+  .e .grid-head, .e .grid-row {
+    display: grid; grid-template-columns: 1fr 42px 42px 42px;
+    align-items: baseline; column-gap: 4px;
+  }
+  .e .grid-head {
+    font-size: 9px; letter-spacing: 0.14em; color: #6C7377;
+    padding-bottom: 6px; border-bottom: 1px solid #DEE0DC;
+  }
+  .e .grid-row { font-size: 13px; padding: 9px 0; }
+  .e .grid-row span:first-child { color: #6C7377; font-size: 11px; }
+  .e .grid-head span:not(:first-child), .e .grid-row span:not(:first-child) {
+    text-align: right;
+  }
+  .e .grid-row.warn span:first-child { color: #C2701C; }
+
+  /* Zeitraum als typografische Tabs, aktiver mit 2 px Unterstrich. */
+  .e .tabs-t { display: flex; gap: 11px; font-size: 11px; color: #6C7377; }
+  .e .tabs-t div { padding-bottom: 6px; }
+  .e .tabs-t .on {
+    color: #171A1C; font-weight: 500; box-shadow: inset 0 -2px 0 #087F78;
+  }
+
+  /* Aktion als Befehlszeile. */
+  .e .cmd {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px; padding: 15px 0; margin-top: 12px;
+    border-top: 1px solid #DEE0DC; border-bottom: 1px solid #DEE0DC;
+  }
+  .e .cmd b { font-weight: 500; }
+  .e .cmd span { color: #087F78; }
+  .e .cmd + .cmd { margin-top: -1px; }
+  .e .cmd.quiet b { color: #6C7377; font-weight: 400; }
+
+  /* Geraetezustand als Zeitstrahl. */
+  .e .tl { position: relative; padding-left: 18px; }
+  .e .tl::before {
+    content: ''; position: absolute; left: 3px; top: 6px; bottom: 6px;
+    width: 1px; background: #DEE0DC;
+  }
+  .e .tl-item { position: relative; padding: 7px 0; }
+  .e .tl-item::before {
+    content: ''; position: absolute; left: -18px; top: 12px;
+    width: 7px; height: 7px; border-radius: 50%; background: #087F78;
+  }
+  .e .tl-item .t { font-size: 12px; }
+  .e .tl-item .s { font-size: 11px; color: #6C7377; }
+
+  .e .bar { height: 5px; background: #E3E5E1; margin: 9px 0 2px; }
+  .e .bar i { display: block; height: 5px; background: #087F78; }
+
+  .e .note-s {
+    border-left: 3px solid #C2701C; background: none; padding: 2px 0 2px 12px;
+    margin: 14px 0 0; font-size: 11px; line-height: 1.5; color: #171A1C;
+  }
+  .e .note-s b { color: #C2701C; display: block; margin-bottom: 4px; }
+
+  .e .kv-stack { padding: 9px 0; }
+  .e .kv-stack .k {
+    font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: #6C7377;
+  }
+  .e .kv-stack .v { font-size: 13px; margin-top: 2px; }
+
+  .e .empty { padding: 34px 0 26px; text-align: left; }
+  .e .empty .t { font-size: 13px; color: #171A1C; }
+  .e .empty .s { font-size: 11px; color: #6C7377; margin-top: 5px; }
+
+  .e .foot-duo { display: flex; gap: 26px; margin-top: 14px; }
+  .e .foot-duo div .n { font-size: 15px; font-weight: 400; }
+  .e .foot-duo div .l { font-size: 9px; letter-spacing: 0.12em; color: #6C7377; }
+
+  /* Navigation: Akzentlinie ueber dem aktiven Eintrag, keine Pillen. */
+  .e .nav { border-top: 1px solid #DEE0DC; padding-top: 0; }
+  .e .nav div {
+    color: #6C7377; padding-top: 9px; border-top: 2px solid transparent;
+    margin-top: -1px;
+  }
+  .e .nav .on { color: #171A1C; font-weight: 500; border-top-color: #087F78; }
+
+
+  /* ── F: Pegel ───────────────────────────────────────────────────────
+     Ganzflaechige Baender ohne Rand, Schatten oder Abstand; ein
+     Abschnitt endet, wo die Flaeche ihren Ton wechselt. Die
+     Einordnung faerbt die Kopfflaeche selbst. Entwurf des Nutzers,
+     2026-09-05, uebernommen aus docs/design/pegel.html. */
+
+  .f {
+    --ink:#16211F;
+    --ink-soft:#6B7671;
+    --paper:#ECEEEB;
+    --flaeche:#FFFFFF;
+    --signal:#0E5C4C;
+    --signal-soft:#DFE6E2;
+    --ton-normal:#D9E5E0;
+    --ton-hochnormal:#EFE1C9;
+    --warn-flaeche:#F3E4CB;
+    --warn-text:#7A4A05;
+  }
+
+  .f.pg-scr {
+    display: flex; flex-direction: column; min-height: 640px;
+    color: var(--ink); background: var(--paper);
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 15px; line-height: 1.45;
+    font-variant-numeric: tabular-nums;
+    /* Baender reichen ueber die volle Breite - deshalb kein Innenabstand,
+       anders als bei den uebrigen Handschriften. */
+    padding: 0;
+  }
+  .f * { box-sizing: border-box; }
+  .f .pg-grow {flex:1 1 auto; background:var(--paper);}
+  .f .pg-b {padding:18px 20px;}
+  .f .pg-b.pg-w {background:var(--flaeche);}
+  .f .pg-b.pg-p {background:var(--paper);}
+  .f .pg-b.pg-tight {padding-top:12px; padding-bottom:12px;}
+  .f .pg-head {padding:24px 20px 22px;}
+  .f .pg-head.pg-normal {background:var(--ton-normal);}
+  .f .pg-head.pg-hoch {background:var(--ton-hochnormal);}
+  .f .pg-lab {font-size:13px; color:var(--ink-soft); margin:0 0 6px;}
+  .f .pg-head .pg-lab {color:#4A5652;}
+  .f .pg-zahl {font-size:62px; line-height:.92; font-weight:600; letter-spacing:-.035em; margin:0;}
+  .f .pg-zahl .pg-slash {font-weight:400; color:#4A5652;}
+  .f .pg-head-foot {display:flex; justify-content:space-between; align-items:flex-end; margin-top:12px; gap:12px;}
+  .f .pg-head-foot .pg-meta {font-size:13.5px; color:#4A5652;}
+  .f .pg-einordnung {font-size:19px; font-weight:600; letter-spacing:-.01em;}
+  .f .pg-r {display:flex; justify-content:space-between; align-items:baseline; gap:14px; padding:8px 0;}
+  .f .pg-r:first-child {padding-top:0;}
+  .f .pg-r:last-child {padding-bottom:0;}
+  .f .pg-r .pg-k {color:var(--ink-soft); font-size:14.5px;}
+  .f .pg-r .pg-v {font-weight:600;}
+  .f .pg-r .pg-v.pg-plain {font-weight:400; color:var(--ink-soft); font-size:14px;}
+  .f .pg-sub {font-size:12.5px; color:var(--warn-text); margin:-2px 0 6px;}
+  .f .pg-fuss {font-size:13px; color:var(--ink-soft);}
+  .f .pg-act {display:block; width:100%; border:0; text-align:center; padding:17px 16px;
+       font:inherit; font-weight:600; font-size:15px; background:var(--signal); color:#fff; cursor:default;}
+  .f .pg-act.pg-sec {background:var(--signal-soft); color:var(--ink);}
+  .f .pg-act.pg-dis {background:#E3E6E3; color:#9AA5A0;}
+  .f .pg-txtact {color:var(--signal); font-weight:600; font-size:14.5px; border-bottom:2px solid var(--signal); padding-bottom:1px;}
+  .f .pg-seg {display:flex; gap:16px; background:var(--flaeche); padding:14px 20px 0;}
+  .f .pg-seg span {font-size:14px; color:var(--ink-soft); padding-bottom:9px; border-bottom:3px solid transparent;}
+  .f .pg-seg span.pg-on {color:var(--ink); font-weight:600; border-bottom-color:var(--signal);}
+  .f .pg-kz {display:flex; gap:16px;}
+  .f .pg-kz div {flex:1;}
+  .f .pg-kz .pg-k {font-size:13px; color:var(--ink-soft);}
+  .f .pg-kz .pg-v {font-size:19px; font-weight:600; letter-spacing:-.02em; margin-top:2px;}
+  .f .pg-kz .pg-p {font-size:12.5px; color:var(--ink-soft);}
+  .f .pg-tag {font-size:13px; color:var(--ink-soft); margin:0 0 6px;}
+  .f .pg-hinweis {background:var(--warn-flaeche); color:var(--warn-text); padding:18px 20px;}
+  .f .pg-hinweis b {display:block; color:#5C3803; font-weight:600; margin-bottom:4px;}
+  .f .pg-hinweis p {margin:0; font-size:13.5px; line-height:1.45;}
+  .f .pg-leer {background:var(--paper); padding:28px 20px;}
+  .f .pg-leer h3 {margin:0 0 6px; font-size:19px; font-weight:600; letter-spacing:-.01em;}
+  .f .pg-leer p {margin:0; color:var(--ink-soft); font-size:14.5px;}
+  .f .pg-nav {display:flex; background:var(--ink);}
+  .f .pg-nav span {flex:1; text-align:center; padding:14px 4px 15px; font-size:12.5px; color:#8FA09B; border-top:3px solid transparent;}
+  .f .pg-nav span.pg-on {color:#fff; font-weight:600; border-top-color:#4FBFA3;}
+  .f .pg-bt {vertical-align:-2px; margin-right:8px;}
+
+  /* ══ Regeltafel ══════════════════════════════════════════════════════ */
+
+  .rules {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+  @media (max-width: 1400px) { .rules { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 900px) { .rules { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 620px) { .rules { grid-template-columns: 1fr; } }
+
+  .rule-card {
+    background: var(--panel);
+    padding: 20px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .rule-card h3 {
+    margin: 0; font-size: var(--step-0); font-weight: 600;
+  }
+  .rule-card dl { margin: 0; display: flex; flex-direction: column; gap: 9px; }
+  .rule-card dt {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.6875rem; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .rule-card dd {
+    margin: 2px 0 0; font-size: 0.875rem; color: var(--ink-soft); line-height: 1.5;
+  }
+
+  .swatch { display: flex; gap: 5px; }
+  .swatch i {
+    width: 22px; height: 22px; border-radius: 3px; display: block;
+    border: 1px solid rgb(0 0 0 / 0.12);
+  }
+
+  table { border-collapse: collapse; width: 100%; font-size: 0.875rem; }
+  .scroller { overflow-x: auto; }
+  th, td {
+    text-align: left; padding: 10px 14px 10px 0; border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  th {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.6875rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-faint); font-weight: 400;
+  }
+  td strong { font-weight: 600; }
+  td code {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 0.8125em; color: var(--accent);
+  }
+
+  /* ── Nachtrag: Bausteine aus dem UX-Gutachten ───────────────────────
+     Alter der Messung, Kennzeichnung fraglicher Geraetezeit, das
+     Abgleich-Symbol. Diese Bausteine gibt es in jeder Handschrift - sie
+     unterscheiden sich in der Form, nie in der Funktion. */
+
+  .age { opacity: 0.62; }
+  .warn-row { display: flex; align-items: center; gap: 6px; }
+  .warn-mark { flex: none; }
+
+  .a .lastline { padding: 13px 0 0; font-size: 12px; }
+  .a .lastline .k {
+    font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: #1B1B1A70; margin-bottom: 3px;
+  }
+  .a .lastline .v { font-variant-numeric: tabular-nums; }
+
+  .b .lastline {
+    background: #fff; border-radius: 16px; margin-top: 12px; padding: 11px 14px;
+    box-shadow: 0 2px 8px rgb(24 32 52 / 0.07);
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .b .lastline .k { font-size: 10px; color: #182034A0; font-weight: 600; }
+  .b .lastline .v { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  .c .lastline {
+    background: #F7F2FA; border-radius: 12px; padding: 12px 15px; margin-top: 11px;
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .c .lastline .k { font-size: 11px; color: #49454F; }
+  .c .lastline .v { font-size: 15px; font-variant-numeric: tabular-nums; }
+
+  .empty { text-align: center; padding: 26px 8px; }
+  .empty .t { font-size: 12px; margin-bottom: 4px; }
+  .a .empty .t { color: #1B1B1A; }
+  .a .empty .s { font-size: 11px; color: #1B1B1A80; }
+  .b .empty .t { color: #182034; font-weight: 700; }
+  .b .empty .s { font-size: 11px; color: #18203490; }
+  .c .empty .t { color: #1D1B20; }
+  .c .empty .s { font-size: 11px; color: #49454F; }
+
+  .a .seg.five div { font-size: 9px; padding: 5px 1px; }
+  .b .pills.five div { font-size: 9px; padding: 6px 1px; }
+  .c .chips.five div { font-size: 9px; padding: 5px 1px; }
+
+  .note-s {
+    border-left: 2px solid #C4703F; background: #FDF6F1;
+    padding: 9px 11px; margin: 13px 0 0; font-size: 11px; line-height: 1.45;
+    color: #1B1B1A;
+  }
+  .b .note-s {
+    border-left: 0; border-radius: 14px; background: #FFF4E8; color: #4A3520;
+  }
+  .c .note-s {
+    border-left: 0; border-radius: 12px; background: #FFD8E4; color: #31111D;
+  }
+
+</style>
+
+<div class="wrap">
+
+  <header class="lede">
+    <p class="eyebrow">Sphygma · Sechste Fassung, 2026-09-05</p>
+    <h1>Sechs Handschriften, dreißig Bildschirme</h1>
+    <p>Überarbeitet nach zwei UX-Gutachten (<code>docs/design/ux-gutachten.md</code>).
+    Die erste Fassung hatte einen Fehler, den Codex fand: Die drei Handschriften
+    unterschieden sich dort in der <em>Funktion</em> — nur Material 3 hatte
+    „Alle Messungen ansehen", „Messinstrument" zeigte Bestandszahlen, wo
+    „Tagebuch" einen Schnitt zeigte. <strong>Eine Handschrift darf Layout und
+    Gewichtung ändern, niemals welche Aktionen es gibt.</strong> Das ist hier
+    korrigiert.</p>
+    <p>Zweite Änderung: Nicht die letzte Einzelmessung trägt die Hauptaussage,
+    sondern der Schnitt der letzten sieben Tage. Ein einzelner Blutdruckwert ist
+    medizinisch fast bedeutungslos — beide Gutachter kamen unabhängig darauf.
+    Die letzte Messung steht kleiner darunter, mit ihrem Alter.</p>
+    <p>Neu in dieser Fassung ist <strong>Aura</strong> — die einzige dunkle
+    Handschrift. Sie gliedert ohne eine einzige Linie: Flächen heben sich um
+    eine Tonstufe vom Grund ab, Luft ersetzt den Trennstrich. Indigo trägt
+    alles Bedienbare, Salbeigrün die unauffälligen Werte, Bernstein die
+    Hinweise.</p>
+    <p>Ebenfalls neu ist <strong>Pulse Grid</strong> — die einzige Handschrift
+    ohne Karten. Sie gliedert über Spalten: SYS, DIA und Puls stehen in festen
+    Positionen, ein Spaltenkopf ersetzt die wiederholten Einheiten, und Aktionen
+    sehen aus wie Befehle statt wie Knöpfe. Aura und Pulse Grid sind zwei
+    Antworten auf dieselbe Frage — welche bleibt, ist noch offen.</p>
+    <p>Dazu <strong>Pegel</strong> — ganzflächige Bänder statt Karten oder
+    Linien, und als einzige Handschrift färbt hier die Einordnung die
+    Kopffläche selbst. Der Bildschirm sagt seinen Zustand, bevor man die Zahl
+    gelesen hat. Übernommen aus <code>docs/design/pegel.html</code>.</p>
+    <p>Alle Werte stammen aus der Datenbank: 114 Messungen, zuletzt 128/87 bei
+    Puls 82, Wochenschnitt 124/85.</p>
+  </header>
+
+  <div class="matrix">
+
+    <!-- ════════ HEUTE ════════ -->
+    <section class="band">
+      <div class="band-head">
+        <h2>Heute</h2>
+        <span class="hint">Schnitt trägt die Aussage · Einzelwert als Rückmeldung darunter</span>
+      </div>
+      <div class="rank">
+
+        <div class="slot">
+          <div class="frame"><div class="screen a">
+            <div class="eyebrow-s">Letzte 7 Tage</div>
+            <div class="big">124<small>/</small>85</div>
+            <div class="unit">mmHg &nbsp;·&nbsp; Puls 81 &nbsp;·&nbsp; 12 Messungen</div>
+            <div class="band-bar"><i style="left:38%"></i></div>
+            <div class="verdict">Normal</div>
+            <div class="lastline">
+              <div class="k">Zuletzt übernommen · vor 10 Minuten</div>
+              <div class="v">128/87 &nbsp;·&nbsp; Puls 82 &nbsp;<span class="age">05.09. 23:57</span></div>
+            </div>
+            <div class="sec">Letzte Tage</div>
+            <div class="row"><span>126/90 · 95</span><span>gestern</span></div>
+            <div class="row"><span>126/84 · 84</span><span>gestern</span></div>
+            <div class="row"><span>133/91 · 78</span><span>18.04.2023 ⚠</span></div>
+            <div class="grow"></div>
+            <div class="foot">114 Messungen &nbsp;·&nbsp; 100 nicht übertragen</div>
+            <div class="nav"><div class="on">Heute</div><div>Verlauf</div><div>Gerät</div></div>
+          </div></div>
+          <p class="cap"><b>A</b> — Messinstrument</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen b">
+            <div class="hi">Guten Abend</div>
+            <div class="hero">
+              <div class="lbl">Letzte 7 Tage · 12 Messungen</div>
+              <div class="big">124/85</div>
+              <div class="lbl">Puls 81 · mmHg</div>
+              <div class="pill">Normal</div>
+            </div>
+            <div class="lastline">
+              <div>
+                <div class="k">Zuletzt übernommen · vor 10 Min</div>
+                <div class="k" style="font-weight:400">05.09. 23:57</div>
+              </div>
+              <div class="v">128/87 · 82</div>
+            </div>
+            <div class="sec">Letzte Tage</div>
+            <div class="card tight">
+              <div class="li"><span>126/90 · 95</span><span>gestern</span></div>
+              <div class="li"><span>126/84 · 84</span><span>gestern</span></div>
+              <div class="li"><span>133/91 · 78</span><span>18.04.2023 ⚠</span></div>
+            </div>
+            <div class="grow"></div>
+            <div class="foot" style="font-size:10px;color:#18203480;margin-top:12px">114 Messungen · 100 nicht übertragen</div>
+            <div class="nav"><div class="on">Heute</div><div>Verlauf</div><div>Gerät</div></div>
+          </div></div>
+          <p class="cap"><b>B</b> — Tagebuch</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen c">
+            <div class="top">Sphygma</div>
+            <div class="card">
+              <div class="lbl">Letzte 7 Tage · 12 Messungen</div>
+              <div class="big">124/85</div>
+              <div class="lbl">mmHg · Puls 81</div>
+              <div class="chip-o">Normal</div>
+            </div>
+            <div class="lastline">
+              <div>
+                <div class="k">Zuletzt übernommen · vor 10 Min</div>
+                <div class="k">05.09. 23:57</div>
+              </div>
+              <div class="v">128/87 · 82</div>
+            </div>
+            <div class="sec">Letzte Tage</div>
+            <div class="card2" style="margin-top:0;padding:4px 15px">
+              <div class="li"><span>126/90 · 95</span><span>gestern</span></div>
+              <div class="li"><span>126/84 · 84</span><span>gestern</span></div>
+              <div class="li"><span>133/91 · 78</span><span>18.04.2023 ⚠</span></div>
+            </div>
+            <div class="grow"></div>
+            <div class="foot" style="font-size:10px;color:#49454F;margin-top:12px">114 Messungen · 100 nicht übertragen</div>
+            <div class="nav"><div class="on"><span>Heute</span></div><div>Verlauf</div><div>Gerät</div></div>
+          </div></div>
+          <p class="cap"><b>C</b> — Material 3</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen d">
+            <div class="pane">
+              <div class="eyebrow-s">Letzte 7 Tage</div>
+              <div class="big">124<small>/</small>85</div>
+              <div class="unit">mmHg · Puls 81 · 12 Messungen</div>
+              <div class="chip"><i></i>Normal</div>
+            </div>
+            <div class="pane deep">
+              <div class="lastline">
+                <div>
+                  <div class="k">Zuletzt übernommen · vor 10 Min</div>
+                  <div class="k">05.09. 23:57</div>
+                </div>
+                <div class="v">128/87 · 82</div>
+              </div>
+            </div>
+            <div class="sec">Letzte Tage</div>
+            <div class="pane deep">
+              <div class="li"><span>126/90 · 95</span><span>gestern</span></div>
+              <div class="li"><span>126/84 · 84</span><span>gestern</span></div>
+              <div class="li warn"><span>133/91 · 78</span><span>18.04.2023 ⚠</span></div>
+            </div>
+            <div class="grow"></div>
+            <div class="foot">114 Messungen · 100 nicht übertragen</div>
+            <div class="nav"><div class="on">Heute</div><div>Verlauf</div><div>Gerät</div></div>
+          </div></div>
+          <p class="cap"><b>D</b> — Aura</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen e">
+            <div class="hi">Guten Abend</div>
+            <div class="sec" style="margin-top:0">Letzte 7 Tage</div>
+            <div class="duo-num">
+              <div class="num"><b>124</b><i>SYS</i></div>
+              <div class="num"><b>85</b><i>DIA</i></div>
+            </div>
+            <div class="mm">mmHg</div>
+            <div class="lead"></div>
+            <div class="state"><i></i>Normal</div>
+            <div class="meta">12 Messungen · Puls Ø 81</div>
+
+            <div class="sec">Zuletzt</div>
+            <div class="grid-head"><span></span><span>SYS</span><span>DIA</span><span>PULS</span></div>
+            <div class="grid-row"><span>vor 10 Min</span><span>128</span><span>87</span><span>82</span></div>
+            <div class="meta">05.09. 23:57</div>
+
+            <div class="sec">Letzte Tage</div>
+            <div class="grid-head"><span></span><span>SYS</span><span>DIA</span><span>PULS</span></div>
+            <div class="grid-row"><span>gestern</span><span>126</span><span>90</span><span>95</span></div>
+            <div class="grid-row"><span>gestern</span><span>126</span><span>84</span><span>84</span></div>
+            <div class="grid-row warn"><span>18.04.2023 !</span><span>133</span><span>91</span><span>78</span></div>
+
+            <div class="grow"></div>
+            <div class="foot-duo">
+              <div><div class="n">114</div><div class="l">MESSUNGEN</div></div>
+              <div><div class="n">100</div><div class="l">NICHT ÜBERTRAGEN</div></div>
+            </div>
+            <div class="nav"><div class="on">Heute</div><div>Verlauf</div><div>Gerät</div></div>
+          </div></div>
+          <p class="cap"><b>E</b> — Pulse Grid</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen f pg-scr">
+        <div class="pg-head pg-normal">
+          <p class="pg-lab">Letzte 7 Tage, 12 Messungen</p>
+          <p class="pg-zahl">124<span class="pg-slash">/</span>85</p>
+          <div class="pg-head-foot">
+            <span class="pg-meta">mmHg, Puls 81</span>
+            <span class="pg-einordnung">Normal</span>
+          </div>
+        </div>
+
+        <div class="pg-b pg-w">
+          <p class="pg-lab">Zuletzt übernommen, vor 10 Minuten</p>
+          <div class="pg-r"><span class="pg-k">05.09. um 23:57</span><span class="pg-v">128/87, Puls 82</span></div>
+        </div>
+
+        <div class="pg-b pg-p">
+          <p class="pg-lab">Letzte Tage</p>
+          <div class="pg-r"><span class="pg-v">126/90, Puls 95</span><span class="pg-v pg-plain">gestern</span></div>
+          <div class="pg-r"><span class="pg-v">126/84, Puls 84</span><span class="pg-v pg-plain">gestern</span></div>
+          <div class="pg-r"><span class="pg-v">133/91, Puls 78</span><span class="pg-v pg-plain">18.04.2023 ⚠</span></div>
+          <p class="pg-sub">Gerätezeit fraglich</p>
+        </div>
+
+        <div class="pg-b pg-w pg-tight">
+          <span class="pg-fuss">114 Messungen, 100 nicht übertragen</span>
+        </div>
+
+        <div class="pg-grow"></div>
+        <div class="pg-nav"><span class="pg-on">Heute</span><span>Verlauf</span><span>Gerät</span></div>
+      </div></div>
+          <p class="cap"><b>F</b> — Pegel</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════ VERLAUF ════════ -->
+    <section class="band">
+      <div class="band-head">
+        <h2>Verlauf</h2>
+        <span class="hint">„3 Monate" ergänzt · leerer Zeitraum erklärt sich</span>
+      </div>
+      <div class="rank">
+
+        <div class="slot">
+          <div class="frame"><div class="screen a">
+            <div class="seg five"><div>Woche</div><div class="on">Monat</div><div>3 Mon.</div><div>Jahr</div><div>Alles</div></div>
+            <div style="margin:16px 0 3px">
+              <svg width="100%" height="96" viewBox="0 0 266 96" role="img" aria-label="Systolisch und diastolisch über einen Monat">
+                <line x1="0" y1="95" x2="266" y2="95" stroke="#E4E1DB" stroke-width="1"/>
+                <line x1="1" y1="0" x2="1" y2="95" stroke="#E4E1DB" stroke-width="1"/>
+                <line x1="1" y1="46" x2="266" y2="46" stroke="#C9B45E" stroke-width="1" stroke-dasharray="3 4"/>
+                <polyline points="14,30 55,38 96,22 137,44 178,32 219,48 254,26" fill="none" stroke="#1B1B1A" stroke-width="1.4"/>
+                <polyline points="14,74 55,68 96,78 137,66 178,72 219,62 254,70" fill="none" stroke="#9A9A96" stroke-width="1.4"/>
+                <circle cx="254" cy="26" r="2.6" fill="#1B1B1A"/>
+              </svg>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:9px;color:#1B1B1A70">
+              <span>06.08.</span><span>13.08.</span><span>20.08.</span><span>27.08.</span><span>05.09.</span>
+            </div>
+            <div class="sec">Mittelwerte</div>
+            <div class="kv"><span>Gesamt</span><b>124/85 · 81</b></div>
+            <div class="kv"><span>Morgens</span><b>121/83 · 79</b></div>
+            <div class="kv"><span>Abends</span><b>127/87 · 83</b></div>
+            <div class="sec">05.09.2026</div>
+            <div class="row"><span>128/87 · 82</span><span>23:57</span></div>
+            <div class="row"><span>126/90 · 95</span><span>08:12</span></div>
+            <div class="grow"></div>
+            <div class="btn">Bericht für die Praxis</div>
+            <div class="nav"><div>Heute</div><div class="on">Verlauf</div><div>Gerät</div></div>
+          </div></div>
+          <p class="cap"><b>A</b> — Zeilen, Haarlinien, Messungsnummer</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen b">
+            <div class="pills five"><div>Woche</div><div class="on">Monat</div><div>3 Mon.</div><div>Jahr</div><div>Alles</div></div>
+            <div class="card">
+              <svg width="100%" height="92" viewBox="0 0 240 92" role="img" aria-label="Systolisch und diastolisch über einen Monat">
+                <defs>
+                  <linearGradient id="bfill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#4F7FD8" stop-opacity="0.26"/>
+                    <stop offset="100%" stop-color="#4F7FD8" stop-opacity="0.02"/>
+                  </linearGradient>
+                </defs>
+                <path d="M10,28 L48,36 L86,20 L124,42 L162,30 L200,46 L230,24 L230,84 L10,84 Z" fill="url(#bfill)"/>
+                <polyline points="10,28 48,36 86,20 124,42 162,30 200,46 230,24" fill="none" stroke="#4F7FD8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="10,68 48,63 86,72 124,61 162,66 200,58 230,64" fill="none" stroke="#7D5FD0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.5"/>
+                <circle cx="230" cy="24" r="4.5" fill="#fff" stroke="#4F7FD8" stroke-width="2.4"/>
+              </svg>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:9px;color:#18203480;padding:0 4px;margin-top:4px">
+              <span>06.08.</span><span>13.08.</span><span>20.08.</span><span>27.08.</span><span>05.09.</span>
+            </div>
+            <div class="trio">
+              <div class="mini"><div class="k">Gesamt</div><div class="v">124/85</div><div class="k" style="font-weight:400">Puls 81</div></div>
+              <div class="mini"><div class="k">Morgens</div><div class="v">121/83</div><div class="k" style="font-weight:400">Puls 79</div></div>
+              <div class="mini"><div class="k">Abends</div><div class="v">127/87</div><div class="k" style="font-weight:400">Puls 83</div></div>
+            </div>
+            <div class="sec">Samstag, 5. September</div>
+            <div class="card tight">
+              <div class="li"><span>128/87 · 82</span><span>23:57</span></div>
+              <div class="li"><span>126/90 · 95</span><span>08:12</span></div>
+            </div>
+            <div class="grow"></div>
+            <div class="btn">Bericht für die Praxis</div>
+            <div class="nav"><div>Heute</div><div class="on">Verlauf</div><div>Gerät</div></div>
+          </div></div>
+          <p class="cap"><b>B</b> — Karten, Fläche unter der Kurve</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen c">
+            <div class="top">Verlauf</div>
+            <div class="chips five"><div>Woche</div><div class="on">Monat</div><div>3 Mon.</div><div>Jahr</div><div>Alles</div></div>
+            <div class="card2" style="margin-top:12px">
+              <svg width="100%" height="88" viewBox="0 0 236 88" role="img" aria-label="Systolisch und diastolisch über einen Monat">
+                <line x1="0" y1="44" x2="236" y2="44" stroke="#CAC4D0" stroke-width="1" stroke-dasharray="4 4"/>
+                <polyline points="10,26 47,34 84,19 121,40 158,29 195,44 226,23" fill="none" stroke="#6750A4" stroke-width="2"/>
+                <polyline points="10,66 47,61 84,70 121,59 158,64 195,56 226,62" fill="none" stroke="#7D5260" stroke-width="2"/>
+                <circle cx="226" cy="23" r="3.4" fill="#6750A4"/>
+              </svg>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:9px;color:#49454F;padding:0 4px;margin-top:4px">
+              <span>06.08.</span><span>13.08.</span><span>20.08.</span><span>27.08.</span><span>05.09.</span>
+            </div>
+            <div class="sec">Mittelwerte</div>
+            <div class="card2" style="margin-top:0;padding:4px 15px">
+              <div class="li"><span>Gesamt</span><span>124/85 · 81</span></div>
+              <div class="li"><span>Morgens</span><span>121/83 · 79</span></div>
+              <div class="li"><span>Abends</span><span>127/87 · 83</span></div>
+            </div>
+            <div class="sec">05.09.2026</div>
+            <div class="card2" style="margin-top:0;padding:4px 15px">
+              <div class="li"><span>128/87 · 82</span><span>23:57</span></div>
+              <div class="li"><span>126/90 · 95</span><span>08:12</span></div>
+            </div>
+            <div class="grow"></div>
+            <div class="fab">Bericht für die Praxis</div>
+            <div class="nav"><div>Heute</div><div class="on"><span>Verlauf</span></div><div>Gerät</div></div>
+          </div></div>
+          <p class="cap"><b>C</b> — Chips, Karten, Extended FAB</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen d">
+            <div class="chips"><div>Woche</div><div class="on">Monat</div><div>3 Mon.</div><div>Jahr</div><div>Alles</div></div>
+            <div class="pane" style="margin-top:11px">
+              <svg width="100%" height="88" viewBox="0 0 236 88" role="img" aria-label="Systolisch und diastolisch über einen Monat">
+                <line x1="0" y1="44" x2="236" y2="44" stroke="#D9A55C" stroke-width="1" stroke-dasharray="3 5" stroke-opacity="0.5"/>
+                <polyline points="10,26 47,34 84,19 121,40 158,29 195,44 226,23" fill="none" stroke="#8FB89A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="10,66 47,61 84,70 121,59 158,64 195,56 226,62" fill="none" stroke="#6C5CE7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.75"/>
+                <circle cx="226" cy="23" r="3.2" fill="#8FB89A"/>
+              </svg>
+              <div style="display:flex;justify-content:space-between;font-size:9px;color:#6E7A8A;margin-top:6px">
+                <span>06.08.</span><span>13.08.</span><span>20.08.</span><span>27.08.</span><span>05.09.</span>
+              </div>
+            </div>
+            <div class="sec">Mittelwerte</div>
+            <div class="pane deep">
+              <div class="li"><span>Gesamt</span><span>124/85 · 81</span></div>
+              <div class="li"><span>Morgens</span><span>121/83 · 79</span></div>
+              <div class="li"><span>Abends</span><span>127/87 · 83</span></div>
+            </div>
+            <div class="sec">05.09.2026</div>
+            <div class="pane deep">
+              <div class="li"><span>128/87 · 82</span><span>23:57</span></div>
+              <div class="li"><span>126/90 · 95</span><span>08:12</span></div>
+            </div>
+            <div class="grow"></div>
+            <div class="btn">Bericht für die Praxis</div>
+            <div class="nav"><div>Heute</div><div class="on">Verlauf</div><div>Gerät</div></div>
+          </div></div>
+          <p class="cap"><b>D</b> — Aura</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen e">
+            <div class="tabs-t"><div>Woche</div><div class="on">Monat</div><div>3 Mon.</div><div>Jahr</div><div>Alles</div></div>
+            <div style="margin-top:14px">
+              <svg width="100%" height="104" viewBox="0 0 262 104" role="img" aria-label="Systolisch und diastolisch über einen Monat, mit Normalbereich">
+                <rect x="26" y="34" width="236" height="34" fill="#087F78" fill-opacity="0.06"/>
+                <text x="0" y="24" font-size="8" fill="#6C7377" font-family="Geist, sans-serif">140</text>
+                <text x="0" y="46" font-size="8" fill="#6C7377" font-family="Geist, sans-serif">130</text>
+                <text x="0" y="72" font-size="8" fill="#6C7377" font-family="Geist, sans-serif">120</text>
+                <text x="4" y="94" font-size="8" fill="#6C7377" font-family="Geist, sans-serif">80</text>
+                <polyline points="34,30 72,38 110,24 148,44 186,33 224,48 254,27" fill="none" stroke="#171A1C" stroke-width="1.6"/>
+                <polyline points="34,84 72,79 110,88 148,77 186,82 224,74 254,80" fill="none" stroke="#6C7377" stroke-width="1"/>
+                <circle cx="254" cy="27" r="2.8" fill="#087F78"/>
+              </svg>
+              <div style="display:flex;justify-content:space-between;font-size:8px;color:#6C7377;padding-left:26px">
+                <span>06.08.</span><span>13.08.</span><span>20.08.</span><span>27.08.</span><span>05.09.</span>
+              </div>
+            </div>
+
+            <div class="sec">Mittelwerte</div>
+            <div class="grid-head"><span></span><span>SYS</span><span>DIA</span><span>PULS</span></div>
+            <div class="grid-row"><span>Gesamt</span><span>124</span><span>85</span><span>81</span></div>
+            <div class="grid-row"><span>Morgens</span><span>121</span><span>83</span><span>79</span></div>
+            <div class="grid-row"><span>Abends</span><span>127</span><span>87</span><span>83</span></div>
+
+            <div class="sec">Samstag, 05.09.2026</div>
+            <div class="grid-head"><span></span><span>SYS</span><span>DIA</span><span>PULS</span></div>
+            <div class="grid-row"><span>23:57</span><span>128</span><span>87</span><span>82</span></div>
+            <div class="grid-row"><span>08:12</span><span>126</span><span>90</span><span>95</span></div>
+
+            <div class="grow"></div>
+            <div class="cmd"><b>Bericht für die Praxis</b><span>→</span></div>
+            <div class="nav"><div>Heute</div><div class="on">Verlauf</div><div>Gerät</div></div>
+          </div></div>
+          <p class="cap"><b>E</b> — Pulse Grid</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen f pg-scr">
+        <div class="pg-seg"><span>Woche</span><span class="pg-on">Monat</span><span>3 Mon.</span><span>Jahr</span><span>Alles</span></div>
+
+        <div class="pg-b pg-w" style="padding-top:14px;">
+          <svg viewBox="0 0 280 132" width="100%" height="132" role="img" aria-label="Verlauf von Systole und Diastole über einen Monat">
+            <path d="M8,34 L52,44 L96,26 L140,40 L184,32 L228,46 L272,22 L272,86 L228,94 L184,88 L140,96 L96,84 L52,92 L8,88 Z" fill="#0E5C4C" opacity=".10"/>
+            <polyline points="8,34 52,44 96,26 140,40 184,32 228,46 272,22" fill="none" stroke="#0E5C4C" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+            <polyline points="8,88 52,92 96,84 140,96 184,88 228,94 272,86" fill="none" stroke="#16211F" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" opacity=".55"/>
+            <rect x="268" y="18" width="8" height="8" fill="#0E5C4C"/>
+            <rect x="268" y="82" width="8" height="8" fill="#16211F" opacity=".55"/>
+            <text x="8" y="126" font-size="10" fill="#6B7671" font-family="Inter,sans-serif">06.08.</text>
+            <text x="72" y="126" font-size="10" fill="#6B7671" font-family="Inter,sans-serif">13.08.</text>
+            <text x="136" y="126" font-size="10" fill="#6B7671" font-family="Inter,sans-serif">20.08.</text>
+            <text x="200" y="126" font-size="10" fill="#6B7671" font-family="Inter,sans-serif">27.08.</text>
+            <text x="252" y="126" font-size="10" fill="#6B7671" font-family="Inter,sans-serif">05.09.</text>
+          </svg>
+        </div>
+
+        <div class="pg-b pg-p">
+          <p class="pg-lab">Mittelwerte</p>
+          <div class="pg-kz">
+            <div><div class="pg-k">Gesamt</div><div class="pg-v">124/85</div><div class="pg-p">Puls 81</div></div>
+            <div><div class="pg-k">Morgens</div><div class="pg-v">121/83</div><div class="pg-p">Puls 79</div></div>
+            <div><div class="pg-k">Abends</div><div class="pg-v">127/87</div><div class="pg-p">Puls 83</div></div>
+          </div>
+        </div>
+
+        <div class="pg-b pg-w">
+          <p class="pg-tag">Samstag, 5. September</p>
+          <div class="pg-r"><span class="pg-v">128/87, Puls 82</span><span class="pg-v pg-plain">23:57</span></div>
+          <div class="pg-r"><span class="pg-v">126/90, Puls 95</span><span class="pg-v pg-plain">08:12</span></div>
+        </div>
+
+        <div class="pg-grow"></div>
+        <button class="pg-act">Bericht für die Praxis</button>
+        <div class="pg-nav"><span>Heute</span><span class="pg-on">Verlauf</span><span>Gerät</span></div>
+      </div></div>
+          <p class="cap"><b>F</b> — Pegel</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════ GERÄT ════════ -->
+    <section class="band">
+      <div class="band-head">
+        <h2>Verlauf ohne Messungen im Zeitraum</h2>
+        <span class="hint">Nach acht Wochen Pause · nennt den Grund und den Weg heraus</span>
+      </div>
+      <div class="rank">
+
+        <div class="slot">
+          <div class="frame"><div class="screen a">
+            <div class="seg five"><div class="on">Woche</div><div>Monat</div><div>3 Mon.</div><div>Jahr</div><div>Alles</div></div>
+            <div class="empty">
+              <div class="t">Keine Messungen in den letzten 7 Tagen</div>
+              <div class="s">Der letzte Wert liegt 8 Wochen zurück.</div>
+            </div>
+            <div class="btn">Zeitraum mit Messungen zeigen</div>
+            <div class="grow"></div>
+            <div class="nav"><div>Heute</div><div class="on">Verlauf</div><div>Gerät</div></div>
+          </div></div>
+          <p class="cap"><b>A</b> — kein automatischer Wechsel</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen b">
+            <div class="pills five"><div class="on">Woche</div><div>Monat</div><div>3 Mon.</div><div>Jahr</div><div>Alles</div></div>
+            <div class="card">
+              <div class="empty">
+                <div class="t">Keine Messungen in den letzten 7 Tagen</div>
+                <div class="s">Der letzte Wert liegt 8 Wochen zurück.</div>
+              </div>
+            </div>
+            <div class="btn">Zeitraum mit Messungen zeigen</div>
+            <div class="grow"></div>
+            <div class="nav"><div>Heute</div><div class="on">Verlauf</div><div>Gerät</div></div>
+          </div></div>
+          <p class="cap"><b>B</b> — derselbe Text, andere Form</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen c">
+            <div class="top">Verlauf</div>
+            <div class="chips five"><div class="on">Woche</div><div>Monat</div><div>3 Mon.</div><div>Jahr</div><div>Alles</div></div>
+            <div class="card2" style="margin-top:12px">
+              <div class="empty">
+                <div class="t">Keine Messungen in den letzten 7 Tagen</div>
+                <div class="s">Der letzte Wert liegt 8 Wochen zurück.</div>
+              </div>
+            </div>
+            <div class="btn-t">Zeitraum mit Messungen zeigen</div>
+            <div class="grow"></div>
+            <div class="nav"><div>Heute</div><div class="on"><span>Verlauf</span></div><div>Gerät</div></div>
+          </div></div>
+          <p class="cap"><b>C</b> — dieselbe Aktion, als Umriss-Knopf</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen d">
+            <div class="chips"><div class="on">Woche</div><div>Monat</div><div>3 Mon.</div><div>Jahr</div><div>Alles</div></div>
+            <div class="pane" style="margin-top:11px">
+              <div class="empty">
+                <div class="t">Keine Messungen in den letzten 7 Tagen</div>
+                <div class="s">Der letzte Wert liegt 8 Wochen zurück.</div>
+              </div>
+            </div>
+            <div class="btn ghost">Zeitraum mit Messungen zeigen</div>
+            <div class="grow"></div>
+            <div class="nav"><div>Heute</div><div class="on">Verlauf</div><div>Gerät</div></div>
+          </div></div>
+          <p class="cap"><b>D</b> — Aura</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen e">
+            <div class="tabs-t"><div class="on">Woche</div><div>Monat</div><div>3 Mon.</div><div>Jahr</div><div>Alles</div></div>
+            <div class="lead short"></div>
+            <div class="empty">
+              <div class="t">Keine Messungen<br>in den letzten 7 Tagen</div>
+              <div class="s">Der letzte Wert liegt<br>8 Wochen zurück.</div>
+            </div>
+            <div class="cmd"><b>Zeitraum mit Messungen zeigen</b><span>→</span></div>
+            <div class="grow"></div>
+            <div class="nav"><div>Heute</div><div class="on">Verlauf</div><div>Gerät</div></div>
+          </div></div>
+          <p class="cap"><b>E</b> — Pulse Grid</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen f pg-scr">
+        <div class="pg-seg"><span class="pg-on">Woche</span><span>Monat</span><span>3 Mon.</span><span>Jahr</span><span>Alles</span></div>
+
+        <div class="pg-leer">
+          <h3>Keine Messungen in den letzten 7 Tagen</h3>
+          <p>Der letzte Wert liegt 8 Wochen zurück.</p>
+        </div>
+
+        <button class="pg-act pg-sec">Zeitraum mit Messungen zeigen</button>
+
+        <div class="pg-grow"></div>
+        <div class="pg-nav"><span>Heute</span><span class="pg-on">Verlauf</span><span>Gerät</span></div>
+      </div></div>
+          <p class="cap"><b>F</b> — Pegel</p>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="band">
+      <div class="band-head">
+        <h2>Gerät</h2>
+        <span class="hint">Abgleich mit Symbol · Bereitschaft und Datenaktualität getrennt</span>
+      </div>
+      <div class="rank">
+
+        <div class="slot">
+          <div class="frame"><div class="screen a">
+            <div class="sec" style="margin-top:0">Gerät</div>
+            <div class="kv"><span>RS7 Intelli IT</span><b>gekoppelt</b></div>
+            <div class="kv"><span>Speicherplatz</span><b>Benutzer 1</b></div>
+            <div class="btn">Neu koppeln</div>
+            <div class="sec">Abgleich</div>
+            <div class="kv">
+              <span class="warn-row">
+                <svg class="warn-mark" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5C9C5C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Abgleich bereit">
+                  <path d="M11 2 L16 7 L6 17 M6 7 L16 17 L11 22 L11 2"/>
+                  <path d="M19 9 A4 4 0 0 1 19 15" stroke-opacity="0.55"/>
+                  <path d="M21.5 6.5 A8 8 0 0 1 21.5 17.5" stroke-opacity="0.3"/>
+                </svg>
+                Abgleich bereit
+              </span>
+              <b>an</b>
+            </div>
+            <div class="kv"><span>Letzte Messung</span><b>vor 10 Minuten</b></div>
+            <div class="kv"><span>Gespeichert</span><b>114 Messungen</b></div>
+            <div class="btn f">Jetzt abgleichen</div>
+            <div class="sec">Health Connect</div>
+            <div class="kv"><span>Übertragen</span><b>14 von 114</b></div>
+            <div class="btn">Alle übertragen</div>
+            <div class="btn">Übertragene entfernen</div>
+            <div class="grow"></div>
+            <div class="nav"><div>Heute</div><div>Verlauf</div><div class="on">Gerät</div></div>
+          </div></div>
+          <p class="cap"><b>A</b> — durchlaufende Zeilenliste</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen b">
+            <div class="hi">Dein Gerät</div>
+            <div class="card" style="margin-top:0">
+              <div class="kv"><span>RS7 Intelli IT</span><b>gekoppelt</b></div>
+              <div class="kv"><span>Speicherplatz</span><b>Benutzer 1</b></div>
+              <div class="btn ghost">Neu koppeln</div>
+            </div>
+            <div class="duo">
+              <div class="mini">
+                <div class="k warn-row">
+                  <svg class="warn-mark" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3FA35F" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Abgleich bereit">
+                    <path d="M11 2 L16 7 L6 17 M6 7 L16 17 L11 22 L11 2"/>
+                    <path d="M19 9 A4 4 0 0 1 19 15" stroke-opacity="0.55"/>
+                  </svg>
+                  Abgleich
+                </div>
+                <div class="v" style="font-size:14px">bereit · an</div>
+              </div>
+              <div class="mini"><div class="k">Letzte Messung</div><div class="v" style="font-size:14px">vor 10 Min</div></div>
+            </div>
+            <div class="card" style="margin-top:10px">
+              <div class="kv"><span>Gespeichert</span><b>114 Messungen</b></div>
+            </div>
+            <div class="btn">Jetzt abgleichen</div>
+            <div class="sec">Health Connect</div>
+            <div class="card" style="margin-top:6px">
+              <div class="kv"><span>Übertragen</span><b>14 von 114</b></div>
+              <div class="btn ghost" style="margin-top:8px">Alle übertragen</div>
+              <div class="btn ghost" style="margin-top:7px">Übertragene entfernen</div>
+            </div>
+            <div class="grow"></div>
+            <div class="nav"><div>Heute</div><div>Verlauf</div><div class="on">Gerät</div></div>
+          </div></div>
+          <p class="cap"><b>B</b> — Kacheln für den Zustand</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen c">
+            <div class="top">Gerät</div>
+            <div class="card">
+              <div class="lbl">RS7 Intelli IT</div>
+              <div style="font-size:16px;margin:4px 0 2px">Gekoppelt · Benutzer 1</div>
+              <div class="chip-o">Neu koppeln</div>
+            </div>
+            <div class="sec">Abgleich</div>
+            <div class="card2" style="margin-top:0;padding:4px 15px">
+              <div class="li">
+                <span class="warn-row">
+                  <svg class="warn-mark" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4C8C4A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Abgleich bereit">
+                    <path d="M11 2 L16 7 L6 17 M6 7 L16 17 L11 22 L11 2"/>
+                    <path d="M19 9 A4 4 0 0 1 19 15" stroke-opacity="0.55"/>
+                  </svg>
+                  Abgleich bereit
+                </span>
+                <span>an</span>
+              </div>
+              <div class="li"><span>Letzte Messung</span><span>vor 10 Minuten</span></div>
+              <div class="li"><span>Gespeichert</span><span>114 Messungen</span></div>
+            </div>
+            <div class="sec">Health Connect</div>
+            <div class="card2" style="margin-top:0;padding:4px 15px">
+              <div class="li"><span>Übertragen</span><span>14 von 114</span></div>
+            </div>
+            <div class="btn-t">Alle übertragen</div>
+            <div class="btn-t">Übertragene entfernen</div>
+            <div class="fab">Jetzt abgleichen</div>
+            <div class="grow"></div>
+            <div class="nav"><div>Heute</div><div>Verlauf</div><div class="on"><span>Gerät</span></div></div>
+          </div></div>
+          <p class="cap"><b>C</b> — Listenkarten, FAB als Hauptaktion</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen d">
+            <div class="pane">
+              <div class="eyebrow-s">Gerät</div>
+              <div style="font-size:17px;font-weight:400;margin:3px 0 1px">RS7 Intelli IT</div>
+              <div class="unit" style="margin-top:2px">Gekoppelt · Benutzer 1</div>
+              <div class="btn ghost">Neu koppeln</div>
+            </div>
+            <div class="sec">Abgleich</div>
+            <div class="pane deep">
+              <div class="kv">
+                <span class="warn-row">
+                  <svg class="warn-mark" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8FB89A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Abgleich bereit">
+                    <path d="M11 2 L16 7 L6 17 M6 7 L16 17 L11 22 L11 2"/>
+                    <path d="M19 9 A4 4 0 0 1 19 15" stroke-opacity="0.55"/>
+                    <path d="M21.5 6.5 A8 8 0 0 1 21.5 17.5" stroke-opacity="0.3"/>
+                  </svg>
+                  Abgleich bereit
+                </span>
+                <b>an</b>
+              </div>
+              <div class="kv"><span>Letzte Messung</span><b>vor 10 Minuten</b></div>
+              <div class="kv"><span>Gespeichert</span><b>114 Messungen</b></div>
+            </div>
+            <div class="btn">Jetzt abgleichen</div>
+            <div class="sec">Health Connect</div>
+            <div class="pane deep">
+              <div class="kv"><span>Übertragen</span><b>14 von 114</b></div>
+            </div>
+            <div class="btn ghost">Alle übertragen</div>
+            <div class="btn ghost">Übertragene entfernen</div>
+            <div class="grow"></div>
+            <div class="nav"><div>Heute</div><div>Verlauf</div><div class="on">Gerät</div></div>
+          </div></div>
+          <p class="cap"><b>D</b> — Aura</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen e">
+            <div class="sec" style="margin-top:0">Gerät</div>
+            <div style="font-size:16px">RS7 Intelli IT</div>
+            <div class="meta">Gekoppelt · Benutzer 1</div>
+            <div class="cmd quiet"><b>Neu koppeln</b><span>→</span></div>
+
+            <div class="sec">Abgleich</div>
+            <div class="tl">
+              <div class="tl-item">
+                <div class="t warn-row">
+                  <svg class="warn-mark" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#087F78" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Abgleich bereit">
+                    <path d="M11 2 L16 7 L6 17 M6 7 L16 17 L11 22 L11 2"/>
+                    <path d="M19 9 A4 4 0 0 1 19 15" stroke-opacity="0.55"/>
+                  </svg>
+                  Abgleich bereit
+                </div>
+                <div class="s">an</div>
+              </div>
+              <div class="tl-item">
+                <div class="t">Letzte Messung</div>
+                <div class="s">vor 10 Minuten</div>
+              </div>
+              <div class="tl-item">
+                <div class="t">Gespeichert</div>
+                <div class="s">114 Messungen</div>
+              </div>
+            </div>
+            <div class="cmd"><b>Jetzt abgleichen</b><span>→</span></div>
+
+            <div class="sec">Health Connect</div>
+            <div style="font-size:13px">14 von 114 übertragen</div>
+            <div class="bar"><i style="width:12%"></i></div>
+            <div class="cmd"><b>Alle übertragen</b><span>→</span></div>
+            <div class="cmd quiet"><b>Übertragene entfernen</b><span>→</span></div>
+
+            <div class="grow"></div>
+            <div class="nav"><div>Heute</div><div>Verlauf</div><div class="on">Gerät</div></div>
+          </div></div>
+          <p class="cap"><b>E</b> — Pulse Grid</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen f pg-scr">
+        <div class="pg-b pg-w" style="padding-top:24px;">
+          <p class="pg-lab">Gerät</p>
+          <div class="pg-r"><span class="pg-v" style="font-size:19px;">RS7 Intelli IT</span></div>
+          <div class="pg-r"><span class="pg-k">Gekoppelt, Speicherplatz Benutzer 1</span></div>
+          <div class="pg-r" style="padding-top:14px;"><span class="pg-txtact">Neu koppeln</span></div>
+        </div>
+
+        <div class="pg-b pg-p">
+          <p class="pg-lab">Abgleich</p>
+          <div class="pg-r">
+            <span class="pg-k">
+              <svg class="pg-bt" width="13" height="17" viewBox="0 0 13 17" fill="none" aria-hidden="true">
+                <path d="M4 5.2 L9.4 11.8 L6.5 14.5 V2.5 L9.4 5.2 L4 11.8" stroke="#0E5C4C" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+                <path d="M11.2 5.6 A4.6 4.6 0 0 1 11.2 11.4" stroke="#0E5C4C" stroke-width="1.3" stroke-linecap="round" opacity=".8"/>
+                <path d="M1.8 5.6 A4.6 4.6 0 0 0 1.8 11.4" stroke="#0E5C4C" stroke-width="1.3" stroke-linecap="round" opacity=".8"/>
+              </svg>Abgleich bereit</span>
+            <span class="pg-v">an</span>
+          </div>
+          <div class="pg-r"><span class="pg-k">Letzte Messung</span><span class="pg-v">vor 10 Minuten</span></div>
+          <div class="pg-r"><span class="pg-k">Gespeichert</span><span class="pg-v">114 Messungen</span></div>
+        </div>
+
+        <button class="pg-act pg-dis">Jetzt abgleichen</button>
+
+        <div class="pg-b pg-w">
+          <p class="pg-lab">Health Connect</p>
+          <div class="pg-r"><span class="pg-k">Übertragen</span><span class="pg-v">14 von 114</span></div>
+        </div>
+
+        <button class="pg-act">Alle übertragen</button>
+        <button class="pg-act pg-sec">Übertragene entfernen</button>
+
+        <div class="pg-grow"></div>
+        <div class="pg-nav"><span>Heute</span><span>Verlauf</span><span class="pg-on">Gerät</span></div>
+      </div></div>
+          <p class="cap"><b>F</b> — Pegel</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════ DETAIL-BLATT ════════ -->
+    <section class="band">
+      <div class="band-head">
+        <h2>Detail-Blatt</h2>
+        <span class="hint">Eine Messung · fragliche Gerätezeit wird hier benannt</span>
+      </div>
+      <div class="rank">
+
+        <div class="slot">
+          <div class="frame"><div class="screen a" style="min-height:400px">
+            <div class="eyebrow-s">Messung 542</div>
+            <div class="big">133<small>/</small>91</div>
+            <div class="unit">mmHg &nbsp;·&nbsp; Puls 78</div>
+            <div class="band-bar"><i style="left:62%"></i></div>
+            <div class="verdict">Hochnormal</div>
+            <div class="note-s">
+              <b>Gerätezeit fraglich</b><br>
+              Das Gerät meldete den 18.04.2023, eingelesen wurde die Messung am
+              05.09.2026. Die Uhr des Geräts geht falsch — Sphygma kann sie nicht
+              stellen.
+            </div>
+            <div class="kv"><span>Gemessen laut Gerät</span><b>18.04.2023, 11:02</b></div>
+            <div class="kv"><span>Eingelesen</span><b>05.09.2026, 23:58</b></div>
+            <div class="kv"><span>Speicherplatz</span><b>Benutzer 1</b></div>
+            <div class="sec">Health Connect</div>
+            <div class="kv"><span>Noch nicht übertragen</span><b></b></div>
+            <div class="btn">Nach Health Connect übertragen</div>
+          </div></div>
+          <p class="cap"><b>A</b> — Hinweis mit Kante</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen b" style="min-height:400px">
+            <div class="hero">
+              <div class="lbl">Messung 542 · gemessen laut Gerät 18.04.2023</div>
+              <div class="big">133/91</div>
+              <div class="lbl">Puls 78 · mmHg</div>
+              <div class="pill">Hochnormal</div>
+            </div>
+            <div class="note-s">
+              <b>Gerätezeit fraglich</b><br>
+              Das Gerät meldete den 18.04.2023, eingelesen wurde die Messung am
+              05.09.2026. Die Uhr des Geräts geht falsch — Sphygma kann sie nicht
+              stellen.
+            </div>
+            <div class="card">
+              <div class="kv"><span>Gemessen laut Gerät</span><b>18.04.2023, 11:02</b></div>
+              <div class="kv"><span>Eingelesen</span><b>05.09.2026, 23:58</b></div>
+              <div class="kv"><span>Speicherplatz</span><b>Benutzer 1</b></div>
+            </div>
+            <div class="sec">Health Connect</div>
+            <div class="card" style="margin-top:6px">
+              <div class="kv"><span>Noch nicht übertragen</span><b></b></div>
+              <div class="btn ghost" style="margin-top:8px">Nach Health Connect übertragen</div>
+            </div>
+          </div></div>
+          <p class="cap"><b>B</b> — Hinweis als warme Fläche</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen c" style="min-height:400px">
+            <div class="top">Messung 542</div>
+            <div class="card">
+              <div class="lbl">Gemessen laut Gerät · 18.04.2023, 11:02</div>
+              <div class="big">133/91</div>
+              <div class="lbl">mmHg · Puls 78</div>
+              <div class="chip-o">Hochnormal</div>
+            </div>
+            <div class="note-s">
+              <b>Gerätezeit fraglich</b><br>
+              Das Gerät meldete den 18.04.2023, eingelesen wurde die Messung am
+              05.09.2026. Die Uhr des Geräts geht falsch — Sphygma kann sie nicht
+              stellen.
+            </div>
+            <div class="card2" style="margin-top:11px;padding:4px 15px">
+              <div class="li"><span>Gemessen laut Gerät</span><span>18.04.2023, 11:02</span></div>
+              <div class="li"><span>Eingelesen</span><span>05.09.2026, 23:58</span></div>
+              <div class="li"><span>Speicherplatz</span><span>Benutzer 1</span></div>
+            </div>
+            <div class="sec">Health Connect</div>
+            <div class="card2" style="margin-top:0;padding:4px 15px">
+              <div class="li"><span>Noch nicht übertragen</span><span></span></div>
+            </div>
+            <div class="btn-t">Nach Health Connect übertragen</div>
+          </div></div>
+          <p class="cap"><b>C</b> — Hinweis in Fehlerfarbe</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen d" style="min-height:400px">
+            <div class="pane">
+              <div class="eyebrow-s">Messung 542</div>
+              <div class="big">133<small>/</small>91</div>
+              <div class="unit">mmHg · Puls 78</div>
+              <div class="chip" style="background:rgb(217 165 92 / 0.16);color:#E2C08A">
+                <i style="background:#D9A55C"></i>Hochnormal
+              </div>
+            </div>
+            <div class="note-s">
+              <b>Gerätezeit fraglich</b><br>
+              Das Gerät meldete den 18.04.2023, eingelesen wurde die Messung am
+              05.09.2026. Die Uhr des Geräts geht falsch — Sphygma kann sie nicht
+              stellen.
+            </div>
+            <div class="pane deep">
+              <div class="kv"><span>Gemessen laut Gerät</span><b>18.04.2023, 11:02</b></div>
+              <div class="kv"><span>Eingelesen</span><b>05.09.2026, 23:58</b></div>
+              <div class="kv"><span>Speicherplatz</span><b>Benutzer 1</b></div>
+            </div>
+            <div class="sec">Health Connect</div>
+            <div class="pane deep">
+              <div class="kv"><span>Noch nicht übertragen</span><b></b></div>
+            </div>
+            <div class="btn">Nach Health Connect übertragen</div>
+          </div></div>
+          <p class="cap"><b>D</b> — Aura</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen e" style="min-height:400px">
+            <div class="sec" style="margin-top:0">Messung 542</div>
+            <div class="duo-num">
+              <div class="num"><b>133</b><i>SYS</i></div>
+              <div class="num"><b>91</b><i>DIA</i></div>
+              <div class="num"><b style="font-size:30px">78</b><i>PULS</i></div>
+            </div>
+            <div class="mm">mmHg</div>
+            <div class="lead"></div>
+            <div class="state"><i style="background:#C2701C"></i>Hochnormal</div>
+
+            <div class="note-s">
+              <b>Gerätezeit fraglich</b>
+              Das Gerät meldete den 18.04.2023, eingelesen wurde die Messung am
+              05.09.2026. Die Uhr des Geräts geht falsch — Sphygma kann sie nicht
+              stellen.
+            </div>
+
+            <div class="kv-stack">
+              <div class="k">Gemessen laut Gerät</div>
+              <div class="v">18.04.2023 · 11:02</div>
+            </div>
+            <div class="kv-stack">
+              <div class="k">Eingelesen</div>
+              <div class="v">05.09.2026 · 23:58</div>
+            </div>
+            <div class="kv-stack">
+              <div class="k">Speicherplatz</div>
+              <div class="v">Benutzer 1</div>
+            </div>
+
+            <div class="sec">Health Connect</div>
+            <div style="font-size:13px">Noch nicht übertragen</div>
+            <div class="cmd"><b>Nach Health Connect übertragen</b><span>→</span></div>
+          </div></div>
+          <p class="cap"><b>E</b> — Pulse Grid</p>
+        </div>
+
+        <div class="slot">
+          <div class="frame"><div class="screen f pg-scr">
+        <div class="pg-head pg-hoch">
+          <p class="pg-lab">Messung 542</p>
+          <p class="pg-zahl">133<span class="pg-slash">/</span>91</p>
+          <div class="pg-head-foot">
+            <span class="pg-meta">mmHg, Puls 78</span>
+            <span class="pg-einordnung">Hochnormal</span>
+          </div>
+        </div>
+
+        <div class="pg-hinweis">
+          <b>Gerätezeit fraglich</b>
+          <p>Das Gerät meldete den 18.04.2023, eingelesen wurde die Messung am 05.09.2026. Die Uhr des Geräts geht falsch — Sphygma kann sie nicht stellen.</p>
+        </div>
+
+        <div class="pg-b pg-w">
+          <div class="pg-r"><span class="pg-k">Gemessen laut Gerät</span><span class="pg-v">18.04.2023, 11:02</span></div>
+          <div class="pg-r"><span class="pg-k">Eingelesen</span><span class="pg-v">05.09.2026, 23:58</span></div>
+          <div class="pg-r"><span class="pg-k">Speicherplatz</span><span class="pg-v">Benutzer 1</span></div>
+        </div>
+
+        <div class="pg-b pg-p pg-tight">
+          <p class="pg-lab" style="margin:0 0 2px;">Health Connect</p>
+          <span class="pg-fuss">Noch nicht übertragen</span>
+        </div>
+
+        <button class="pg-act">Nach Health Connect übertragen</button>
+
+        <div class="pg-grow"></div>
+      </div></div>
+          <p class="cap"><b>F</b> — Pegel</p>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ════════ REGELN ════════ -->
+  <section class="band">
+    <div class="band-head">
+      <h2>Woraus die Umsetzung folgt</h2>
+      <span class="hint">Nicht die Farben, sondern der Aufbau</span>
+    </div>
+
+    <div class="rules">
+      <article class="rule-card">
+        <h3>A — Messinstrument</h3>
+        <div class="swatch">
+          <i style="background:#FAF9F7"></i><i style="background:#1B1B1A"></i>
+          <i style="background:#E4E1DB"></i><i style="background:#7EA77E"></i>
+          <i style="background:#C9B45E"></i><i style="background:#C07D5A"></i>
+        </div>
+        <dl>
+          <div><dt>Trennung</dt><dd>Haarlinien. Keine Flächen, keine Schatten, kein Radius über 3&nbsp;px.</dd></div>
+          <div><dt>Kopf</dt><dd>Eyebrow, dann der Wochenschnitt in 58&nbsp;px Light. Das Einordnungsband ist die einzige Farbe.</dd></div>
+          <div><dt>Listen</dt><dd>Zeilen mit Trennlinie, Ziffern tabellarisch gesetzt.</dd></div>
+          <div><dt>Knöpfe</dt><dd>Rechteckiger Umriss; die Hauptaktion gefüllt schwarz.</dd></div>
+        </dl>
+      </article>
+
+      <article class="rule-card">
+        <h3>B — Tagebuch</h3>
+        <div class="swatch">
+          <i style="background:#F2F5FB"></i><i style="background:#4F7FD8"></i>
+          <i style="background:#7D5FD0"></i><i style="background:#FFFFFF"></i>
+          <i style="background:#3FA35F"></i><i style="background:#E0A93B"></i>
+        </div>
+        <dl>
+          <div><dt>Trennung</dt><dd>Weiße Karten auf blaugrauem Grund, Radius 16–22&nbsp;px, weicher Schatten.</dd></div>
+          <div><dt>Kopf</dt><dd>Begrüßung, dann eine Karte mit Farbverlauf; der Schnitt steht weiß darauf, die Einordnung als Pille.</dd></div>
+          <div><dt>Kennzahlen</dt><dd>Nebeneinander als Mini-Karten statt untereinander als Zeilen.</dd></div>
+          <div><dt>Kurve</dt><dd>Dicke Linie mit Fläche darunter, der letzte Punkt hervorgehoben.</dd></div>
+        </dl>
+      </article>
+
+      <article class="rule-card">
+        <h3>C — Material 3</h3>
+        <div class="swatch">
+          <i style="background:#FEF7FF"></i><i style="background:#6750A4"></i>
+          <i style="background:#E8DEF8"></i><i style="background:#F7F2FA"></i>
+          <i style="background:#79747E"></i><i style="background:#7D5260"></i>
+        </div>
+        <dl>
+          <div><dt>Trennung</dt><dd>Karten in Sekundär- und Oberflächenfarbe, Radius 12&nbsp;px, kein Schatten.</dd></div>
+          <div><dt>Kopf</dt><dd>Bildschirmtitel, dann die Karte in <code>#E8DEF8</code>; die Einordnung als umrandeter Chip.</dd></div>
+          <div><dt>Auswahl</dt><dd>Filter-Chips statt Segmentleiste; der gewählte Chip gefüllt.</dd></div>
+          <div><dt>Hauptaktion</dt><dd>Ein Extended FAB je Bildschirm — und nur einer.</dd></div>
+        </dl>
+      </article>
+      <article class="rule-card">
+        <h3>D — Aura</h3>
+        <div class="swatch">
+          <i style="background:#14181F"></i><i style="background:#6C5CE7"></i>
+          <i style="background:#8FB89A"></i><i style="background:#D9A55C"></i>
+          <i style="background:#E8ECF2"></i><i style="background:#94A0B0"></i>
+        </div>
+        <dl>
+          <div><dt>Trennung</dt><dd>Keine Trennstriche zwischen Zeilen und Abschnitten, keine Schatten. Flächen heben sich um eine Tonstufe vom Grund ab (4,5&nbsp;% und 2,5&nbsp;% Weiß), Radius 16–20&nbsp;px, mit feiner Kante aus 7&nbsp;% Weiß — der einzige Rest von Glas. Die Navigationsleiste trägt eine Oberkante wie A bis E; F setzt dort ein dunkles Vollband.</dd></div>
+          <div><dt>Kopf</dt><dd>Eyebrow, Schnitt in 58&nbsp;px ExtraLight, Einordnung als Chip mit Punkt — alles in einer Fläche.</dd></div>
+          <div><dt>Listen</dt><dd>Zeilen ohne Trennstrich; Luft gliedert, nicht der Strich.</dd></div>
+          <div><dt>Hauptaktion</dt><dd>Indigo gefüllt, Radius 14&nbsp;px; Nebenaktionen in 5&nbsp;% Weiß mit hellem Indigo-Text.</dd></div>
+        </dl>
+      </article>
+      <article class="rule-card">
+        <h3>E — Pulse Grid</h3>
+        <div class="swatch">
+          <i style="background:#F5F6F4"></i><i style="background:#171A1C"></i>
+          <i style="background:#087F78"></i><i style="background:#C2701C"></i>
+          <i style="background:#6C7377"></i><i style="background:#DEE0DC"></i>
+        </div>
+        <dl>
+          <div><dt>Trennung</dt><dd>Fast keine Flächen. Gegliedert wird durch Spalten, Weißraum und kurze Führungslinien; Radius nur an Bedienelementen, keine Schatten.</dd></div>
+          <div><dt>Kopf</dt><dd>SYS und DIA als zwei gleichwertige Zahlenblöcke mit Beschriftung darunter — nicht als 124/85.</dd></div>
+          <div><dt>Listen</dt><dd>Datentabelle mit festen Spalten SYS · DIA · PULS und einem Spaltenkopf statt wiederholter Einheiten.</dd></div>
+          <div><dt>Hauptaktion</dt><dd>Befehlszeile: volle Breite, Pfeil rechts, dünne Linie oben und unten. Nebenaktionen in Grau.</dd></div>
+        </dl>
+      </article>
+      <article class="rule-card">
+        <h3>F — Pegel</h3>
+        <div class="swatch">
+          <i style="background:#ECEEEB"></i><i style="background:#16211F"></i>
+          <i style="background:#0E5C4C"></i><i style="background:#D9E5E0"></i>
+          <i style="background:#EFE1C9"></i><i style="background:#F3E4CB"></i>
+        </div>
+        <dl>
+          <div><dt>Trennung</dt><dd>Ganzflächige Bänder ohne Rand, Schatten, Radius oder Abstand. Ein Abschnitt endet, wo die Fläche ihren Ton wechselt.</dd></div>
+          <div><dt>Kopf</dt><dd>Die Einordnung färbt die Kopffläche selbst — nicht einen Chip, eine Pille oder ein Band darunter. Der Bildschirm sagt seinen Zustand vor der Zahl.</dd></div>
+          <div><dt>Listen</dt><dd>Zeilen in einem Papierband, Wert links und Zeitangabe rechts.</dd></div>
+          <div><dt>Hauptaktion</dt><dd>Das Band selbst ist der Knopf: volle Breite in Signalgrün, Nebenaktionen im hellen Ton.</dd></div>
+        </dl>
+      </article>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="band-head">
+      <h2>Gleiche Funktion, andere Form</h2>
+      <span class="hint">Die Regel, an der die erste Fassung scheiterte</span>
+    </div>
+    <p>Jede Zeile ist ein Baustein, den <strong>alle sechs</strong> Handschriften
+    haben. Sie unterscheiden sich in der Spalte, nie in der Existenz. Fehlt ein
+    Baustein in einer Variante, ist das ein Fehler — kein Stil.</p>
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>Baustein</th><th>A Messinstrument</th><th>B Tagebuch</th><th>C Material 3</th><th>D Aura</th><th>E Pulse Grid</th><th>F Pegel</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Kopf: Wochenschnitt</strong></td>
+            <td>Eyebrow, 58 px Light, Band mit Zeiger</td>
+            <td>Verlaufskarte, weiße Schrift, Pille</td>
+            <td>Karte <code>#E8DEF8</code>, Chip</td>
+            <td>Fläche, 58 px ExtraLight, Chip mit Punkt</td>
+            <td>SYS und DIA als zwei Blöcke, Punkt-Status</td>
+            <td>Kopffläche in der Farbe der Einordnung, 62 px</td>
+          </tr>
+          <tr>
+            <td><strong>Letzte Messung mit Alter</strong></td>
+            <td>Zeile unter der Trennlinie</td>
+            <td>eigene weiße Karte</td>
+            <td>Karte in <code>#F7F2FA</code></td>
+            <td>tiefere Fläche im Grundton</td>
+            <td>Tabellenzeile unter Spaltenkopf</td>
+            <td>eigenes weißes Band</td>
+          </tr>
+          <tr>
+            <td><strong>Kennzahlen</strong></td>
+            <td>Zeilen mit Trennlinie</td>
+            <td>Mini-Karten nebeneinander</td>
+            <td>Listenzeilen in einer Karte</td>
+            <td>Zeilen ohne Trennstrich in einer Fläche</td>
+            <td>Datentabelle, Werte rechtsbündig</td>
+            <td>drei Spalten in einem Band, getrennt durch Leerraum</td>
+          </tr>
+          <tr>
+            <td><strong>Messungsliste</strong></td>
+            <td>Zeilen mit Trennlinie</td>
+            <td>weiße Karte je Tag</td>
+            <td>Karte in <code>#F7F2FA</code></td>
+            <td>tiefere Fläche, Zeilen ohne Strich</td>
+            <td>Datentabelle mit Spaltenkopf</td>
+            <td>Zeilen in einem Papierband</td>
+          </tr>
+          <tr>
+            <td><strong>Zeitraumwahl (5 Werte)</strong></td>
+            <td>Segmentleiste, eckig</td>
+            <td>Pillen</td>
+            <td>Filter-Chips</td>
+            <td>Pill-Chips, aktiver in Indigo</td>
+            <td>Text-Tabs, aktiver mit 2 px Unterstrich</td>
+            <td>Unterstreichung, 3 px in Signalgrün</td>
+          </tr>
+          <tr>
+            <td><strong>Kurve</strong></td>
+            <td>zwei Haarlinien, Achsen sichtbar</td>
+            <td>dicke Linie mit Fläche</td>
+            <td>zwei Linien, gestrichelte Schwelle</td>
+            <td>zwei Linien in Salbei und Indigo, Schwelle in Bernstein</td>
+            <td>Normalbereich als Band, Achsenwerte links</td>
+            <td>Fläche <em>zwischen</em> Systole und Diastole</td>
+          </tr>
+          <tr>
+            <td><strong>Leerer Zeitraum</strong></td>
+            <td>Text auf dem Grund</td>
+            <td>Text in weißer Karte</td>
+            <td>Text in Oberflächenkarte</td>
+            <td>Text in gehobener Fläche</td>
+            <td>Text auf dem Grund, kurze Akzentlinie darüber</td>
+            <td>Papierband mit Text, Ausweg als tonales Band</td>
+          </tr>
+          <tr>
+            <td><strong>Hinweisfeld</strong></td>
+            <td>Kante links, heller Grund</td>
+            <td>runde warme Fläche</td>
+            <td>Fläche in <code>#FFD8E4</code></td>
+            <td>Bernstein auf 12 % Deckung</td>
+            <td>3 px Kante links, kein Hintergrund</td>
+            <td>eigenes Vollband im Warnton, keine Kante</td>
+          </tr>
+          <tr>
+            <td><strong>Hauptaktion</strong></td>
+            <td>gefüllter Rechteckknopf</td>
+            <td>runder Knopf mit Schatten</td>
+            <td>Extended FAB</td>
+            <td>Indigo gefüllt, Radius 14 px</td>
+            <td>Befehlszeile mit Pfeil</td>
+            <td>Band über die volle Breite in Signalgrün</td>
+          </tr>
+          <tr>
+            <td><strong>Nebenaktion</strong></td>
+            <td>Umriss-Rechteck</td>
+            <td>weiße Pille</td>
+            <td>Umriss-Knopf, abgerundet</td>
+            <td>5 % Weiß, Text in hellem Indigo</td>
+            <td>Befehlszeile in Grau</td>
+            <td>Band im hellen Signalton</td>
+          </tr>
+          <tr>
+            <td><strong>Navigationsleiste</strong></td>
+            <td>Textzeile über Oberkante</td>
+            <td>Textzeile, aktiver in Blau</td>
+            <td>Pille um den aktiven Eintrag</td>
+            <td>Textzeile, aktiver in hellem Indigo</td>
+            <td>Akzentlinie über dem aktiven Eintrag</td>
+            <td>dunkles Vollband, aktiver weiß</td>
+          </tr>
+          <tr>
+            <td><strong>Abgleich-Symbol</strong></td>
+            <td colspan="6">ein Symbol für den bereiten Abgleich in allen sechs; A bis E zeichnen die Bluetooth-Rune mit Wellen, F stattdessen beidseitige Funkwellen — die Form folgt der Handschrift, die Aussage nicht</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="band-head">
+      <h2>Was sich gegenüber der ersten Fassung geändert hat</h2>
+      <span class="hint">Sechs Entscheidungen aus den Gutachten</span>
+    </div>
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>Vorher</th><th>Jetzt</th><th>Warum</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Letzte Einzelmessung in 58 px</td>
+            <td>Wochenschnitt in 58 px, Einzelmessung klein darunter</td>
+            <td>Ein einzelner Blutdruckwert ist medizinisch fast bedeutungslos; ein Ausreißer steht so sofort im Trend eingebettet</td>
+          </tr>
+          <tr>
+            <td>„Alle Messungen ansehen" nur in Material 3</td>
+            <td>gestrichen — die Navigationsleiste leistet das</td>
+            <td>Handschriften dürfen nicht bestimmen, welche Aktionen es gibt</td>
+          </tr>
+          <tr>
+            <td>Fußzeile in A, Wochenschnitt in B</td>
+            <td>Bestandszahlen in jeder Handschrift</td>
+            <td>gleicher Grund</td>
+          </tr>
+          <tr>
+            <td>Woche / Monat / Jahr / Alles</td>
+            <td>zusätzlich <strong>3 Monate</strong></td>
+            <td>der wahrscheinlichste Zeitraum für einen Arztbericht war nicht ausdrückbar</td>
+          </tr>
+          <tr>
+            <td>leerer Verlauf zeigt leere Kurve</td>
+            <td>nennt Grund und Alter des letzten Werts, bietet den Sprung an</td>
+            <td>nach acht Wochen Pause sah es aus, als seien die Daten weg</td>
+          </tr>
+          <tr>
+            <td>grüner Punkt „Wartet auf Messungen"</td>
+            <td>Symbol + zwei getrennte Zeilen: „Abgleich bereit" und „Letzte Messung vor …"</td>
+            <td>technische Bereitschaft wurde als „alles aktuell" gelesen</td>
+          </tr>
+          <tr>
+            <td>Messungsnummer in der Liste, nur in „Messinstrument"</td>
+            <td>ganz aus den Listen entfernt — sie steht im Detail-Blatt</td>
+            <td>eine Information, die nur eine Handschrift zeigt, ist ein Funktionsunterschied; in der Liste ist ihr Nutzen gering</td>
+          </tr>
+          <tr>
+            <td>Puls-Mittelwerte fehlten in „Tagebuch", Datumsmarken an der Kurve nur in „Messinstrument"</td>
+            <td>überall vorhanden</td>
+            <td>gleicher Grund</td>
+          </tr>
+          <tr>
+            <td>Health-Connect-Zustand im Detail-Blatt nur in „Messinstrument"</td>
+            <td>in jeder Handschrift vor dem Knopf</td>
+            <td>gleicher Grund</td>
+          </tr>
+          <tr>
+            <td>„Freitag, 5. September"</td>
+            <td>Samstag</td>
+            <td>der 05.09.2026 ist ein Samstag — im Entwurf schlicht falsch</td>
+          </tr>
+          <tr>
+            <td>fragliche Gerätezeit nur als allgemeiner Hinweis</td>
+            <td>je Messung gekennzeichnet, in Liste, Detail und Bericht</td>
+            <td>echte alte Messungen und falsch datierte neue waren nicht zu unterscheiden</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="band-head">
+      <h2>Was davon noch nicht im Code steht</h2>
+      <span class="hint">Der Arbeitsvorrat, den diese Tafel eröffnet</span>
+    </div>
+    <p>Die Tafel zeigt den Sollzustand. Diese Bausteine sind heute nicht gebaut —
+    aufgeführt, damit niemand die Zeichnung für den Bestand hält.</p>
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>Baustein</th><th>Stand</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Wochenschnitt als Hauptaussage</strong></td>
+            <td><code>TrendStats</code> rechnet ihn bereits, die Oberfläche ruft ihn nirgends auf — <code>TodayScreen</code> zeigt die neueste Einzelmessung</td>
+          </tr>
+          <tr>
+            <td><strong>Zeitraum „3 Monate"</strong></td>
+            <td>fehlt in <code>Period</code>; vorhanden sind Woche, Monat, Jahr, Alles</td>
+          </tr>
+          <tr>
+            <td><strong>Erklärter leerer Zeitraum</strong></td>
+            <td>der Text existiert, „Zeitraum mit Messungen zeigen" hat keine Aktion</td>
+          </tr>
+          <tr>
+            <td><strong>Kennzeichnung je Messung</strong></td>
+            <td><code>clockLooksWrong</code> prüft nur die neueste Messung und meldet nur auf „Heute"; eine Kennzeichnung am einzelnen Datensatz gibt es nicht</td>
+          </tr>
+          <tr>
+            <td><strong>Alter der Messung</strong></td>
+            <td>nirgends berechnet oder angezeigt</td>
+          </tr>
+          <tr>
+            <td><strong>Abgleich-Symbol, getrennte Zustandszeilen</strong></td>
+            <td>heute eine Zeile „Automatischer Abgleich · wartet auf Messungen"</td>
+          </tr>
+          <tr>
+            <td><strong>Bericht für die Praxis</strong></td>
+            <td>nicht gebaut; eigener Plan, noch nicht geschrieben</td>
+          </tr>
+          <tr>
+            <td><strong>Einordnung (Normal, Hochnormal)</strong></td>
+            <td>gebaut, aber ohne <code>SPHYGMA_ESC=true</code> unsichtbar; Release-Builds setzen das Flag</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="note">
+    <strong>Zu klären an Aura:</strong> Es ist die einzige dunkle Handschrift.
+    Entweder bleibt sie fest dunkel — dann steht sie neben drei hellen —, oder
+    sie folgt dem Systemmodus und braucht eine zweite, helle Farbtafel. Die
+    Theme-Schicht kennt heute nur feste Farben je Variante; der Systemmodus
+    wäre eine Erweiterung. Für die Zeichnung ist sie fest dunkel angenommen.
+  </div>
+
+  <div class="note">
+    <strong>Bekannte Lücke, bewusst offen:</strong> Eine heute gemessene Messung mit
+    Gerätedatum 2023 steht auf „Heute" ganz oben — die Liste sortiert nach
+    Gerätezähler, nicht nach Datum — fehlt aber im Verlauf der letzten Woche, weil
+    der nach Datum filtert. Die Kennzeichnung macht das erklärbar; sie behebt es
+    nicht. Die Datenbank bleibt reines Abbild des Geräts, wie festgelegt.
+  </div>
+
+</div>
