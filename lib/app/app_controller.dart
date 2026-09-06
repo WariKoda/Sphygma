@@ -10,9 +10,11 @@ import '../ble/omron_session.dart';
 import '../ble/pairing_key_store.dart';
 import '../db/app_database.dart';
 import '../db/measurement_repository.dart';
+import '../db/occasion_repository.dart';
 import '../db/settings_repository.dart';
 import 'concept.dart';
 import '../protocol/exceptions.dart';
+import '../stats/occasion_grouping.dart';
 import '../stats/period.dart';
 import '../sync/export_service.dart';
 import '../sync/sync_service.dart';
@@ -23,6 +25,7 @@ class AppController extends ChangeNotifier {
     required this.settings,
     required this.keyStore,
     required this.repository,
+    required this.occasionRepository,
     required this.syncService,
     required this.exportService,
     Stream<OmronAdvertisedStatus> Function()? statusStream,
@@ -47,6 +50,13 @@ class AppController extends ChangeNotifier {
   final SettingsRepository settings;
   final PairingKeyStore keyStore;
   final MeasurementRepository repository;
+
+  /// Die Entscheidungen des Nutzers zur Gruppierung und seine Phasen.
+  /// Beides gehört keinem einzelnen Konzept: „Messanlass" braucht die
+  /// Gruppierung, „Phase" die Lebensabschnitte, und beide arbeiten auf
+  /// demselben Bestand wie alle anderen.
+  final OccasionRepository occasionRepository;
+
   final SyncService syncService;
   final ExportService exportService;
 
@@ -66,6 +76,20 @@ class AppController extends ChangeNotifier {
   /// Die zweite Achse: wie die App geordnet ist. Frei mit der Gestaltung
   /// kombinierbar — jedes Konzept trägt denselben Funktionsumfang.
   AppConcept concept = AppConcept.klassisch;
+
+  /// Die Messanlässe des gewählten Speicherplatzes: Rohmessungen, die kurz
+  /// nacheinander entstanden sind, gehören zu einem Messen. Abgeleitet, nicht
+  /// gespeichert — nur die Entscheidungen des Nutzers liegen in der DB.
+  List<MeasurementOccasion> occasions = const [];
+
+  /// Die benannten Lebensabschnitte, neueste zuerst.
+  List<Phase> phases = const [];
+
+  /// Anlässe, bei denen die Regel keine eindeutige Antwort gibt. Sie werden
+  /// nicht still zusammengefasst — eine zugedeckte Frage ist schlimmer als
+  /// eine unbeantwortete.
+  Iterable<MeasurementOccasion> get openOccasions =>
+      occasions.where((o) => o.state == OccasionState.zuPruefen);
 
   /// Die neueste Messung, unabhaengig vom Zeitraum. Null heisst: noch
   /// keine Messung gespeichert - ein echter Zustand, kein Fehler.
@@ -291,12 +315,72 @@ class AppController extends ChangeNotifier {
       measurements = const [];
       pendingExport = 0;
       clockLooksWrong = false;
+      occasions = const [];
+      phases = const [];
     } else {
       measurements = (await repository.allForSlot(slot)).reversed.toList();
       pendingExport = (await repository.pendingExport(slot)).length;
       clockLooksWrong = _clockLooksWrong(measurements);
+      occasions = proposeOccasions(
+        measurements,
+        confirmedJoins: await occasionRepository.confirmedJoins(slot),
+        confirmedSplits: await occasionRepository.confirmedSplits(slot),
+      );
+      phases = await occasionRepository.phases();
     }
     notifyListeners();
+  }
+
+  /// Der Nutzer entscheidet einen Grenzfall: Diese Messung gehört zum
+  /// vorherigen Anlass.
+  Future<void> confirmJoin(int deviceSequence) async {
+    await occasionRepository.confirmJoin(
+      userSlot: _requireSlot(),
+      deviceSequence: deviceSequence,
+    );
+    await _refresh();
+  }
+
+  /// Der Nutzer entscheidet einen Grenzfall: Diese Messung ist ein eigener
+  /// Anlass.
+  Future<void> confirmSplit(int deviceSequence) async {
+    await occasionRepository.confirmSplit(
+      userSlot: _requireSlot(),
+      deviceSequence: deviceSequence,
+    );
+    await _refresh();
+  }
+
+  /// Nimmt eine Entscheidung zurück — die Regel gilt wieder.
+  Future<void> clearOccasionDecision(int deviceSequence) async {
+    await occasionRepository.clearDecision(
+      userSlot: _requireSlot(),
+      deviceSequence: deviceSequence,
+    );
+    await _refresh();
+  }
+
+  Future<void> startPhase({
+    required String name,
+    required PhaseAnchor anchor,
+    DateTime? begin,
+  }) async {
+    await occasionRepository.startPhase(
+      name: name,
+      anchor: anchor,
+      begin: begin,
+    );
+    await _refresh();
+  }
+
+  Future<void> endPhase(int id, {required DateTime at}) async {
+    await occasionRepository.endPhase(id, at: at);
+    await _refresh();
+  }
+
+  Future<void> deletePhase(int id) async {
+    await occasionRepository.deletePhase(id);
+    await _refresh();
   }
 
   /// Geht die Geraeteuhr falsch?

@@ -7,6 +7,7 @@ import 'app/app_controller.dart';
 import 'ble/pairing_key_store.dart';
 import 'db/app_database.dart';
 import 'db/measurement_repository.dart';
+import 'db/occasion_repository.dart';
 import 'db/settings_repository.dart';
 import 'sync/export_service.dart';
 import 'sync/health_connect_sink.dart';
@@ -23,6 +24,7 @@ Future<void> main() async {
     settings: SettingsRepository(database),
     keyStore: keyStore,
     repository: measurements,
+    occasionRepository: OccasionRepository(database),
     syncService: SyncService(keyStore: keyStore, repository: measurements),
     exportService: ExportService(
       repository: measurements,
