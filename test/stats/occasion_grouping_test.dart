@@ -177,6 +177,28 @@ void main() {
     });
   });
 
+  group('Offene Fragen verschwinden nicht hinter Bestätigungen', () {
+    test('ein Graubereich bleibt sichtbar, auch neben einer Bestätigung', () {
+      // Vor 101 hat der Nutzer getrennt; zwischen 101 und 102 liegen elf
+      // Minuten und damit eine offene Frage. Würde „bestätigt" gewinnen,
+      // erführe der Nutzer nie, dass noch etwas zu entscheiden ist.
+      final anlaesse = proposeOccasions(
+        [
+          _m(100, _basis),
+          _m(101, _basis.add(const Duration(minutes: 2))),
+          _m(102, _basis.add(const Duration(minutes: 13))),
+        ],
+        confirmedSplits: {101},
+      );
+
+      expect(
+        anlaesse.any((a) => a.state == OccasionState.zuPruefen),
+        isTrue,
+        reason: 'der Übergang 101 zu 102 liegt im Graubereich',
+      );
+    });
+  });
+
   group('Fail hard', () {
     test('mehrere Speicherplätze zugleich sind ein Fehler', () {
       final gemischt = [

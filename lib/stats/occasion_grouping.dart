@@ -175,14 +175,21 @@ _Decision _decide(
   return const _Decision(false, OccasionState.zuPruefen);
 }
 
-/// „Zu prüfen" schlägt „sicher": Sobald ein Übergang unklar ist, ist es der
-/// ganze Anlass. „Bestätigt" schlägt beides — der Nutzer hat gesprochen.
+/// **„Zu prüfen" schlägt alles.**
+///
+/// Die drei Zustände beschreiben Verschiedenes: „bestätigt" sagt, woher eine
+/// Grenze stammt, „zu prüfen" ist eine offene Frage. Ein Anlass kann beides
+/// haben — eine vom Nutzer entschiedene Grenze und daneben eine ungeklärte.
+///
+/// Ließe man „bestätigt" gewinnen, verschwände die offene Frage dahinter und
+/// die App fragte nie nach. Eine zugedeckte Frage ist schlimmer als eine
+/// unbeantwortete: Der Nutzer erfährt nicht einmal, dass es sie gibt.
 OccasionState _staerker(OccasionState a, OccasionState b) {
-  if (a == OccasionState.bestaetigt || b == OccasionState.bestaetigt) {
-    return OccasionState.bestaetigt;
-  }
   if (a == OccasionState.zuPruefen || b == OccasionState.zuPruefen) {
     return OccasionState.zuPruefen;
+  }
+  if (a == OccasionState.bestaetigt || b == OccasionState.bestaetigt) {
+    return OccasionState.bestaetigt;
   }
   return OccasionState.sicher;
 }
