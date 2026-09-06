@@ -16,7 +16,10 @@ const List<String> _monate = [
 /// Der Zeitraum einer Messwoche, so wie man ihn ausspricht:
 /// „25. bis 31. August", über den Monatswechsel „29. September bis 5. Oktober".
 String formatWeekRange(DateTime monday) {
-  final sonntag = monday.add(const Duration(days: 6));
+  // Kalenderarithmetik wie in mondayOf: In der Woche der Herbstumstellung
+  // umfassen sechs Kalendertage 145 Stunden, und ein Zuschlag in Stunden
+  // landet am Samstag um 23 Uhr — der Zeitraum nennte dann den falschen Tag.
+  final sonntag = DateTime(monday.year, monday.month, monday.day + 6);
   final bis = '${sonntag.day}. ${_monate[sonntag.month - 1]}';
   if (monday.month == sonntag.month) {
     return '${monday.day}. bis $bis';

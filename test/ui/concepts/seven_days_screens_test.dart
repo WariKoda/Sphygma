@@ -137,7 +137,7 @@ void main() {
       final woche = buildWeeks(controller.measurements).single;
 
       await tester.pumpWidget(mit(
-        WeekDetailScreen(controller: controller, week: woche),
+        WeekDetailScreen(controller: controller, weekStart: woche.beginsAt),
       ));
 
       expect(find.textContaining('Mittel ohne den ersten Tag'), findsOneWidget);
@@ -151,10 +151,36 @@ void main() {
       final woche = buildWeeks(controller.measurements).single;
 
       await tester.pumpWidget(mit(
-        WeekDetailScreen(controller: controller, week: woche),
+        WeekDetailScreen(controller: controller, weekStart: woche.beginsAt),
       ));
 
       expect(find.text('ALLE MESSUNGEN DIESER WOCHE'), findsOneWidget);
+    });
+
+    testWidgets('nimmt eine später eingelesene Messung mit auf',
+        (tester) async {
+      await boot();
+      await repository.importAll([
+        _rec(seq++, _in(_juengsterMontag, 0, 7)),
+        _rec(seq++, _in(_juengsterMontag, 1, 7)),
+      ]);
+      await controller.refreshForTest();
+
+      await tester.pumpWidget(mit(
+        WeekDetailScreen(
+          controller: controller,
+          weekStart: _juengsterMontag,
+        ),
+      ));
+      expect(find.text('2 von 14 Feldern'), findsOneWidget);
+
+      // Der automatische Abgleich holt eine Messung, während der Bildschirm
+      // offen steht. Ein mitgereichtes Wochenobjekt zeigte hier weiter 2.
+      await repository.importAll([_rec(seq++, _in(_juengsterMontag, 1, 20))]);
+      await controller.refreshForTest();
+      await tester.pump();
+
+      expect(find.text('3 von 14 Feldern'), findsOneWidget);
     });
   });
 

@@ -240,4 +240,29 @@ void main() {
 
     expect(find.text('Nicht gekoppelt'), findsWidgets);
   });
+
+  testWidgets('über Mitternacht wandert der Bildschirm auf den neuen Tag',
+      (tester) async {
+    await boot();
+    await teilwoche();
+
+    // Freitag 23:59:30 — dreißig Sekunden vor dem Tageswechsel.
+    var jetzt = DateTime(_montag.year, _montag.month, _montag.day + 4, 23, 59, 30);
+    await tester.pumpWidget(MaterialApp(
+      home: SphygmaThemeScope(
+        theme: themeFor(ThemeVariant.instrument),
+        child: SevenDaysHome(controller: controller, clock: () => jetzt),
+      ),
+    ));
+    expect(find.textContaining('Tag 5 von 7'), findsOneWidget);
+
+    // Der Steuerungsteil meldet nichts — es hat sich keine Messung geändert,
+    // nur das Datum. Ohne eigenen Wecker bliebe hier „Tag 5" stehen.
+    jetzt = DateTime(_montag.year, _montag.month, _montag.day + 5, 0, 0, 5);
+    await tester.pump(const Duration(seconds: 35));
+    await tester.pump();
+
+    expect(find.textContaining('Tag 6 von 7'), findsOneWidget);
+    expect(find.text('Heute fehlen noch beide Messungen.'), findsOneWidget);
+  });
 }

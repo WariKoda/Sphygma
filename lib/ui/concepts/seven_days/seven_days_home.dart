@@ -8,6 +8,8 @@
 // Ein Weg statt vier Reiter: Dieser Bildschirm ist der Einstieg, alles andere
 // wird von hier aus aufgerufen. Heute, Verlauf und Gerät nebeneinander zu
 // stellen hieße, zwei selten gebrauchte Bereiche dauerhaft mitzuführen.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../app/app_controller.dart';
@@ -24,7 +26,7 @@ import 'earlier_weeks_screen.dart';
 import 'week_detail_screen.dart';
 import 'week_grid.dart';
 
-class SevenDaysHome extends StatelessWidget {
+class SevenDaysHome extends StatefulWidget {
   const SevenDaysHome({
     super.key,
     required this.controller,
@@ -40,17 +42,55 @@ class SevenDaysHome extends StatelessWidget {
   final DateTime Function() clock;
 
   @override
+  State<SevenDaysHome> createState() => _SevenDaysHomeState();
+}
+
+class _SevenDaysHomeState extends State<SevenDaysHome> {
+  /// Weckt den Bildschirm zum nächsten Tageswechsel.
+  ///
+  /// Ohne ihn zeigte eine über Mitternacht geöffnete App weiter den gestrigen
+  /// Wochentag — am Montag sogar die ganze Vorwoche als „diese Woche". Der
+  /// Steuerungsteil meldet dafür nichts: Es hat sich keine Messung geändert,
+  /// nur das Datum.
+  Timer? _tageswechsel;
+
+  @override
+  void initState() {
+    super.initState();
+    _planeTageswechsel();
+  }
+
+  @override
+  void dispose() {
+    _tageswechsel?.cancel();
+    super.dispose();
+  }
+
+  void _planeTageswechsel() {
+    final jetzt = widget.clock();
+    final morgen = DateTime(jetzt.year, jetzt.month, jetzt.day + 1);
+    _tageswechsel?.cancel();
+    // difference() rechnet die echte Spanne — in der Umstellungsnacht sind
+    // das 23 oder 25 Stunden, und genau die sollen es sein.
+    _tageswechsel = Timer(morgen.difference(jetzt), () {
+      if (!mounted) return;
+      setState(() {});
+      _planeTageswechsel();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
 
     return ListenableBuilder(
-      listenable: controller,
+      listenable: widget.controller,
       builder: (context, _) {
-        final messungen = controller.measurements;
+        final messungen = widget.controller.measurements;
         final wochen = messungen.isEmpty
             ? const <MeasurementWeek>[]
             : buildWeeks(messungen);
-        final jetzt = clock();
+        final jetzt = widget.clock();
         final montag = mondayOf(jetzt);
         MeasurementWeek? laufende;
         for (final w in wochen) {
@@ -73,7 +113,7 @@ class SevenDaysHome extends StatelessWidget {
                 icon: const Icon(Icons.tune),
                 onPressed: () => showSettings(
                   context,
-                  controller: controller,
+                  controller: widget.controller,
                   title: 'Wochen-Einstellungen',
                 ),
               ),
@@ -82,19 +122,19 @@ class SevenDaysHome extends StatelessWidget {
           body: ListView(
             padding: EdgeInsets.all(t.gapLarge),
             children: [
-              _Statuszeile(controller: controller),
+              _Statuszeile(controller: widget.controller),
               SizedBox(height: t.gapLarge),
               if (wochen.isEmpty)
-                _NochNichtsGemessen(paired: controller.paired)
+                _NochNichtsGemessen(paired: widget.controller.paired)
               else if (laufende == null)
                 _LangePause(
-                  controller: controller,
+                  controller: widget.controller,
                   letzte: wochen.first,
                   jetzt: jetzt,
                 )
               else
                 _LaufendeWoche(
-                  controller: controller,
+                  controller: widget.controller,
                   week: laufende,
                   jetzt: jetzt,
                 ),
@@ -109,16 +149,16 @@ class SevenDaysHome extends StatelessWidget {
                   MaterialPageRoute<void>(
                     builder: (_) => SphygmaThemeScope(
                       theme: t,
-                      child: EarlierWeeksScreen(controller: controller),
+                      child: EarlierWeeksScreen(controller: widget.controller),
                     ),
                   ),
                 ),
               ),
               _Verweis(
                 label: 'Gerät und Übertragung',
-                hint: controller.pendingExport == 0
+                hint: widget.controller.pendingExport == 0
                     ? 'alles übertragen'
-                    : '${controller.pendingExport} offen',
+                    : '${widget.controller.pendingExport} offen',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
                     builder: (_) => SphygmaThemeScope(
@@ -131,7 +171,7 @@ class SevenDaysHome extends StatelessWidget {
                           foregroundColor: t.onSurface,
                           elevation: 0,
                         ),
-                        body: DeviceScreen(controller: controller),
+                        body: DeviceScreen(controller: widget.controller),
                       ),
                     ),
                   ),
@@ -148,7 +188,7 @@ class SevenDaysHome extends StatelessWidget {
     final t = SphygmaTheme.of(context);
     final hinweise = <Widget>[];
 
-    if (!controller.paired) {
+    if (!widget.controller.paired) {
       hinweise.add(const NoticeCard(
         title: 'Nicht gekoppelt',
         message: 'Ohne Kopplung kann Sphygma keine Messungen holen. Unter '
@@ -156,7 +196,7 @@ class SevenDaysHome extends StatelessWidget {
       ));
     }
 
-    if (controller.clockLooksWrong) {
+    if (widget.controller.clockLooksWrong) {
       hinweise.add(const NoticeCard(
         title: 'Geräteuhr geht falsch',
         message: 'Einzelne Messungen tragen ein Datum, das nicht stimmen '
@@ -290,7 +330,7 @@ class _LaufendeWoche extends StatelessWidget {
                   theme: t,
                   child: WeekDetailScreen(
                     controller: controller,
-                    week: week,
+                    weekStart: week.beginsAt,
                   ),
                 ),
               ),

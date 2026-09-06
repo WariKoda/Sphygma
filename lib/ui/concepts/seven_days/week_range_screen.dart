@@ -169,7 +169,7 @@ class _WeekRangeScreenState extends State<WeekRangeScreen> {
                         theme: t,
                         child: WeekDetailScreen(
                           controller: widget.controller,
-                          week: w,
+                          weekStart: w.beginsAt,
                         ),
                       ),
                     ),

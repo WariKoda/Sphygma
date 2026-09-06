@@ -20,14 +20,51 @@ class WeekDetailScreen extends StatelessWidget {
   const WeekDetailScreen({
     super.key,
     required this.controller,
-    required this.week,
+    required this.weekStart,
   });
 
   final AppController controller;
-  final MeasurementWeek week;
+
+  /// Der Montag der Woche — nicht die Woche selbst. Ein mitgereichtes
+  /// Wochenobjekt wäre ein Schnappschuss: Holt der automatische Abgleich
+  /// währenddessen eine Messung, zeigte dieser Bildschirm weiter die alten
+  /// Felder und Mittelwerte.
+  final DateTime weekStart;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ListenableBuilder(
+        listenable: controller,
+        builder: (context, _) {
+          final wochen = buildWeeks(controller.measurements);
+          for (final w in wochen) {
+            if (w.beginsAt == weekStart) return _inhalt(context, w);
+          }
+          return _keineWoche(context);
+        },
+      );
+
+  Widget _keineWoche(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+    return Scaffold(
+      backgroundColor: t.surface,
+      appBar: AppBar(
+        title: Text(formatWeekRange(weekStart)),
+        backgroundColor: t.surface,
+        foregroundColor: t.onSurface,
+        elevation: 0,
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(t.gapLarge),
+        child: Text(
+          'Für diese Woche liegt keine Messung des gewählten Speicherplatzes '
+          'vor.',
+          style: TextStyle(fontSize: 13, color: t.muted, height: 1.5),
+        ),
+      ),
+    );
+  }
+
+  Widget _inhalt(BuildContext context, MeasurementWeek week) {
     final t = SphygmaTheme.of(context);
     final fraglich = {
       for (final m in questionableTimestamps(

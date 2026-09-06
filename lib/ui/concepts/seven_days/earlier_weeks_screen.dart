@@ -93,7 +93,7 @@ class _WochenZeile extends StatelessWidget {
         MaterialPageRoute<void>(
           builder: (_) => SphygmaThemeScope(
             theme: t,
-            child: WeekDetailScreen(controller: controller, week: week),
+            child: WeekDetailScreen(controller: controller, weekStart: week.beginsAt),
           ),
         ),
       ),
