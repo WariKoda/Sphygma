@@ -170,7 +170,7 @@ class _RohZeile extends StatelessWidget {
     return InkWell(
       onTap: onTap == null ? null : () => onTap!(m),
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: t.gapSmall / 2),
+        padding: EdgeInsets.symmetric(vertical: t.rowSpacing(t.gapSmall / 2)),
         decoration: t.rowDivider,
         child: Row(
           children: [

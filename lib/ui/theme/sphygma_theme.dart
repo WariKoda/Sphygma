@@ -74,7 +74,15 @@ class SphygmaTheme {
       : const BoxDecoration();
 
   /// Was ohne Trennstrich an Luft dazukommt, damit die Zeilen nicht kleben.
-  double get rowGap => showDividers ? gapSmall : gapSmall * 1.6;
+  ///
+  /// Nimmt den Abstand entgegen, den die Zeile sonst hätte: Nicht jede Zeile
+  /// misst [gapSmall] — manche stehen enger, manche weiter. Ein fester Wert
+  /// hier hätte die Unterschiede zwischen den Zeilen eingeebnet, ein fester
+  /// Wert dort hätte Aura und Pegel ihre Zeilen zusammenkleben lassen.
+  double rowSpacing(double base) => showDividers ? base : base * 1.6;
+
+  /// Der Regelfall: eine Zeile mit [gapSmall] Abstand.
+  double get rowGap => rowSpacing(gapSmall);
 
   /// Wirft, wenn kein [SphygmaThemeScope] darueber liegt. Ein stiller
   /// Ersatzwert wuerde die Gestaltung unbemerkt zerfallen lassen.

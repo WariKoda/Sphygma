@@ -148,7 +148,7 @@ class _RecentRow extends StatelessWidget {
     final m = measurement;
 
     return Container(
-      padding: EdgeInsets.symmetric(vertical: t.gapSmall + 2),
+      padding: EdgeInsets.symmetric(vertical: t.rowSpacing(t.gapSmall + 2)),
       decoration: t.rowDivider,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

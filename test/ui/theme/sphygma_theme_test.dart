@@ -84,6 +84,7 @@ void main() {
 
       expect(mitStrich.rowDivider.border, isNotNull);
       expect(mitStrich.rowGap, mitStrich.gapSmall);
+      expect(mitStrich.rowSpacing(4), 4, reason: 'mit Strich bleibt der Wert');
     });
 
     test('ohne Trennstrich gliedert Luft statt Linie', () {
@@ -116,6 +117,11 @@ void main() {
 
       expect(ohneStrich.rowDivider.border, isNull);
       expect(ohneStrich.rowGap, greaterThan(ohneStrich.gapSmall));
+      // rowSpacing rechnet auf dem Abstand, den die Zeile sonst hätte —
+      // sonst blieben eng oder weit gesetzte Zeilen bei den strichlosen
+      // Handschriften auf ihrem festen Wert stehen und klebten aneinander.
+      expect(ohneStrich.rowSpacing(4), greaterThan(4));
+      expect(ohneStrich.rowSpacing(20), greaterThan(20));
     });
   });
 }

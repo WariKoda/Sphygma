@@ -159,7 +159,7 @@ class _Row extends StatelessWidget {
     final t = SphygmaTheme.of(context);
 
     return Container(
-      padding: EdgeInsets.symmetric(vertical: t.gapSmall + 2),
+      padding: EdgeInsets.symmetric(vertical: t.rowSpacing(t.gapSmall + 2)),
       decoration: t.rowDivider,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
