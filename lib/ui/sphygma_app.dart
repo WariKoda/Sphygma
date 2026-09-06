@@ -4,6 +4,8 @@
 import 'package:flutter/material.dart';
 
 import '../app/app_controller.dart';
+import '../app/concept.dart';
+import 'concepts/day_profile/day_profile_screen.dart';
 import 'device_screen.dart';
 import 'history_screen.dart';
 import 'theme/sphygma_theme.dart';
@@ -79,7 +81,11 @@ class _ShellState extends State<_Shell> {
   @override
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
-    const titles = ['Heute', 'Verlauf', 'Gerät'];
+    final titles = [
+      widget.controller.concept == AppConcept.tagesprofil ? 'Muster' : 'Heute',
+      'Verlauf',
+      'Gerät',
+    ];
 
     return ListenableBuilder(
       listenable: widget.controller,
@@ -91,9 +97,14 @@ class _ShellState extends State<_Shell> {
           foregroundColor: t.onSurface,
           elevation: 0,
         ),
-        body: switch (_index) {
-          0 => TodayScreen(controller: widget.controller),
-          1 => HistoryScreen(controller: widget.controller),
+        // Das Konzept bestimmt, was auf dem ersten Reiter steht. Der
+        // Gerätebereich bleibt in jedem Konzept derselbe — dort wird das
+        // Konzept ja auch gewechselt.
+        body: switch ((widget.controller.concept, _index)) {
+          (AppConcept.tagesprofil, 0) =>
+            DayProfileScreen(controller: widget.controller),
+          (_, 0) => TodayScreen(controller: widget.controller),
+          (_, 1) => HistoryScreen(controller: widget.controller),
           _ => DeviceScreen(controller: widget.controller),
         },
         bottomNavigationBar: NavigationBar(

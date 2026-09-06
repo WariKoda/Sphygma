@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sphygma/app/app_controller.dart';
+import 'package:sphygma/app/concept.dart';
 import 'package:sphygma/ble/pairing_key_store.dart';
 import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/db/measurement_repository.dart';
@@ -12,6 +13,7 @@ import 'package:sphygma/db/settings_repository.dart';
 import 'package:sphygma/sync/export_service.dart';
 import 'package:sphygma/sync/health_sink.dart';
 import 'package:sphygma/sync/sync_service.dart';
+import 'package:sphygma/ui/concepts/day_profile/day_profile_screen.dart';
 import 'package:sphygma/ui/device_screen.dart';
 import 'package:sphygma/ui/history_screen.dart';
 import 'package:sphygma/ui/sphygma_app.dart';
@@ -102,6 +104,32 @@ void main() {
       SphygmaTheme.of(context).name,
       themeFor(ThemeVariant.material).name,
     );
+  });
+
+  testWidgets('das Konzept bestimmt den ersten Bildschirm', (tester) async {
+    await tester.pumpWidget(SphygmaApp(controller: controller));
+    await tester.pumpAndSettle();
+    expect(find.byType(TodayScreen), findsOneWidget);
+
+    await controller.setConcept(AppConcept.tagesprofil);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DayProfileScreen), findsOneWidget);
+    expect(find.byType(TodayScreen), findsNothing);
+  });
+
+  testWidgets('der Gerätebereich bleibt in jedem Konzept erreichbar',
+      (tester) async {
+    // Dort wird das Konzept gewechselt — wäre er in einem Konzept
+    // unerreichbar, käme man nicht mehr heraus.
+    await controller.setConcept(AppConcept.tagesprofil);
+    await tester.pumpWidget(SphygmaApp(controller: controller));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Gerät'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DeviceScreen), findsOneWidget);
   });
 
   testWidgets('eine Meldung des Steuerungsteils erscheint', (tester) async {
