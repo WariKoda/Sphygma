@@ -2,6 +2,7 @@
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 
+import '../app/concept.dart';
 import '../ui/theme/variants.dart';
 import 'app_database.dart';
 
@@ -59,6 +60,31 @@ class SettingsRepository {
 
   Future<void> setThemeVariant(ThemeVariant variant) =>
       setRawSetting(_themeVariantKey, variant.name);
+
+  static const String _conceptKey = 'app_concept';
+
+  /// Das gewaehlte Konzept — die zweite Achse neben der Gestaltung. Wie dort
+  /// ist ein Standard richtig: Wer nichts waehlt, bekommt die gewachsene
+  /// Ordnung, nicht einen Fehler.
+  Future<AppConcept> concept() async {
+    final row = await (_db.select(_db.appSettings)
+          ..where((s) => s.key.equals(_conceptKey)))
+        .getSingleOrNull();
+    if (row == null) return AppConcept.klassisch;
+    for (final c in allConcepts) {
+      if (c.name == row.value) return c;
+    }
+    // Wie bei der Gestaltung: nicht werfen, aber auch nicht lautlos. Ein
+    // entferntes Konzept darf die App nicht unbenutzbar machen.
+    debugPrint(
+      '[Sphygma] Unbekanntes Konzept "${row.value}" gespeichert, '
+      'nutze ${AppConcept.klassisch.name}.',
+    );
+    return AppConcept.klassisch;
+  }
+
+  Future<void> setConcept(AppConcept concept) =>
+      setRawSetting(_conceptKey, concept.name);
 
   /// Schreibt einen Einstellungswert unmittelbar. Oeffentlich, weil Tests
   /// ungueltige Zustaende herstellen koennen muessen.

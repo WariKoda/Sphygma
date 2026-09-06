@@ -4,6 +4,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sphygma/app/app_controller.dart';
+import 'package:sphygma/app/concept.dart';
 import 'package:sphygma/ble/pairing_key_store.dart';
 import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/db/measurement_repository.dart';
@@ -196,6 +197,31 @@ void main() {
       ),
     );
     expect(button.onPressed, isNull);
+  });
+
+  testWidgets('das Konzept lässt sich umschalten', (tester) async {
+    await boot();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+    await tester.ensureVisible(find.text('Tagesprofil'));
+    await tester.tap(find.text('Tagesprofil'));
+    await tester.pumpAndSettle();
+
+    expect(controller.concept, AppConcept.tagesprofil);
+  });
+
+  testWidgets('Konzept und Gestaltung stehen beide zur Wahl', (tester) async {
+    await boot();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+
+    // Zwei freie Achsen: Ordnung und Aussehen.
+    // _Section setzt den Titel in Großbuchstaben.
+    expect(find.text('KONZEPT'), findsOneWidget);
+    expect(find.text('GESTALTUNG'), findsOneWidget);
+    for (final k in allConcepts) {
+      expect(find.text(k.label), findsOneWidget, reason: k.name);
+    }
   });
 
   testWidgets('die Gestaltung lässt sich umschalten', (tester) async {

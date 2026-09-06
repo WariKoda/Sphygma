@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../app/app_controller.dart';
+import '../app/concept.dart';
 import 'theme/sphygma_theme.dart';
 import 'theme/variants.dart';
 
@@ -124,6 +125,31 @@ class _DeviceScreenState extends State<DeviceScreen> {
               onPressed: c.busy || c.userSlot == null
                   ? null
                   : () => _start(c.retractAll),
+            ),
+
+            _Section(title: 'Konzept'),
+            RadioGroup<AppConcept>(
+              groupValue: c.concept,
+              onChanged: (chosen) =>
+                  chosen == null ? null : c.setConcept(chosen),
+              child: Column(
+                children: [
+                  for (final k in allConcepts)
+                    RadioListTile<AppConcept>(
+                      value: k,
+                      title: Text(
+                        k.label,
+                        style: TextStyle(fontSize: 14, color: t.onSurface),
+                      ),
+                      subtitle: Text(
+                        '${k.unit} · ${k.description}',
+                        style: TextStyle(fontSize: 11, color: t.muted),
+                      ),
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                    ),
+                ],
+              ),
             ),
 
             _Section(title: 'Gestaltung'),

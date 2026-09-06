@@ -11,6 +11,7 @@ import '../ble/pairing_key_store.dart';
 import '../db/app_database.dart';
 import '../db/measurement_repository.dart';
 import '../db/settings_repository.dart';
+import 'concept.dart';
 import '../protocol/exceptions.dart';
 import '../stats/period.dart';
 import '../sync/export_service.dart';
@@ -62,6 +63,10 @@ class AppController extends ChangeNotifier {
   /// Gewaehlte Gestaltung. Wird in [init] aus der DB geladen.
   ThemeVariant themeVariant = ThemeVariant.instrument;
 
+  /// Die zweite Achse: wie die App geordnet ist. Frei mit der Gestaltung
+  /// kombinierbar — jedes Konzept trägt denselben Funktionsumfang.
+  AppConcept concept = AppConcept.klassisch;
+
   /// Die neueste Messung, unabhaengig vom Zeitraum. Null heisst: noch
   /// keine Messung gespeichert - ein echter Zustand, kein Fehler.
   Measurement? get latest => measurements.isEmpty ? null : measurements.first;
@@ -72,6 +77,12 @@ class AppController extends ChangeNotifier {
 
   Future<void> setPeriod(Period value) async {
     period = value;
+    notifyListeners();
+  }
+
+  Future<void> setConcept(AppConcept value) async {
+    await settings.setConcept(value);
+    concept = value;
     notifyListeners();
   }
 
@@ -93,6 +104,7 @@ class AppController extends ChangeNotifier {
     userSlot = await settings.userSlot();
     paired = await keyStore.load() != null;
     themeVariant = await settings.themeVariant();
+    concept = await settings.concept();
     await _refresh();
     _startWatching();
   }
