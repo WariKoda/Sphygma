@@ -5,9 +5,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../app/app_controller.dart';
-import '../app/concept.dart';
+import 'settings_screen.dart';
 import 'theme/sphygma_theme.dart';
 import 'theme/variants.dart';
+import 'widgets/section_header.dart';
 
 class DeviceScreen extends StatefulWidget {
   const DeviceScreen({super.key, required this.controller});
@@ -38,7 +39,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
         padding: EdgeInsets.all(t.gapLarge),
         child: Column(
           children: [
-            _Section(title: 'Gerät'),
+            const SectionHeader(title: 'Gerät'),
             _Row(
               label: 'RS7 Intelli IT',
               value: c.paired ? 'gekoppelt' : 'nicht gekoppelt',
@@ -88,7 +89,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
               ),
             ],
 
-            _Section(title: 'Abgleich'),
+            const SectionHeader(title: 'Abgleich'),
             _Row(
               label: 'Automatischer Abgleich',
               value: c.autoSyncActive ? 'wartet auf Messungen' : 'aus',
@@ -108,7 +109,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
               Text(c.status!, style: TextStyle(fontSize: 12, color: t.muted)),
             ],
 
-            _Section(title: 'Health Connect'),
+            const SectionHeader(title: 'Health Connect'),
             _Row(
               label: 'Übertragen',
               value:
@@ -127,50 +128,12 @@ class _DeviceScreenState extends State<DeviceScreen> {
                   : () => _start(c.retractAll),
             ),
 
-            _Section(title: 'Konzept'),
-            RadioGroup<AppConcept>(
-              groupValue: c.concept,
-              onChanged: (chosen) =>
-                  chosen == null ? null : c.setConcept(chosen),
-              child: Column(
-                children: [
-                  for (final k in allConcepts)
-                    RadioListTile<AppConcept>(
-                      value: k,
-                      title: Text(
-                        k.label,
-                        style: TextStyle(fontSize: 14, color: t.onSurface),
-                      ),
-                      subtitle: Text(
-                        '${k.unit} · ${k.description}',
-                        style: TextStyle(fontSize: 11, color: t.muted),
-                      ),
-                      contentPadding: EdgeInsets.zero,
-                      dense: true,
-                    ),
-                ],
-              ),
-            ),
-
-            _Section(title: 'Gestaltung'),
-            RadioGroup<ThemeVariant>(
-              groupValue: c.themeVariant,
-              onChanged: (chosen) =>
-                  chosen == null ? null : c.setThemeVariant(chosen),
-              child: Column(
-                children: [
-                  for (final v in allVariants)
-                    RadioListTile<ThemeVariant>(
-                      value: v,
-                      title: Text(
-                        themeFor(v).name,
-                        style: TextStyle(fontSize: 14, color: t.onSurface),
-                      ),
-                      contentPadding: EdgeInsets.zero,
-                      dense: true,
-                    ),
-                ],
-              ),
+            const SectionHeader(title: 'Darstellung'),
+            _Row(label: 'Konzept', value: c.concept.label),
+            _Row(label: 'Gestaltung', value: themeFor(c.themeVariant).name),
+            _Button(
+              label: 'Konzept und Gestaltung ändern',
+              onPressed: () => showSettings(context, controller: c),
             ),
           ],
         ),
@@ -188,25 +151,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
     unawaited(action().catchError((Object e) {
       debugPrint('[Sphygma] Aktion fehlgeschlagen: $e');
     }));
-  }
-}
-
-class _Section extends StatelessWidget {
-  const _Section({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = SphygmaTheme.of(context);
-
-    return Padding(
-      padding: EdgeInsets.only(top: t.gapLarge, bottom: t.gapSmall),
-      child: Text(
-        title.toUpperCase(),
-        style: TextStyle(fontSize: 10, letterSpacing: 1.6, color: t.muted),
-      ),
-    );
   }
 }
 

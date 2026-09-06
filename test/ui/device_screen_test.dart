@@ -4,7 +4,6 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sphygma/app/app_controller.dart';
-import 'package:sphygma/app/concept.dart';
 import 'package:sphygma/ble/pairing_key_store.dart';
 import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/db/measurement_repository.dart';
@@ -199,39 +198,28 @@ void main() {
     expect(button.onPressed, isNull);
   });
 
-  testWidgets('das Konzept lässt sich umschalten', (tester) async {
+  testWidgets('der Weg zu Konzept und Gestaltung führt aus dem Gerätebereich '
+      'heraus', (tester) async {
     await boot();
 
     await pumpWith(tester, ThemeVariant.instrument);
-    await tester.ensureVisible(find.text('Tagesprofil'));
-    await tester.tap(find.text('Tagesprofil'));
+    await tester.ensureVisible(find.text('Konzept und Gestaltung ändern'));
+    await tester.tap(find.text('Konzept und Gestaltung ändern'));
     await tester.pumpAndSettle();
 
-    expect(controller.concept, AppConcept.tagesprofil);
-  });
-
-  testWidgets('Konzept und Gestaltung stehen beide zur Wahl', (tester) async {
-    await boot();
-
-    await pumpWith(tester, ThemeVariant.instrument);
-
-    // Zwei freie Achsen: Ordnung und Aussehen.
-    // _Section setzt den Titel in Großbuchstaben.
+    // Die Wahl selbst steht seit dem 06.09.2026 auf einem eigenen Blatt:
+    // Gerät und Übertragung tun etwas mit den Messungen, diese beiden nur
+    // mit ihrer Darstellung.
     expect(find.text('KONZEPT'), findsOneWidget);
     expect(find.text('GESTALTUNG'), findsOneWidget);
-    for (final k in allConcepts) {
-      expect(find.text(k.label), findsOneWidget, reason: k.name);
-    }
   });
 
-  testWidgets('die Gestaltung lässt sich umschalten', (tester) async {
+  testWidgets('nennt das gewählte Konzept, ohne die Wahl aufzublättern',
+      (tester) async {
     await boot();
 
     await pumpWith(tester, ThemeVariant.instrument);
-    await tester.ensureVisible(find.text('Tagebuch'));
-    await tester.tap(find.text('Tagebuch'));
-    await tester.pumpAndSettle();
 
-    expect(controller.themeVariant, ThemeVariant.diary);
+    expect(find.text('Messung und Filter'), findsOneWidget);
   });
 }
