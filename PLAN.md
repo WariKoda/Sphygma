@@ -542,3 +542,77 @@ Bewusst ausgeschlossen — jede Position mit Grund:
 - [Health apps declaration form](https://support.google.com/googleplay/android-developer/answer/14738291)
 - Quellcode von `flutter_blue_plus` 2.3.12, `flutter_reactive_ble` 5.5.0, `health` 13.3.2
 - [Sphygmo auf Google Play](https://play.google.com/store/apps/details?id=ca.mmhg.sphygmo)
+
+---
+
+## 9. Vorgemerkt — Ideen, noch nicht geplant
+
+Notiert am 2026-09-06 auf Zuruf. Keine Zusage, kein Meilenstein: Was hier steht,
+ist noch nicht entworfen und noch nicht gegen die harten Projektregeln geprüft.
+Jede Zeile nennt, woran zu denken ist, bevor sie in einen Meilenstein wandert.
+
+### 9.1 Ergänzende Notizen zu Messungen
+
+Freitext an einer Messung — „nach dem Sport", „Manschette zu locker",
+„Medikament vergessen". Der Kontext einer Messung geht sonst verloren, und
+gerade er entscheidet oft, ob ein Ausreißer einer ist.
+
+* Eigene Tabelle, kein Feld an `Measurements`: **Die Messungstabelle bleibt
+  reines Abbild des Geräts.** Verknüpfung über `(userSlot, deviceSequence)`,
+  denselben Schlüssel wie `OccasionDecisions` und `PhaseAssignments`.
+* **Nicht** nach Health Connect. Dorthin gehen Messwerte, nichts sonst; ein
+  Freitext wäre keine Geräteaufzeichnung.
+* Jedes der fünf Konzepte braucht einen Ort dafür — die Notiz ist eine
+  Funktion wie F1–F15 und darf nicht in einem Konzept fehlen.
+* Offen: Ob eine Notiz an der Rohmessung oder am Messanlass hängt. Beim
+  Konzept „Messanlass" sind das verschiedene Dinge.
+
+### 9.2 Backup
+
+Die lokale DB ist Source of Truth. Geht das Telefon verloren, sind alle
+Messungen weg, die über die 100 Records im Gerätespeicher hinausgehen — und
+alles, was nur in der App existiert.
+
+* Ein Backup, das nur Messwerte sichert, ist keines: Anlass-Entscheidungen,
+  Phasen, Phasenzuordnungen und künftige Notizen gehören dazu. Sie sind
+  Nutzerarbeit und aus dem Gerät nicht wiederherstellbar.
+* Die Datei enthält Gesundheitsdaten. Ablageort, Verschlüsselung und der
+  Hinweis darauf sind Teil der Aufgabe, nicht Beiwerk — `docs/PRIVACY.md`
+  zieht mit.
+* Beim Zurücklesen gilt derselbe Dedup-Schlüssel wie beim Gerät. Ein Import
+  darf nichts überschreiben, was neuer ist.
+* Offen: Format und ob der Weg über Androids eigene Sicherung sinnvoller ist
+  als ein eigener Export. Beides erst prüfen, nicht annehmen.
+
+### 9.3 Erinnerungen für regelmäßige Messungen
+
+Passt zum Konzept „Sieben Tage": Eine Messwoche verlangt sieben Tage morgens
+und abends, und genau daran denkt man nicht.
+
+* Zwei Zeitpunkte je Tag, die zur eingestellten Tagesgrenze passen sollten —
+  dieselbe, die morgens von abends trennt.
+* Klären, bevor gebaut wird: welche Laufzeitberechtigung neuere
+  Android-Versionen für Benachrichtigungen verlangen, und wie zuverlässig
+  geplante Benachrichtigungen im Energiesparmodus zünden. Beides gegen die
+  offizielle Dokumentation prüfen, nicht aus dem Gedächtnis.
+* MDR: Eine reine Terminerinnerung dürfte unkritisch sein. Sobald sie
+  begründet wird („dein Wert war gestern hoch, miss nochmal"), ist es eine
+  andere Frage — dann gehört sie hinter dasselbe Flag wie die
+  ESC-Klassifikation (§3.2).
+* Die Erinnerung darf nicht drängeln. Der Entwurf zu „Sieben Tage" nennt den
+  Ton: sachlich, immer mit dem nächsten Schritt, nie als Vorwurf.
+
+### 9.4 Logo für die App
+
+Es gibt bisher keins. Gebraucht wird es für das Startsymbol, die
+F-Droid-Metadaten und einen etwaigen Play-Eintrag.
+
+* Als adaptives Symbol anzulegen (Vorder- und Hintergrundebene getrennt),
+  sonst wird es auf vielen Geräten beschnitten.
+* Muss in einfarbig und in klein lesbar bleiben; ein Blutdruckdiagramm wird
+  in 48 px zu Matsch.
+* Keine Anleihen bei Omron — weder Name noch Formensprache. Sphygma ist ein
+  eigenständiges Projekt, und Verwechselbarkeit wäre ein rechtliches Risiko
+  neben einem gestalterischen.
+* Die drei Handschriften haben je eine eigene Farbwelt. Das Symbol gehört
+  keiner davon; es steht außerhalb und muss auf allen dreien tragen.
