@@ -44,6 +44,7 @@ class MeasurementOccasion {
     required this.result,
     required this.state,
     required this.rule,
+    required this.openSeam,
   });
 
   /// Alle Rohmessungen dieses Anlasses, älteste zuerst.
@@ -60,6 +61,15 @@ class MeasurementOccasion {
   /// Wie das Ergebnis zustande kam — im Klartext, für die Anzeige.
   /// Ein Wert, dessen Herkunft man nicht nachlesen kann, ist keine Messung.
   final String rule;
+
+  /// Die Gerätenummer der Messung, deren Zugehörigkeit zu diesem Anlass offen
+  /// ist — null, wenn nichts offen ist.
+  ///
+  /// Ein Grenzfall betrifft immer die Naht zwischen zwei benachbarten
+  /// Anlässen, nicht einen Anlass allein. Ohne diese Adresse müsste die
+  /// Oberfläche aus der Reihenfolge zurückrechnen, welche Messung gemeint
+  /// ist — und läge falsch, sobald eine Nummer fehlt.
+  final int? openSeam;
 
   /// Die Gerätenummer, unter der dieser Anlass geführt wird: die erste.
   int get sequence => measurements.first.deviceSequence;
@@ -109,6 +119,7 @@ List<MeasurementOccasion> proposeOccasions(
 
   final gruppen = <List<Measurement>>[];
   final zustaende = <OccasionState>[];
+  final naehte = <int?>[];
   var aktuell = <Measurement>[sortiert.first];
   var aktuellerZustand = OccasionState.sicher;
 
@@ -126,6 +137,11 @@ List<MeasurementOccasion> proposeOccasions(
       // das genauso wie der neu beginnende.
       gruppen.add(aktuell);
       zustaende.add(_staerker(aktuellerZustand, entscheidung.state));
+      // Die offene Frage lautet: Gehört `jetzt` noch zum eben
+      // abgeschlossenen Anlass? Ihre Nummer ist die Adresse der Antwort.
+      naehte.add(entscheidung.state == OccasionState.zuPruefen
+          ? jetzt.deviceSequence
+          : null);
       aktuell = [jetzt];
       aktuellerZustand = entscheidung.state == OccasionState.bestaetigt
           ? OccasionState.bestaetigt
@@ -134,9 +150,11 @@ List<MeasurementOccasion> proposeOccasions(
   }
   gruppen.add(aktuell);
   zustaende.add(aktuellerZustand);
+  naehte.add(null);
 
   return [
-    for (var i = 0; i < gruppen.length; i++) _build(gruppen[i], zustaende[i]),
+    for (var i = 0; i < gruppen.length; i++)
+      _build(gruppen[i], zustaende[i], naehte[i]),
   ];
 }
 
@@ -194,7 +212,11 @@ OccasionState _staerker(OccasionState a, OccasionState b) {
   return OccasionState.sicher;
 }
 
-MeasurementOccasion _build(List<Measurement> gruppe, OccasionState state) {
+MeasurementOccasion _build(
+  List<Measurement> gruppe,
+  OccasionState state,
+  int? openSeam,
+) {
   // Bewegung während der Messung macht den Wert unzuverlässig — solche
   // Messungen fallen aus dem Ergebnis. Trügen alle das Kennzeichen, bliebe
   // nichts übrig; dann zählen alle, mit einem Hinweis darauf.
@@ -233,5 +255,6 @@ MeasurementOccasion _build(List<Measurement> gruppe, OccasionState state) {
     result: ergebnis,
     state: state,
     rule: regel,
+    openSeam: openSeam,
   );
 }

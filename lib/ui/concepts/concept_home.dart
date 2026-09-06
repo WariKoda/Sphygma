@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_controller.dart';
 import '../../app/concept.dart';
+import 'occasion/occasion_home.dart';
 import 'seven_days/seven_days_home.dart';
 import 'tabbed_home.dart';
 
@@ -22,9 +23,11 @@ Widget conceptHome({
       // Sieben Tage bringt einen Weg statt vier Reiter mit: ein Einstieg,
       // von dem alles andere aufgerufen wird.
       AppConcept.siebenTage => SevenDaysHome(controller: controller),
+      // Messanlass braucht einen eigenen Ort für offene Grenzfälle — einen
+      // vierten Bereich, dessen Anzahl am Reiter steht.
+      AppConcept.messanlass => OccasionHome(controller: controller),
       AppConcept.klassisch ||
       AppConcept.tagesprofil ||
-      AppConcept.messanlass ||
       AppConcept.phase =>
         TabbedHome(controller: controller),
     };

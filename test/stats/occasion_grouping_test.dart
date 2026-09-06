@@ -237,4 +237,46 @@ void main() {
       );
     });
   });
+
+  group('Die offene Naht hat eine Adresse', () {
+    test('ein Grenzfall nennt die Messung, um die es geht', () {
+      // Elf Minuten: zu weit für "sicher zusammen", zu nah für "sicher
+      // getrennt".
+      final anlaesse = proposeOccasions([
+        _m(200, _basis),
+        _m(201, _basis.add(const Duration(minutes: 11))),
+      ]);
+
+      expect(anlaesse, hasLength(2));
+      expect(anlaesse.first.state, OccasionState.zuPruefen);
+      // Die Frage lautet: Gehört 201 noch zum ersten Anlass?
+      expect(anlaesse.first.openSeam, 201);
+      expect(anlaesse.last.openSeam, isNull);
+    });
+
+    test('ohne Grenzfall ist keine Naht offen', () {
+      final anlaesse = proposeOccasions([
+        _m(300, _basis),
+        _m(301, _basis.add(const Duration(minutes: 2))),
+      ]);
+
+      expect(anlaesse.single.openSeam, isNull);
+    });
+
+    test('eine Entscheidung schließt die Naht', () {
+      final messungen = [
+        _m(400, _basis),
+        _m(401, _basis.add(const Duration(minutes: 11))),
+      ];
+
+      final zusammen = proposeOccasions(messungen, confirmedJoins: {401});
+      expect(zusammen, hasLength(1));
+      expect(zusammen.single.openSeam, isNull);
+      expect(zusammen.single.state, OccasionState.bestaetigt);
+
+      final getrennt = proposeOccasions(messungen, confirmedSplits: {401});
+      expect(getrennt, hasLength(2));
+      expect(getrennt.every((o) => o.openSeam == null), isTrue);
+    });
+  });
 }
