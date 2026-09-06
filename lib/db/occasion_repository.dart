@@ -113,10 +113,18 @@ class OccasionRepository {
   }
 
   /// Legt eine Phase an und liefert ihre Kennung.
+  ///
+  /// Bei [PhaseAnchor.jetzt] erzeugt das Repository den Beginn selbst — dann
+  /// darf [begin] nicht gesetzt sein. Sonst könnte jeder Aufrufer ein
+  /// beliebiges Datum als „jetzt" ausgeben, und die Herkunftsangabe wäre eine
+  /// Lüge, die dauerhaft in der Datenbank steht.
+  ///
+  /// Bei [PhaseAnchor.bestaetigt] ist [begin] Pflicht: Ein bestätigtes Datum
+  /// ohne Datum gibt es nicht.
   Future<int> startPhase({
     required String name,
-    required DateTime begin,
     required PhaseAnchor anchor,
+    DateTime? begin,
   }) async {
     final sauber = name.trim();
     if (sauber.isEmpty) {
@@ -127,10 +135,30 @@ class OccasionRepository {
             'Kalenderfilter — und den gibt es schon',
       );
     }
+
+    final DateTime beginn;
+    switch (anchor) {
+      case PhaseAnchor.jetzt:
+        if (begin != null) {
+          throw ArgumentError.value(
+            begin,
+            'begin',
+            'bei PhaseAnchor.jetzt setzt das Repository den Zeitpunkt selbst — '
+                'ein übergebener Wert würde die Herkunftsangabe verfälschen',
+          );
+        }
+        beginn = DateTime.now();
+      case PhaseAnchor.bestaetigt:
+        if (begin == null) {
+          throw ArgumentError.notNull('begin');
+        }
+        beginn = begin;
+    }
+
     return _db.into(_db.phases).insert(
           PhasesCompanion.insert(
             name: sauber,
-            beginsAt: begin,
+            beginsAt: beginn,
             anchor: anchor.name,
             createdAt: DateTime.now(),
           ),
@@ -147,6 +175,13 @@ class OccasionRepository {
         .getSingleOrNull();
     if (phase == null) {
       throw StateError('Phase $id gibt es nicht.');
+    }
+    if (phase.endsAt != null) {
+      // Ein zweiter Aufruf — etwa durch einen Doppeltipp — würde sonst eine
+      // aufgezeichnete Phasengrenze stillschweigend verschieben.
+      throw StateError(
+        'Phase $id ist bereits am ${phase.endsAt} beendet worden.',
+      );
     }
     if (at.isBefore(phase.beginsAt)) {
       throw ArgumentError.value(

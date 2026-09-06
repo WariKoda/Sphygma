@@ -66,11 +66,7 @@ void main() {
     });
 
     test('eine Phase wird angelegt und gefunden', () async {
-      final id = await repo.startPhase(
-        name: 'Ramipril 5 mg',
-        begin: DateTime(2026, 8, 10),
-        anchor: PhaseAnchor.bestaetigt,
-      );
+      final id = await repo.startPhase(name: 'Ramipril 5 mg', anchor: PhaseAnchor.bestaetigt, begin: DateTime(2026, 8, 10));
 
       final alle = await repo.phases();
       expect(alle, hasLength(1));
@@ -81,11 +77,7 @@ void main() {
     });
 
     test('eine Phase wird beendet', () async {
-      final id = await repo.startPhase(
-        name: 'Urlaub',
-        begin: DateTime(2026, 5, 18),
-        anchor: PhaseAnchor.bestaetigt,
-      );
+      final id = await repo.startPhase(name: 'Urlaub', anchor: PhaseAnchor.bestaetigt, begin: DateTime(2026, 5, 18));
       await repo.endPhase(id, at: DateTime(2026, 6, 2));
 
       final phase = (await repo.phases()).single;
@@ -93,17 +85,14 @@ void main() {
     });
 
     test('Phasen kommen neueste zuerst', () async {
-      await repo.startPhase(
-          name: 'Alt', begin: DateTime(2026, 5, 1), anchor: PhaseAnchor.bestaetigt);
-      await repo.startPhase(
-          name: 'Neu', begin: DateTime(2026, 8, 1), anchor: PhaseAnchor.bestaetigt);
+      await repo.startPhase(name: 'Alt', anchor: PhaseAnchor.bestaetigt, begin: DateTime(2026, 5, 1));
+      await repo.startPhase(name: 'Neu', anchor: PhaseAnchor.bestaetigt, begin: DateTime(2026, 8, 1));
 
       expect((await repo.phases()).map((p) => p.name), ['Neu', 'Alt']);
     });
 
     test('eine Phase wird gelöscht', () async {
-      final id = await repo.startPhase(
-          name: 'Versuch', begin: DateTime(2026, 8, 1), anchor: PhaseAnchor.jetzt);
+      final id = await repo.startPhase(name: 'Versuch', anchor: PhaseAnchor.jetzt);
       await repo.deletePhase(id);
 
       expect(await repo.phases(), isEmpty);
@@ -113,15 +102,13 @@ void main() {
   group('Fail hard', () {
     test('eine Phase ohne Namen ist keine Phase', () async {
       expect(
-        () => repo.startPhase(
-            name: '   ', begin: DateTime(2026, 8, 1), anchor: PhaseAnchor.jetzt),
+        () => repo.startPhase(name: '   ', anchor: PhaseAnchor.jetzt),
         throwsArgumentError,
       );
     });
 
     test('ein Ende vor dem Beginn wird abgelehnt', () async {
-      final id = await repo.startPhase(
-          name: 'Test', begin: DateTime(2026, 8, 10), anchor: PhaseAnchor.jetzt);
+      final id = await repo.startPhase(name: 'Test', anchor: PhaseAnchor.jetzt);
 
       expect(
         () => repo.endPhase(id, at: DateTime(2026, 8, 1)),
@@ -134,6 +121,48 @@ void main() {
       expect(
         () => repo.endPhase(9999, at: DateTime(2026, 9, 1)),
         throwsStateError,
+      );
+    });
+
+    test('eine beendete Phase lässt sich nicht erneut beenden', () async {
+      // Sonst verschöbe ein Doppeltipp eine aufgezeichnete Phasengrenze.
+      final id = await repo.startPhase(
+          name: 'Urlaub', anchor: PhaseAnchor.bestaetigt, begin: DateTime(2026, 5, 18));
+      await repo.endPhase(id, at: DateTime(2026, 6, 2));
+
+      expect(
+        () => repo.endPhase(id, at: DateTime(2026, 7, 1)),
+        throwsStateError,
+      );
+      expect((await repo.phases()).single.endsAt, DateTime(2026, 6, 2));
+    });
+
+    test('bei „jetzt" darf kein Beginn übergeben werden', () async {
+      // Sonst könnte ein beliebiges Datum als „jetzt" ausgegeben werden und
+      // die Herkunftsangabe stünde als Lüge dauerhaft in der Datenbank.
+      expect(
+        () => repo.startPhase(
+            name: 'Test', anchor: PhaseAnchor.jetzt, begin: DateTime(2020, 1, 1)),
+        throwsArgumentError,
+      );
+    });
+
+    test('bei „jetzt" stammt der Beginn von der Uhr des Telefons', () async {
+      final vorher = DateTime.now();
+      await repo.startPhase(name: 'Test', anchor: PhaseAnchor.jetzt);
+      final nachher = DateTime.now();
+
+      final phase = (await repo.phases()).single;
+      expect(phase.beginsAt.isBefore(vorher.subtract(const Duration(seconds: 1))),
+          isFalse);
+      expect(phase.beginsAt.isAfter(nachher.add(const Duration(seconds: 1))),
+          isFalse);
+    });
+
+    test('bei „bestätigt" ist der Beginn Pflicht', () async {
+      expect(
+        () => repo.startPhase(name: 'Test', anchor: PhaseAnchor.bestaetigt),
+        throwsArgumentError,
       );
     });
 
