@@ -217,4 +217,43 @@ void main() {
       expect(container.margin, isNull);
     });
   });
+
+  group('Was auffallen soll, fällt in jeder Form auf', () {
+    testWidgets('eine hervorgehobene Fläche trägt auch bei „Linie" eine Kante',
+        (tester) async {
+      // Der Prüfbereich zeigt offene Grenzfälle als Kacheln. Ohne Kante
+      // stünden sie im Modus „Linie" als bloßer Text zwischen anderem Text —
+      // die Aussage „hier ist etwas offen" ginge verloren.
+      await tester.pumpWidget(MaterialApp(
+        home: SphygmaThemeScope(
+          theme: themeFor(ThemeVariant.instrument, surface: SurfaceStyle.linie),
+          child: const Scaffold(
+            body: SurfacePanel(highlighted: true, child: Text('Offen')),
+          ),
+        ),
+      ));
+
+      final container = tester.widget<Container>(find
+          .descendant(
+              of: find.byType(SurfacePanel), matching: find.byType(Container))
+          .first);
+      final deko = container.decoration as BoxDecoration?;
+      expect(deko?.border, isNotNull, reason: 'eine offene Frage braucht Kante');
+    });
+
+    testWidgets('ohne Hervorhebung bleibt „Linie" flächenlos', (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: SphygmaThemeScope(
+          theme: themeFor(ThemeVariant.instrument, surface: SurfaceStyle.linie),
+          child: const Scaffold(body: SurfacePanel(child: Text('Normal'))),
+        ),
+      ));
+
+      final container = tester.widget<Container>(find
+          .descendant(
+              of: find.byType(SurfacePanel), matching: find.byType(Container))
+          .first);
+      expect(container.decoration, isNull);
+    });
+  });
 }

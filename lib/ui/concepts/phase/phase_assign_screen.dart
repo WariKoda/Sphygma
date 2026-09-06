@@ -69,6 +69,7 @@ class PhaseAssignScreen extends StatelessWidget {
             for (final (i, m) in offen.indexed)
               SurfacePanel(
                 tone: i % 2,
+                highlighted: true,
                 child: _Offen(
                   controller: controller,
                   measurement: m,

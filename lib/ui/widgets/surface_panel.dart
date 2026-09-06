@@ -15,6 +15,7 @@ class SurfacePanel extends StatelessWidget {
     required this.child,
     this.tone = 0,
     this.padding,
+    this.highlighted = false,
   });
 
   final Widget child;
@@ -34,6 +35,15 @@ class SurfacePanel extends StatelessWidget {
 
   final EdgeInsetsGeometry? padding;
 
+  /// Ob die Fläche etwas trägt, das auffallen soll — eine offene Frage, ein
+  /// Grenzfall, eine Entscheidung, die aussteht.
+  ///
+  /// Sie bekommt dann auch dort eine Kante, wo die Form keine Flächen kennt.
+  /// Ohne das verlöre der Prüfbereich im Modus „Linie" seine Kacheln und
+  /// damit die Aussage „hier ist etwas offen" — sie stünde als bloßer Text
+  /// zwischen anderem Text.
+  final bool highlighted;
+
   @override
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
@@ -52,7 +62,15 @@ class SurfacePanel extends StatelessWidget {
       // Strich sie trennt.
       SurfaceStyle.linie => Container(
           margin: EdgeInsets.only(bottom: t.gapLarge),
-          padding: padding ?? EdgeInsets.zero,
+          padding: highlighted
+              ? (padding ?? EdgeInsets.all(t.gapSmall))
+              : (padding ?? EdgeInsets.zero),
+          decoration: highlighted
+              ? BoxDecoration(
+                  border: Border.all(color: t.line),
+                  borderRadius: BorderRadius.circular(t.radius),
+                )
+              : null,
           child: inhalt,
         ),
 

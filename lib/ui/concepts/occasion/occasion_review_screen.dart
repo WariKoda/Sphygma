@@ -69,6 +69,7 @@ class OccasionReviewScreen extends StatelessWidget {
             for (final (i, o) in offen.indexed)
               SurfacePanel(
                 tone: i % 2,
+                highlighted: true,
                 child: _Grenzfall(controller: controller, occasion: o),
               ),
           ],
