@@ -135,7 +135,23 @@ Phase? _phaseFuer(DateTime at, List<Phase> phases) {
     if (at.isBefore(p.beginsAt)) continue;
     final ende = p.endsAt;
     if (ende != null && !at.isBefore(ende)) continue;
-    if (beste == null || p.beginsAt.isAfter(beste.beginsAt)) beste = p;
+    if (beste == null || _spaeter(p, beste)) beste = p;
   }
   return beste;
+}
+
+/// Welche von zwei überlappenden Phasen die speziellere ist.
+///
+/// „Die zuletzt begonnene gewinnt" reicht nicht: Zwei rückwirkend gesetzte
+/// Phasen können denselben Beginn tragen — der Nutzer wählt ein Datum, und
+/// das steht auf Mitternacht. Ohne Stichentscheid entschiede die Reihenfolge,
+/// in der die Datenbank die Phasen liefert, und dieselbe Messung fiele je
+/// nach Abfrage in eine andere Phase.
+///
+/// Bei gleichem Beginn gewinnt deshalb die **später angelegte**: Wer eine
+/// zweite Phase auf dasselbe Datum legt, präzisiert die erste.
+bool _spaeter(Phase a, Phase b) {
+  if (a.beginsAt != b.beginsAt) return a.beginsAt.isAfter(b.beginsAt);
+  if (a.createdAt != b.createdAt) return a.createdAt.isAfter(b.createdAt);
+  return a.id > b.id;
 }

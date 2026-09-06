@@ -19,13 +19,14 @@ Measurement _m(int seq, DateTime at, {int sys = 128}) => Measurement(
       exportedAt: null,
     );
 
-Phase _p(int id, String name, DateTime von, {DateTime? bis}) => Phase(
+Phase _p(int id, String name, DateTime von, {DateTime? bis, DateTime? angelegt}) =>
+    Phase(
       id: id,
       name: name,
       beginsAt: von,
       endsAt: bis,
       anchor: 'bestaetigt',
-      createdAt: von,
+      createdAt: angelegt ?? von,
     );
 
 final _jetzt = DateTime(2026, 9, 6, 12);
@@ -171,5 +172,32 @@ void main() {
     );
 
     expect(gruppen.total, messungen.length);
+  });
+
+  group('Gleicher Beginn braucht einen Stichentscheid', () {
+    test('bei gleichem Beginn gewinnt die später angelegte Phase', () {
+      // Zwei rückwirkend gesetzte Phasen können denselben Beginn tragen —
+      // der Nutzer wählt ein Datum, und das steht auf Mitternacht. Ohne
+      // Stichentscheid entschiede die Reihenfolge der Datenbankabfrage.
+      final beginn = DateTime(2026, 8, 12);
+      final phasen = [
+        _p(1, 'Zuerst angelegt', beginn, angelegt: DateTime(2026, 8, 12, 9)),
+        _p(2, 'Danach angelegt', beginn, angelegt: DateTime(2026, 8, 12, 17)),
+      ];
+      final messung = [_m(1, DateTime(2026, 8, 15, 8))];
+
+      for (final reihenfolge in [phasen, phasen.reversed.toList()]) {
+        final gruppen = groupByPhase(
+          messung,
+          phases: reihenfolge,
+          assignments: const {},
+          now: _jetzt,
+        );
+        final treffer =
+            gruppen.memberships.firstWhere((m) => m.count == 1).phase;
+        expect(treffer.name, 'Danach angelegt',
+            reason: 'die Reihenfolge der Liste darf nichts entscheiden');
+      }
+    });
   });
 }
