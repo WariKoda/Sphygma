@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import '../../app/app_controller.dart';
 import '../../app/concept.dart';
 import 'occasion/occasion_home.dart';
+import 'phase/phase_home.dart';
 import 'seven_days/seven_days_home.dart';
 import 'tabbed_home.dart';
 
@@ -26,8 +27,9 @@ Widget conceptHome({
       // Messanlass braucht einen eigenen Ort für offene Grenzfälle — einen
       // vierten Bereich, dessen Anzahl am Reiter steht.
       AppConcept.messanlass => OccasionHome(controller: controller),
-      AppConcept.klassisch ||
-      AppConcept.tagesprofil ||
-      AppConcept.phase =>
+      // Phase braucht einen eigenen Ort für die Zeitzuordnung: Ein Vergleich
+      // ist nur so belastbar wie sie.
+      AppConcept.phase => PhaseHome(controller: controller),
+      AppConcept.klassisch || AppConcept.tagesprofil =>
         TabbedHome(controller: controller),
     };

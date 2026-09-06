@@ -1709,6 +1709,372 @@ class PhasesCompanion extends UpdateCompanion<Phase> {
   }
 }
 
+class $PhaseAssignmentsTable extends PhaseAssignments
+    with TableInfo<$PhaseAssignmentsTable, PhaseAssignment> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PhaseAssignmentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _userSlotMeta = const VerificationMeta(
+    'userSlot',
+  );
+  @override
+  late final GeneratedColumn<int> userSlot = GeneratedColumn<int>(
+    'user_slot',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deviceSequenceMeta = const VerificationMeta(
+    'deviceSequence',
+  );
+  @override
+  late final GeneratedColumn<int> deviceSequence = GeneratedColumn<int>(
+    'device_sequence',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _phaseIdMeta = const VerificationMeta(
+    'phaseId',
+  );
+  @override
+  late final GeneratedColumn<int> phaseId = GeneratedColumn<int>(
+    'phase_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES phases (id)',
+    ),
+  );
+  static const VerificationMeta _decidedAtMeta = const VerificationMeta(
+    'decidedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> decidedAt = GeneratedColumn<DateTime>(
+    'decided_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    userSlot,
+    deviceSequence,
+    phaseId,
+    decidedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'phase_assignments';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PhaseAssignment> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('user_slot')) {
+      context.handle(
+        _userSlotMeta,
+        userSlot.isAcceptableOrUnknown(data['user_slot']!, _userSlotMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userSlotMeta);
+    }
+    if (data.containsKey('device_sequence')) {
+      context.handle(
+        _deviceSequenceMeta,
+        deviceSequence.isAcceptableOrUnknown(
+          data['device_sequence']!,
+          _deviceSequenceMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_deviceSequenceMeta);
+    }
+    if (data.containsKey('phase_id')) {
+      context.handle(
+        _phaseIdMeta,
+        phaseId.isAcceptableOrUnknown(data['phase_id']!, _phaseIdMeta),
+      );
+    }
+    if (data.containsKey('decided_at')) {
+      context.handle(
+        _decidedAtMeta,
+        decidedAt.isAcceptableOrUnknown(data['decided_at']!, _decidedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_decidedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {userSlot, deviceSequence},
+  ];
+  @override
+  PhaseAssignment map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PhaseAssignment(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      userSlot: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}user_slot'],
+      )!,
+      deviceSequence: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}device_sequence'],
+      )!,
+      phaseId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}phase_id'],
+      ),
+      decidedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}decided_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PhaseAssignmentsTable createAlias(String alias) {
+    return $PhaseAssignmentsTable(attachedDatabase, alias);
+  }
+}
+
+class PhaseAssignment extends DataClass implements Insertable<PhaseAssignment> {
+  final int id;
+  final int userSlot;
+  final int deviceSequence;
+  final int? phaseId;
+  final DateTime decidedAt;
+  const PhaseAssignment({
+    required this.id,
+    required this.userSlot,
+    required this.deviceSequence,
+    this.phaseId,
+    required this.decidedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['user_slot'] = Variable<int>(userSlot);
+    map['device_sequence'] = Variable<int>(deviceSequence);
+    if (!nullToAbsent || phaseId != null) {
+      map['phase_id'] = Variable<int>(phaseId);
+    }
+    map['decided_at'] = Variable<DateTime>(decidedAt);
+    return map;
+  }
+
+  PhaseAssignmentsCompanion toCompanion(bool nullToAbsent) {
+    return PhaseAssignmentsCompanion(
+      id: Value(id),
+      userSlot: Value(userSlot),
+      deviceSequence: Value(deviceSequence),
+      phaseId: phaseId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(phaseId),
+      decidedAt: Value(decidedAt),
+    );
+  }
+
+  factory PhaseAssignment.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PhaseAssignment(
+      id: serializer.fromJson<int>(json['id']),
+      userSlot: serializer.fromJson<int>(json['userSlot']),
+      deviceSequence: serializer.fromJson<int>(json['deviceSequence']),
+      phaseId: serializer.fromJson<int?>(json['phaseId']),
+      decidedAt: serializer.fromJson<DateTime>(json['decidedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'userSlot': serializer.toJson<int>(userSlot),
+      'deviceSequence': serializer.toJson<int>(deviceSequence),
+      'phaseId': serializer.toJson<int?>(phaseId),
+      'decidedAt': serializer.toJson<DateTime>(decidedAt),
+    };
+  }
+
+  PhaseAssignment copyWith({
+    int? id,
+    int? userSlot,
+    int? deviceSequence,
+    Value<int?> phaseId = const Value.absent(),
+    DateTime? decidedAt,
+  }) => PhaseAssignment(
+    id: id ?? this.id,
+    userSlot: userSlot ?? this.userSlot,
+    deviceSequence: deviceSequence ?? this.deviceSequence,
+    phaseId: phaseId.present ? phaseId.value : this.phaseId,
+    decidedAt: decidedAt ?? this.decidedAt,
+  );
+  PhaseAssignment copyWithCompanion(PhaseAssignmentsCompanion data) {
+    return PhaseAssignment(
+      id: data.id.present ? data.id.value : this.id,
+      userSlot: data.userSlot.present ? data.userSlot.value : this.userSlot,
+      deviceSequence: data.deviceSequence.present
+          ? data.deviceSequence.value
+          : this.deviceSequence,
+      phaseId: data.phaseId.present ? data.phaseId.value : this.phaseId,
+      decidedAt: data.decidedAt.present ? data.decidedAt.value : this.decidedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PhaseAssignment(')
+          ..write('id: $id, ')
+          ..write('userSlot: $userSlot, ')
+          ..write('deviceSequence: $deviceSequence, ')
+          ..write('phaseId: $phaseId, ')
+          ..write('decidedAt: $decidedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, userSlot, deviceSequence, phaseId, decidedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PhaseAssignment &&
+          other.id == this.id &&
+          other.userSlot == this.userSlot &&
+          other.deviceSequence == this.deviceSequence &&
+          other.phaseId == this.phaseId &&
+          other.decidedAt == this.decidedAt);
+}
+
+class PhaseAssignmentsCompanion extends UpdateCompanion<PhaseAssignment> {
+  final Value<int> id;
+  final Value<int> userSlot;
+  final Value<int> deviceSequence;
+  final Value<int?> phaseId;
+  final Value<DateTime> decidedAt;
+  const PhaseAssignmentsCompanion({
+    this.id = const Value.absent(),
+    this.userSlot = const Value.absent(),
+    this.deviceSequence = const Value.absent(),
+    this.phaseId = const Value.absent(),
+    this.decidedAt = const Value.absent(),
+  });
+  PhaseAssignmentsCompanion.insert({
+    this.id = const Value.absent(),
+    required int userSlot,
+    required int deviceSequence,
+    this.phaseId = const Value.absent(),
+    required DateTime decidedAt,
+  }) : userSlot = Value(userSlot),
+       deviceSequence = Value(deviceSequence),
+       decidedAt = Value(decidedAt);
+  static Insertable<PhaseAssignment> custom({
+    Expression<int>? id,
+    Expression<int>? userSlot,
+    Expression<int>? deviceSequence,
+    Expression<int>? phaseId,
+    Expression<DateTime>? decidedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userSlot != null) 'user_slot': userSlot,
+      if (deviceSequence != null) 'device_sequence': deviceSequence,
+      if (phaseId != null) 'phase_id': phaseId,
+      if (decidedAt != null) 'decided_at': decidedAt,
+    });
+  }
+
+  PhaseAssignmentsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? userSlot,
+    Value<int>? deviceSequence,
+    Value<int?>? phaseId,
+    Value<DateTime>? decidedAt,
+  }) {
+    return PhaseAssignmentsCompanion(
+      id: id ?? this.id,
+      userSlot: userSlot ?? this.userSlot,
+      deviceSequence: deviceSequence ?? this.deviceSequence,
+      phaseId: phaseId ?? this.phaseId,
+      decidedAt: decidedAt ?? this.decidedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (userSlot.present) {
+      map['user_slot'] = Variable<int>(userSlot.value);
+    }
+    if (deviceSequence.present) {
+      map['device_sequence'] = Variable<int>(deviceSequence.value);
+    }
+    if (phaseId.present) {
+      map['phase_id'] = Variable<int>(phaseId.value);
+    }
+    if (decidedAt.present) {
+      map['decided_at'] = Variable<DateTime>(decidedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PhaseAssignmentsCompanion(')
+          ..write('id: $id, ')
+          ..write('userSlot: $userSlot, ')
+          ..write('deviceSequence: $deviceSequence, ')
+          ..write('phaseId: $phaseId, ')
+          ..write('decidedAt: $decidedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1717,6 +2083,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $OccasionDecisionsTable occasionDecisions =
       $OccasionDecisionsTable(this);
   late final $PhasesTable phases = $PhasesTable(this);
+  late final $PhaseAssignmentsTable phaseAssignments = $PhaseAssignmentsTable(
+    this,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1726,6 +2095,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     appSettings,
     occasionDecisions,
     phases,
+    phaseAssignments,
   ];
 }
 
@@ -2457,6 +2827,31 @@ typedef $$PhasesTableUpdateCompanionBuilder = PhasesCompanion Function({
   Value<DateTime> createdAt,
 });
 
+final class $$PhasesTableReferences
+    extends BaseReferences<_$AppDatabase, $PhasesTable, Phase> {
+  $$PhasesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$PhaseAssignmentsTable, List<PhaseAssignment>>
+  _phaseAssignmentsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.phaseAssignments,
+    aliasName: 'phases__id__phase_assignments__phase_id',
+  );
+
+  $$PhaseAssignmentsTableProcessedTableManager get phaseAssignmentsRefs {
+    final manager = $$PhaseAssignmentsTableTableManager(
+      $_db,
+      $_db.phaseAssignments,
+    ).filter((f) => f.phaseId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _phaseAssignmentsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
 class $$PhasesTableFilterComposer
     extends Composer<_$AppDatabase, $PhasesTable> {
   $$PhasesTableFilterComposer({
@@ -2495,6 +2890,31 @@ class $$PhasesTableFilterComposer
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  Expression<bool> phaseAssignmentsRefs(
+    Expression<bool> Function($$PhaseAssignmentsTableFilterComposer f) f,
+  ) {
+    final $$PhaseAssignmentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.phaseAssignments,
+      getReferencedColumn: (t) => t.phaseId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PhaseAssignmentsTableFilterComposer(
+            $db: $db,
+            $table: $db.phaseAssignments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$PhasesTableOrderingComposer
@@ -2563,6 +2983,31 @@ class $$PhasesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> phaseAssignmentsRefs<T extends Object>(
+    Expression<T> Function($$PhaseAssignmentsTableAnnotationComposer a) f,
+  ) {
+    final $$PhaseAssignmentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.phaseAssignments,
+      getReferencedColumn: (t) => t.phaseId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PhaseAssignmentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.phaseAssignments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$PhasesTableTableManager
@@ -2576,9 +3021,9 @@ class $$PhasesTableTableManager
           $$PhasesTableAnnotationComposer,
           $$PhasesTableCreateCompanionBuilder,
           $$PhasesTableUpdateCompanionBuilder,
-          (Phase, BaseReferences<_$AppDatabase, $PhasesTable, Phase>),
+          (Phase, $$PhasesTableReferences),
           Phase,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool phaseAssignmentsRefs})
         > {
   $$PhasesTableTableManager(_$AppDatabase db, $PhasesTable table)
     : super(
@@ -2627,15 +3072,41 @@ class $$PhasesTableTableManager
               .map(
                 (e) => (
                   e.readTable<$PhasesTable, Phase>(table),
-                  BaseReferences<_$AppDatabase, $PhasesTable, Phase>(
-                    db,
-                    table,
-                    e,
-                  ),
+                  $$PhasesTableReferences(db, table, e),
                 ),
               )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({phaseAssignmentsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (phaseAssignmentsRefs) db.phaseAssignments,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (phaseAssignmentsRefs)
+                    await $_getPrefetchedData<
+                      Phase,
+                      $PhasesTable,
+                      PhaseAssignment
+                    >(
+                      currentTable: table,
+                      referencedTable: $$PhasesTableReferences
+                          ._phaseAssignmentsRefsTable(db),
+                      managerFromTypedResult: (p0) => $$PhasesTableReferences(
+                        db,
+                        table,
+                        p0,
+                      ).phaseAssignmentsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.phaseId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
         ),
       );
 }
@@ -2650,9 +3121,327 @@ typedef $$PhasesTableProcessedTableManager =
       $$PhasesTableAnnotationComposer,
       $$PhasesTableCreateCompanionBuilder,
       $$PhasesTableUpdateCompanionBuilder,
-      (Phase, BaseReferences<_$AppDatabase, $PhasesTable, Phase>),
+      (Phase, $$PhasesTableReferences),
       Phase,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool phaseAssignmentsRefs})
+    >;
+typedef $$PhaseAssignmentsTableCreateCompanionBuilder =
+    PhaseAssignmentsCompanion Function({
+      Value<int> id,
+      required int userSlot,
+      required int deviceSequence,
+      Value<int?> phaseId,
+      required DateTime decidedAt,
+    });
+typedef $$PhaseAssignmentsTableUpdateCompanionBuilder =
+    PhaseAssignmentsCompanion Function({
+      Value<int> id,
+      Value<int> userSlot,
+      Value<int> deviceSequence,
+      Value<int?> phaseId,
+      Value<DateTime> decidedAt,
+    });
+
+final class $$PhaseAssignmentsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $PhaseAssignmentsTable, PhaseAssignment> {
+  $$PhaseAssignmentsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $PhasesTable _phaseIdTable(_$AppDatabase db) =>
+      db.phases.createAlias('phase_assignments__phase_id__phases__id');
+
+  $$PhasesTableProcessedTableManager? get phaseId {
+    final $_column = $_itemColumn<int>('phase_id');
+    if ($_column == null) return null;
+    final manager = $$PhasesTableTableManager(
+      $_db,
+      $_db.phases,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_phaseIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$PhaseAssignmentsTableFilterComposer
+    extends Composer<_$AppDatabase, $PhaseAssignmentsTable> {
+  $$PhaseAssignmentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get userSlot => $composableBuilder(
+    column: $table.userSlot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get deviceSequence => $composableBuilder(
+    column: $table.deviceSequence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get decidedAt => $composableBuilder(
+    column: $table.decidedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$PhasesTableFilterComposer get phaseId {
+    final $$PhasesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.phaseId,
+      referencedTable: $db.phases,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PhasesTableFilterComposer(
+            $db: $db,
+            $table: $db.phases,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PhaseAssignmentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PhaseAssignmentsTable> {
+  $$PhaseAssignmentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get userSlot => $composableBuilder(
+    column: $table.userSlot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get deviceSequence => $composableBuilder(
+    column: $table.deviceSequence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get decidedAt => $composableBuilder(
+    column: $table.decidedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$PhasesTableOrderingComposer get phaseId {
+    final $$PhasesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.phaseId,
+      referencedTable: $db.phases,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PhasesTableOrderingComposer(
+            $db: $db,
+            $table: $db.phases,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PhaseAssignmentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PhaseAssignmentsTable> {
+  $$PhaseAssignmentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get userSlot =>
+      $composableBuilder(column: $table.userSlot, builder: (column) => column);
+
+  GeneratedColumn<int> get deviceSequence => $composableBuilder(
+    column: $table.deviceSequence,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get decidedAt =>
+      $composableBuilder(column: $table.decidedAt, builder: (column) => column);
+
+  $$PhasesTableAnnotationComposer get phaseId {
+    final $$PhasesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.phaseId,
+      referencedTable: $db.phases,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PhasesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.phases,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PhaseAssignmentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PhaseAssignmentsTable,
+          PhaseAssignment,
+          $$PhaseAssignmentsTableFilterComposer,
+          $$PhaseAssignmentsTableOrderingComposer,
+          $$PhaseAssignmentsTableAnnotationComposer,
+          $$PhaseAssignmentsTableCreateCompanionBuilder,
+          $$PhaseAssignmentsTableUpdateCompanionBuilder,
+          (PhaseAssignment, $$PhaseAssignmentsTableReferences),
+          PhaseAssignment,
+          PrefetchHooks Function({bool phaseId})
+        > {
+  $$PhaseAssignmentsTableTableManager(
+    _$AppDatabase db,
+    $PhaseAssignmentsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PhaseAssignmentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PhaseAssignmentsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PhaseAssignmentsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> userSlot = const Value.absent(),
+                Value<int> deviceSequence = const Value.absent(),
+                Value<int?> phaseId = const Value.absent(),
+                Value<DateTime> decidedAt = const Value.absent(),
+              }) => PhaseAssignmentsCompanion(
+                id: id,
+                userSlot: userSlot,
+                deviceSequence: deviceSequence,
+                phaseId: phaseId,
+                decidedAt: decidedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int userSlot,
+                required int deviceSequence,
+                Value<int?> phaseId = const Value.absent(),
+                required DateTime decidedAt,
+              }) => PhaseAssignmentsCompanion.insert(
+                id: id,
+                userSlot: userSlot,
+                deviceSequence: deviceSequence,
+                phaseId: phaseId,
+                decidedAt: decidedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$PhaseAssignmentsTable, PhaseAssignment>(table),
+                  $$PhaseAssignmentsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({phaseId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (phaseId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.phaseId,
+                        referencedTable: $$PhaseAssignmentsTableReferences
+                            ._phaseIdTable(db),
+                        referencedColumn: $$PhaseAssignmentsTableReferences
+                            ._phaseIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PhaseAssignmentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PhaseAssignmentsTable,
+      PhaseAssignment,
+      $$PhaseAssignmentsTableFilterComposer,
+      $$PhaseAssignmentsTableOrderingComposer,
+      $$PhaseAssignmentsTableAnnotationComposer,
+      $$PhaseAssignmentsTableCreateCompanionBuilder,
+      $$PhaseAssignmentsTableUpdateCompanionBuilder,
+      (PhaseAssignment, $$PhaseAssignmentsTableReferences),
+      PhaseAssignment,
+      PrefetchHooks Function({bool phaseId})
     >;
 
 class $AppDatabaseManager {
@@ -2666,4 +3455,6 @@ class $AppDatabaseManager {
       $$OccasionDecisionsTableTableManager(_db, _db.occasionDecisions);
   $$PhasesTableTableManager get phases =>
       $$PhasesTableTableManager(_db, _db.phases);
+  $$PhaseAssignmentsTableTableManager get phaseAssignments =>
+      $$PhaseAssignmentsTableTableManager(_db, _db.phaseAssignments);
 }

@@ -1,5 +1,10 @@
-// Die Migration von Schema 2 auf 3 legt zwei Tabellen an. Bestehende
+// Die Schemaerweiterungen der Konzepte legen Tabellen an. Bestehende
 // Messungen dürfen dabei unangetastet bleiben — auf dem Gerät liegen 114.
+//
+// Geprüft wird eine frisch angelegte Datenbank, nicht der Upgrade-Pfad
+// selbst: Dafür bräuchte es die Schema-Dumps von drift_dev, die dieses
+// Projekt nicht pflegt. Die Reihenfolge in `onUpgrade` ist deshalb von Hand
+// zu wahren — phaseAssignments verweist auf phases und muss nach ihr kommen.
 import 'dart:typed_data';
 
 import 'package:drift/drift.dart';
@@ -9,7 +14,8 @@ import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/db/occasion_repository.dart';
 
 void main() {
-  test('Schema 3 legt beide Tabellen an und lässt Messungen unberührt',
+  test('das aktuelle Schema legt alle Tabellen an und lässt Messungen '
+      'unberührt',
       () async {
     final db = AppDatabase(NativeDatabase.memory());
 
@@ -36,10 +42,19 @@ void main() {
       anchor: PhaseAnchor.bestaetigt,
     );
 
-    expect(db.schemaVersion, 3);
+    await db.into(db.phaseAssignments).insert(
+          PhaseAssignmentsCompanion.insert(
+            userSlot: 1,
+            deviceSequence: 542,
+            decidedAt: DateTime(2026, 9, 6),
+          ),
+        );
+
+    expect(db.schemaVersion, 4);
     expect(await db.select(db.measurements).get(), hasLength(1));
     expect(await repo.confirmedSplits(1), {542});
     expect(await repo.phases(), hasLength(1));
+    expect(await db.select(db.phaseAssignments).get(), hasLength(1));
 
     await db.close();
   });

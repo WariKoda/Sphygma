@@ -205,4 +205,65 @@ class OccasionRepository {
       throw ArgumentError.value(userSlot, 'userSlot', 'muss 1 oder 2 sein');
     }
   }
+
+  /// Wem der Nutzer eine Messung ausdrücklich zugeordnet hat.
+  ///
+  /// Schlüssel ist die Gerätenummer, Wert die Phase — `null` heißt „gehört zu
+  /// keiner Phase", und das ist eine Entscheidung, kein fehlender Wert. Wer
+  /// gar nicht in der Karte steht, wird über den Zeitraum zugeordnet.
+  Future<Map<int, int?>> phaseAssignments(int userSlot) async {
+    final zeilen = await (_db.select(_db.phaseAssignments)
+          ..where((t) => t.userSlot.equals(userSlot)))
+        .get();
+    return {for (final z in zeilen) z.deviceSequence: z.phaseId};
+  }
+
+  /// Ordnet eine Messung einer Phase zu — oder ausdrücklich keiner.
+  Future<void> assignToPhase({
+    required int userSlot,
+    required int deviceSequence,
+    required int? phaseId,
+  }) async {
+    if (phaseId != null) {
+      final vorhanden = await (_db.select(_db.phases)
+            ..where((t) => t.id.equals(phaseId)))
+          .getSingleOrNull();
+      if (vorhanden == null) {
+        throw ArgumentError.value(
+          phaseId,
+          'phaseId',
+          'diese Phase gibt es nicht — eine Zuordnung ins Leere wäre '
+              'schlimmer als keine',
+        );
+      }
+    }
+
+    final eintrag = PhaseAssignmentsCompanion.insert(
+      userSlot: userSlot,
+      deviceSequence: deviceSequence,
+      phaseId: Value(phaseId),
+      decidedAt: DateTime.now(),
+    );
+    await _db.into(_db.phaseAssignments).insert(
+          eintrag,
+          onConflict: DoUpdate(
+            (_) => eintrag,
+            target: [
+              _db.phaseAssignments.userSlot,
+              _db.phaseAssignments.deviceSequence,
+            ],
+          ),
+        );
+  }
+
+  /// Nimmt eine Zuordnung zurück — der Zeitraum entscheidet wieder.
+  Future<void> clearAssignment({
+    required int userSlot,
+    required int deviceSequence,
+  }) =>
+      (_db.delete(_db.phaseAssignments)
+            ..where((t) =>
+                t.userSlot.equals(userSlot) &
+                t.deviceSequence.equals(deviceSequence)))
+          .go();
 }

@@ -106,12 +106,43 @@ class Phases extends Table {
   DateTimeColumn get createdAt => dateTime()();
 }
 
-@DriftDatabase(tables: [Measurements, AppSettings, OccasionDecisions, Phases])
+/// Welcher Phase eine Messung angehört, wenn der Zeitraum es nicht klärt.
+///
+/// Die meisten Messungen brauchen keinen Eintrag: Ihr Zeitstempel liegt
+/// eindeutig in einer Phase. Ein Eintrag entsteht nur, wo der Mensch
+/// entschieden hat — weil die Geräteuhr falsch ging oder weil er eine
+/// Messung ausdrücklich außen vor lassen wollte.
+///
+/// [phaseId] darf null sein. Das ist kein fehlender Wert, sondern eine
+/// Aussage: „gehört zu keiner Phase, und das ist entschieden."
+@DataClassName('PhaseAssignment')
+class PhaseAssignments extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get userSlot => integer()();
+  IntColumn get deviceSequence => integer()();
+  IntColumn get phaseId => integer().nullable().references(Phases, #id)();
+  DateTimeColumn get decidedAt => dateTime()();
+
+  /// Eine Messung hat höchstens eine primäre Phase. Ohne diese Grenze ginge
+  /// dieselbe Messung in konkurrierende Vergleiche ein.
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {userSlot, deviceSequence},
+      ];
+}
+
+@DriftDatabase(tables: [
+  Measurements,
+  AppSettings,
+  OccasionDecisions,
+  Phases,
+  PhaseAssignments,
+])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -125,6 +156,10 @@ class AppDatabase extends _$AppDatabase {
             // die Konzepte zusammen gebaut werden.
             await m.createTable(occasionDecisions);
             await m.createTable(phases);
+          }
+          // Nach Phases, nicht davor: Die Zuordnung verweist auf sie.
+          if (from < 4) {
+            await m.createTable(phaseAssignments);
           }
         },
       );

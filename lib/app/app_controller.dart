@@ -15,6 +15,7 @@ import '../db/settings_repository.dart';
 import 'concept.dart';
 import '../protocol/exceptions.dart';
 import '../stats/occasion_grouping.dart';
+import '../stats/phase_grouping.dart';
 import '../stats/period.dart';
 import '../sync/export_service.dart';
 import '../sync/sync_service.dart';
@@ -84,6 +85,11 @@ class AppController extends ChangeNotifier {
 
   /// Die benannten Lebensabschnitte, neueste zuerst.
   List<Phase> phases = const [];
+
+  /// Welche Messung zu welcher Phase gehört — abgeleitet aus Zeiträumen und
+  /// den Entscheidungen des Nutzers. Null, solange kein Speicherplatz
+  /// gewählt ist.
+  PhaseGrouping? phaseGrouping;
 
   /// Anlässe, bei denen die Regel keine eindeutige Antwort gibt. Sie werden
   /// nicht still zusammengefasst — eine zugedeckte Frage ist schlimmer als
@@ -317,6 +323,7 @@ class AppController extends ChangeNotifier {
       clockLooksWrong = false;
       occasions = const [];
       phases = const [];
+      phaseGrouping = null;
     } else {
       measurements = (await repository.allForSlot(slot)).reversed.toList();
       pendingExport = (await repository.pendingExport(slot)).length;
@@ -327,6 +334,12 @@ class AppController extends ChangeNotifier {
         confirmedSplits: await occasionRepository.confirmedSplits(slot),
       );
       phases = await occasionRepository.phases();
+      phaseGrouping = groupByPhase(
+        measurements,
+        phases: phases,
+        assignments: await occasionRepository.phaseAssignments(slot),
+        now: DateTime.now(),
+      );
     }
     notifyListeners();
   }
@@ -354,6 +367,28 @@ class AppController extends ChangeNotifier {
   /// Nimmt eine Entscheidung zurück — die Regel gilt wieder.
   Future<void> clearOccasionDecision(int deviceSequence) async {
     await occasionRepository.clearDecision(
+      userSlot: _requireSlot(),
+      deviceSequence: deviceSequence,
+    );
+    await _refresh();
+  }
+
+  /// Ordnet eine Messung ausdrücklich einer Phase zu — oder keiner.
+  Future<void> assignToPhase({
+    required int deviceSequence,
+    required int? phaseId,
+  }) async {
+    await occasionRepository.assignToPhase(
+      userSlot: _requireSlot(),
+      deviceSequence: deviceSequence,
+      phaseId: phaseId,
+    );
+    await _refresh();
+  }
+
+  /// Nimmt eine Zuordnung zurück — der Zeitraum entscheidet wieder.
+  Future<void> clearPhaseAssignment(int deviceSequence) async {
+    await occasionRepository.clearAssignment(
       userSlot: _requireSlot(),
       deviceSequence: deviceSequence,
     );
