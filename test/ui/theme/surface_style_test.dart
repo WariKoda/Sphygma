@@ -162,4 +162,59 @@ void main() {
       expect(toene, [0, 1, 0]);
     });
   });
+
+  group('Jede Form gliedert auf ihre Weise', () {
+    testWidgets('Linie trennt durch Abstand, weil ihr Fläche und Strich fehlen',
+        (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: SphygmaThemeScope(
+          theme: themeFor(ThemeVariant.instrument, surface: SurfaceStyle.linie),
+          child: const Scaffold(body: SurfacePanel(child: Text('Inhalt'))),
+        ),
+      ));
+
+      final container = tester.widget<Container>(find
+          .descendant(
+              of: find.byType(SurfacePanel), matching: find.byType(Container))
+          .first);
+      // Ohne Abstand stießen zwei Abschnitte übergangslos aneinander — in
+      // dieser Form trennt sie nichts anderes.
+      expect(container.margin, isNotNull, reason: 'Luft ist die Gliederung');
+      expect(container.decoration, isNull, reason: 'aber keine Fläche');
+      expect(container.color, isNull);
+    });
+
+    testWidgets('Karte trennt durch Abstand zwischen den Flächen',
+        (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: SphygmaThemeScope(
+          theme: themeFor(ThemeVariant.diary, surface: SurfaceStyle.karte),
+          child: const Scaffold(body: SurfacePanel(child: Text('Inhalt'))),
+        ),
+      ));
+
+      final container = tester.widget<Container>(find
+          .descendant(
+              of: find.byType(SurfacePanel), matching: find.byType(Container))
+          .first);
+      expect(container.margin, isNotNull);
+    });
+
+    testWidgets('Band trennt durch den Tonwechsel, nicht durch Abstand',
+        (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: SphygmaThemeScope(
+          theme: themeFor(ThemeVariant.pegel, surface: SurfaceStyle.band),
+          child: const Scaffold(body: SurfacePanel(child: Text('Inhalt'))),
+        ),
+      ));
+
+      final container = tester.widget<Container>(find
+          .descendant(
+              of: find.byType(SurfacePanel), matching: find.byType(Container))
+          .first);
+      // „Ganzflächige Bänder ohne Rand, Schatten, Radius oder Abstand."
+      expect(container.margin, isNull);
+    });
+  });
 }

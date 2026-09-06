@@ -40,8 +40,12 @@ class SurfacePanel extends StatelessWidget {
 
     return switch (t.surfaceStyle) {
       // Keine Fläche: Der Inhalt steht auf dem Grund, gegliedert wird durch
-      // Haarlinien und Weißraum.
-      SurfaceStyle.linie => Padding(
+      // Haarlinien und Weißraum. Der Abstand nach unten ist deshalb kein
+      // Beiwerk, sondern die Gliederung selbst — ohne ihn stießen zwei
+      // Abschnitte übergangslos aneinander, weil hier keine Fläche und kein
+      // Strich sie trennt.
+      SurfaceStyle.linie => Container(
+          margin: EdgeInsets.only(bottom: t.gapLarge),
           padding: padding ?? EdgeInsets.zero,
           child: child,
         ),
