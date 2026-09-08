@@ -10,6 +10,7 @@ import 'widgets/classification_scale.dart';
 import 'widgets/notice_card.dart';
 import 'widgets/reading_headline.dart';
 import 'measurement_sheet.dart';
+import 'widgets/at_day_change.dart';
 import 'widgets/surface_panel.dart';
 import 'widgets/this_week_panel.dart';
 
@@ -80,17 +81,24 @@ class TodayScreen extends StatelessWidget {
           if (controller.measurements.isNotEmpty)
             SurfacePanel(
               tone: 1,
-              child: ThisWeekPanel(
-                measurements: controller.measurements,
-                now: clock(),
-                onFieldTap: (feld) {
-                  if (feld.measurements.isEmpty) return;
-                  showMeasurementSheet(
-                    context,
-                    controller: controller,
-                    measurementId: feld.measurements.first.id,
-                  );
-                },
+              // Der Wecker gehört hierher, nicht in den Bildschirm: Ohne ihn
+              // bliebe „Heute fehlt noch…" über Mitternacht beim gestrigen
+              // Tag stehen, und am Montag stünde die Vorwoche als „diese
+              // Woche" da.
+              child: AtDayChange(
+                clock: clock,
+                builder: (context, jetzt) => ThisWeekPanel(
+                  measurements: controller.measurements,
+                  now: jetzt,
+                  onFieldTap: (feld) {
+                    if (feld.measurements.isEmpty) return;
+                    showMeasurementSheet(
+                      context,
+                      controller: controller,
+                      measurementId: feld.measurements.first.id,
+                    );
+                  },
+                ),
               ),
             ),
           if (controller.measurements.length > 1)
@@ -125,7 +133,7 @@ class TodayScreen extends StatelessWidget {
         title: 'Nicht gekoppelt',
         message:
             'Ohne Kopplung kann Sphygma keine Messungen holen. '
-            'Unter "Gerät" einrichten.',
+            'Oben rechts über das Zahnrad einrichten.',
       ),
     if (controller.clockLooksWrong)
       const NoticeCard(
@@ -171,7 +179,7 @@ class _EmptyState extends StatelessWidget {
           Text(
             paired
                 ? 'Miss am Gerät - Sphygma holt die Messung von selbst.'
-                : 'Zuerst unter "Gerät" koppeln.',
+                : 'Zuerst koppeln — oben rechts über das Zahnrad.',
             style: TextStyle(fontSize: 13, color: t.muted),
           ),
         ],

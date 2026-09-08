@@ -84,7 +84,7 @@ class CurrentPhaseScreen extends StatelessWidget {
                 title: 'Nicht gekoppelt',
                 message:
                     'Ohne Kopplung kann Sphygma keine Messungen holen. '
-                    'Unter "Gerät" einrichten.',
+                    'Oben rechts über das Zahnrad einrichten.',
               ),
             ],
           ],

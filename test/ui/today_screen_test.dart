@@ -185,4 +185,48 @@ void main() {
     // Freitag morgens gemessen, abends noch nicht.
     expect(find.text('Heute fehlt noch die Abendmessung.'), findsOneWidget);
   });
+
+  testWidgets('über Mitternacht wandert die Wochenansicht mit', (tester) async {
+    // Der Steuerungsteil meldet nichts, wenn nur das Datum wechselt. Ohne
+    // eigenen Wecker bliebe „Heute fehlt noch…" beim gestrigen Tag stehen.
+    final montag = previousMonday(mondayOf(DateTime.now()));
+    DateTime tag(int versatz, int stunde, [int minute = 0]) => DateTime(
+      montag.year,
+      montag.month,
+      montag.day + versatz,
+      stunde,
+      minute,
+    );
+
+    controller = await boot();
+    await repository.importAll([
+      _rec(1, tag(0, 7), systolic: 128),
+      _rec(2, tag(0, 20), systolic: 124),
+      _rec(3, tag(3, 7), systolic: 126),
+      _rec(4, tag(3, 20), systolic: 122),
+    ]);
+    await controller.refreshForTest();
+
+    // Donnerstag 23:59:30 — morgens und abends gemessen.
+    var jetzt = tag(3, 23, 59);
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => SphygmaThemeScope(
+          theme: themeFor(ThemeVariant.instrument),
+          child: child!,
+        ),
+        home: Scaffold(
+          body: TodayScreen(controller: controller, clock: () => jetzt),
+        ),
+      ),
+    );
+    expect(find.text('Heute ist morgens und abends gemessen.'), findsOneWidget);
+
+    // Freitag 00:00:30 — der neue Tag ist noch leer.
+    jetzt = tag(4, 0, 0);
+    await tester.pump(const Duration(minutes: 1));
+    await tester.pump();
+
+    expect(find.text('Heute fehlen noch beide Messungen.'), findsOneWidget);
+  });
 }

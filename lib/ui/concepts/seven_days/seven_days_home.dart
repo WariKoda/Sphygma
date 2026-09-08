@@ -8,8 +8,6 @@
 // Ein Weg statt vier Reiter: Dieser Bildschirm ist der Einstieg, alles andere
 // wird von hier aus aufgerufen. Heute, Verlauf und Gerät nebeneinander zu
 // stellen hieße, zwei selten gebrauchte Bereiche dauerhaft mitzuführen.
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../../../app/app_controller.dart';
@@ -23,6 +21,7 @@ import '../../measurement_sheet.dart';
 import '../../settings_screen.dart';
 import '../../theme/sphygma_theme.dart';
 import '../../widgets/classification_scale.dart';
+import '../../widgets/at_day_change.dart';
 import '../../widgets/notice_card.dart';
 import '../../widgets/surface_panel.dart';
 import 'earlier_weeks_screen.dart';
@@ -50,134 +49,109 @@ class SevenDaysHome extends StatefulWidget {
 }
 
 class _SevenDaysHomeState extends State<SevenDaysHome> {
-  /// Weckt den Bildschirm zum nächsten Tageswechsel.
-  ///
-  /// Ohne ihn zeigte eine über Mitternacht geöffnete App weiter den gestrigen
-  /// Wochentag — am Montag sogar die ganze Vorwoche als „diese Woche". Der
-  /// Steuerungsteil meldet dafür nichts: Es hat sich keine Messung geändert,
-  /// nur das Datum.
-  Timer? _tageswechsel;
-
-  @override
-  void initState() {
-    super.initState();
-    _planeTageswechsel();
-  }
-
-  @override
-  void dispose() {
-    _tageswechsel?.cancel();
-    super.dispose();
-  }
-
-  void _planeTageswechsel() {
-    final jetzt = widget.clock();
-    final morgen = DateTime(jetzt.year, jetzt.month, jetzt.day + 1);
-    _tageswechsel?.cancel();
-    // difference() rechnet die echte Spanne — in der Umstellungsnacht sind
-    // das 23 oder 25 Stunden, und genau die sollen es sein.
-    _tageswechsel = Timer(morgen.difference(jetzt), () {
-      if (!mounted) return;
-      setState(() {});
-      _planeTageswechsel();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
 
-    return ListenableBuilder(
-      listenable: widget.controller,
-      builder: (context, _) {
-        final messungen = widget.controller.measurements;
-        final wochen = messungen.isEmpty
-            ? const <MeasurementWeek>[]
-            : buildWeeks(messungen);
-        final jetzt = widget.clock();
-        final montag = mondayOf(jetzt);
-        MeasurementWeek? laufende;
-        for (final w in wochen) {
-          if (w.beginsAt == montag) {
-            laufende = w;
-            break;
+    // Der Wecker steht im geteilten Baustein: Ohne ihn zeigte eine über
+    // Mitternacht geöffnete App weiter den gestrigen Wochentag — am Montag
+    // die ganze Vorwoche als „diese Woche". Der Steuerungsteil meldet dafür
+    // nichts, weil sich keine Messung geändert hat.
+    return AtDayChange(
+      clock: widget.clock,
+      builder: (context, jetzt) => ListenableBuilder(
+        listenable: widget.controller,
+        builder: (context, _) {
+          final messungen = widget.controller.measurements;
+          final wochen = messungen.isEmpty
+              ? const <MeasurementWeek>[]
+              : buildWeeks(messungen);
+          final montag = mondayOf(jetzt);
+          MeasurementWeek? laufende;
+          for (final w in wochen) {
+            if (w.beginsAt == montag) {
+              laufende = w;
+              break;
+            }
           }
-        }
 
-        return Scaffold(
-          backgroundColor: t.surface,
-          appBar: AppBar(
-            title: const Text('Diese Woche'),
+          return Scaffold(
             backgroundColor: t.surface,
-            foregroundColor: t.onSurface,
-            elevation: 0,
-            actions: [
-              IconButton(
-                tooltip: 'Einstellungen',
-                icon: const Icon(Icons.settings),
-                onPressed: () =>
-                    showSettings(context, controller: widget.controller),
-              ),
-            ],
-          ),
-          body: ListView(
-            padding: t.listPadding,
-            children: [
-              SurfacePanel(child: _Statuszeile(controller: widget.controller)),
-              SurfacePanel(
-                tone: 1,
-                child: wochen.isEmpty
-                    ? _NochNichtsGemessen(paired: widget.controller.paired)
-                    : laufende == null
-                    ? _LangePause(
-                        controller: widget.controller,
-                        letzte: wochen.first,
-                        jetzt: jetzt,
-                      )
-                    : _LaufendeWoche(
-                        controller: widget.controller,
-                        week: laufende,
-                        jetzt: jetzt,
-                      ),
-              ),
-              ..._hinweise(context),
-              SizedBox(height: t.gapLarge),
-              _Verweis(
-                label: 'Frühere Wochen',
-                hint: wochen.isEmpty
-                    ? 'noch keine'
-                    : '${wochen.length} ${wochen.length == 1 ? "Woche" : "Wochen"}',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) =>
-                        EarlierWeeksScreen(controller: widget.controller),
-                  ),
+            appBar: AppBar(
+              title: const Text('Diese Woche'),
+              backgroundColor: t.surface,
+              foregroundColor: t.onSurface,
+              elevation: 0,
+              actions: [
+                IconButton(
+                  tooltip: 'Einstellungen',
+                  icon: const Icon(Icons.settings),
+                  onPressed: () =>
+                      showSettings(context, controller: widget.controller),
                 ),
-              ),
-              _Verweis(
-                label: 'Gerät und Übertragung',
-                hint: widget.controller.pendingExport == 0
-                    ? 'alles übertragen'
-                    : '${widget.controller.pendingExport} offen',
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => Scaffold(
-                      backgroundColor: t.surface,
-                      appBar: AppBar(
-                        title: const Text('Gerät und Übertragung'),
-                        backgroundColor: t.surface,
-                        foregroundColor: t.onSurface,
-                        elevation: 0,
-                      ),
-                      body: DeviceScreen(controller: widget.controller),
+              ],
+            ),
+            body: ListView(
+              padding: t.listPadding,
+              children: [
+                SurfacePanel(
+                  child: _Statuszeile(controller: widget.controller),
+                ),
+                SurfacePanel(
+                  tone: 1,
+                  child: wochen.isEmpty
+                      ? _NochNichtsGemessen(paired: widget.controller.paired)
+                      : laufende == null
+                      ? _LangePause(
+                          controller: widget.controller,
+                          letzte: wochen.first,
+                          jetzt: jetzt,
+                        )
+                      : _LaufendeWoche(
+                          controller: widget.controller,
+                          week: laufende,
+                          jetzt: jetzt,
+                        ),
+                ),
+                ..._hinweise(context),
+                SizedBox(height: t.gapLarge),
+                _Verweis(
+                  label: 'Frühere Wochen',
+                  hint: wochen.isEmpty
+                      ? 'noch keine'
+                      : '${wochen.length} ${wochen.length == 1 ? "Woche" : "Wochen"}',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          EarlierWeeksScreen(controller: widget.controller),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        );
-      },
+                _Verweis(
+                  label: 'Gerät und Übertragung',
+                  hint: widget.controller.pendingExport == 0
+                      ? 'alles übertragen'
+                      : '${widget.controller.pendingExport} offen',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => Scaffold(
+                        backgroundColor: t.surface,
+                        appBar: AppBar(
+                          title: const Text('Gerät und Übertragung'),
+                          backgroundColor: t.surface,
+                          foregroundColor: t.onSurface,
+                          elevation: 0,
+                        ),
+                        body: DeviceScreen(controller: widget.controller),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -446,7 +420,7 @@ class _NochNichtsGemessen extends StatelessWidget {
               ? 'Miss am Gerät — Sphygma holt die Messung von selbst. Eine '
                     'Woche gilt als vollständig, wenn an sieben Tagen morgens '
                     'und abends gemessen wurde.'
-              : 'Zuerst unter "Gerät und Übertragung" koppeln.',
+              : 'Zuerst koppeln — oben rechts über das Zahnrad.',
           style: TextStyle(fontSize: 13, color: t.muted, height: 1.5),
         ),
       ],

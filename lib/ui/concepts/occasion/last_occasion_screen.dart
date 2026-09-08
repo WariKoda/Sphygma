@@ -51,7 +51,7 @@ class LastOccasionScreen extends StatelessWidget {
                       ? 'Miss am Gerät — Sphygma holt die Messung von selbst. '
                             'Wer zweimal hintereinander misst, bekommt einen '
                             'Anlass mit einem Ergebnis, nicht zwei Einträge.'
-                      : 'Zuerst unter "Gerät" koppeln.',
+                      : 'Zuerst koppeln — oben rechts über das Zahnrad.',
                   style: TextStyle(fontSize: 13, color: t.muted, height: 1.5),
                 ),
               ],
@@ -104,7 +104,7 @@ class LastOccasionScreen extends StatelessWidget {
                 title: 'Nicht gekoppelt',
                 message:
                     'Ohne Kopplung kann Sphygma keine Messungen holen. '
-                    'Unter "Gerät" einrichten.',
+                    'Oben rechts über das Zahnrad einrichten.',
               ),
             ],
             if (controller.clockLooksWrong) ...[
