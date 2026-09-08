@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{color-scheme:light dark}
+  body{margin:0;font:14px system-ui,sans-serif}
+  img{max-width:100%}
+  [hidden]{display:none!important}
+</style>
+<title>Form, Farbe, Schrift</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@200;300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap">
+
+<style>
+:root{
+  --ground:#eceef0; --panel:#f7f8f9; --ink:#1a1d21; --muted:#69717a;
+  --rule:#d5d9dd; --rule-soft:#e3e6e9;
+  --warn:#a8442c; --warn-bg:#f6e6e1;
+  --slate:#48535f;
+  --sans:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#17191c; --panel:#1e2126; --ink:#e6e9ec; --muted:#98a0a8;
+    --rule:#2e333a; --rule-soft:#24282d;
+    --warn:#e08d70; --warn-bg:#2e211c; --slate:#9aa6b3;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#17191c; --panel:#1e2126; --ink:#e6e9ec; --muted:#98a0a8;
+  --rule:#2e333a; --rule-soft:#24282d;
+  --warn:#e08d70; --warn-bg:#2e211c; --slate:#9aa6b3;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--ground); color:var(--ink);
+  font-family:var(--serif); font-size:16px; line-height:1.6;
+  margin:0; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:48px 24px 80px}
+@media(max-width:640px){.wrap{padding:32px 16px 56px}}
+
+h1,h2,h3,.eyebrow,th,.label{font-family:var(--sans)}
+h1{font-size:clamp(2.1rem,5vw,3.4rem);font-weight:700;line-height:1.02;
+  letter-spacing:-.025em;margin:0 0 .5rem;text-wrap:balance}
+h2{font-size:1.35rem;font-weight:600;letter-spacing:-.01em;margin:0;
+  text-wrap:balance}
+h3{font-size:1rem;font-weight:600;margin:0 0 .3rem;letter-spacing:-.005em}
+p{margin:0 0 1rem;max-width:66ch}
+.eyebrow{font-size:.688rem;font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted);margin:0 0 1rem}
+.lede{font-size:1.12rem;max-width:60ch}
+.mono{font-family:var(--mono);font-size:.82em;font-variant-numeric:tabular-nums}
+code{font-family:var(--mono);font-size:.85em;background:var(--rule-soft);
+  padding:.1em .35em;border-radius:2px}
+
+header{border-bottom:2px solid var(--ink);padding-bottom:28px;margin-bottom:36px}
+.byline{font-family:var(--mono);font-size:.72rem;color:var(--muted);
+  letter-spacing:.04em;margin-top:14px}
+
+section{margin:56px 0 0}
+.section-head{display:flex;gap:16px;align-items:baseline;
+  border-bottom:1px solid var(--rule);padding-bottom:10px;margin-bottom:22px}
+.section-head .num{font-family:var(--mono);font-size:.75rem;color:var(--muted);
+  flex:none;padding-top:.2em}
+
+.finding{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:1px;background:var(--rule);border:1px solid var(--rule);margin:26px 0 8px}
+.finding div{background:var(--panel);padding:16px 18px}
+.finding .n{font-family:var(--sans);font-size:2rem;font-weight:700;line-height:1;
+  letter-spacing:-.03em;display:block;margin-bottom:6px;
+  font-variant-numeric:tabular-nums}
+.finding .t{font-size:.875rem;color:var(--muted);line-height:1.45}
+
+.scroller{overflow-x:auto;padding-bottom:8px}
+table.matrix{border-collapse:separate;border-spacing:6px;margin:0 auto}
+table.matrix th{font-size:.7rem;font-weight:600;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted);padding:0 0 4px;text-align:center;
+  white-space:nowrap}
+table.matrix th.row-h{text-align:right;padding:0 10px 0 0;vertical-align:middle}
+table.matrix th.row-h .hint{display:block;font-family:var(--mono);
+  font-size:.62rem;letter-spacing:0;text-transform:none;opacity:.75;
+  font-weight:400}
+td.cell{padding:0;position:relative}
+td.diag .probe{outline:2px solid var(--ink);outline-offset:2px}
+td.diag::after{content:"";position:absolute;top:-6px;right:-6px;width:9px;
+  height:9px;background:var(--ink);border-radius:50%}
+
+/* ---------- Die Probe ---------- */
+.probe{
+  --radius:6px; --weight:400; --num:26px; --gap:7px;
+  --schrift:system-ui,-apple-system,"Segoe UI",sans-serif;
+  width:158px;background:var(--grund);color:var(--text);
+  border-radius:var(--radius);overflow:hidden;font-family:var(--schrift);
+  display:block;
+}
+.probe .pad{padding:11px 12px 12px}
+.probe .kopf{font-size:8px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted-c);margin-bottom:5px}
+.probe .zahl{font-size:var(--num);font-weight:var(--weight);line-height:1;
+  letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.probe .zahl .dia{opacity:.72}
+.probe .puls{font-size:9px;color:var(--muted-c);margin-top:4px}
+.probe .chip{display:inline-block;font-size:7.5px;letter-spacing:.06em;
+  text-transform:uppercase;padding:2px 6px;border-radius:calc(var(--radius)/2);
+  margin-top:7px;background:var(--kat);color:#fff}
+.probe .liste{margin-top:9px}
+.probe .zeile{display:flex;justify-content:space-between;gap:8px;font-size:9px;
+  padding:var(--gap) 0;font-variant-numeric:tabular-nums;
+  border-bottom:1px solid var(--linie)}
+.probe .zeile:last-child{border-bottom:0}
+.probe .zeile span:last-child{color:var(--muted-c)}
+.probe .flaeche{background:var(--flaeche);border-radius:var(--radius)}
+
+/* — Charakteristika — */
+.c-instrument{--radius:3px;--weight:300;--num:30px;--gap:6px}
+.c-instrument .flaeche{background:transparent}
+.c-instrument .chip{background:transparent;color:var(--text);
+  border-left:3px solid var(--kat);border-radius:0;padding-left:5px}
+.c-tagebuch{--radius:16px;--weight:700;--num:25px;--gap:6px}
+.c-tagebuch .flaeche{box-shadow:0 2px 8px rgba(20,30,60,.13)}
+.c-tagebuch .kennzahlen{display:flex;gap:5px;margin-top:8px}
+.c-tagebuch .kennzahlen div{flex:1;background:var(--grund);
+  border-radius:calc(var(--radius)/2);padding:5px 6px;font-size:8px;
+  line-height:1.3}
+.c-tagebuch .kennzahlen b{display:block;font-size:12px;font-weight:700}
+.c-tagebuch .chip{border-radius:99px}
+.c-material{--radius:12px;--weight:400;--num:23px;--gap:6px}
+.c-material .flaeche{background:var(--flaeche2,var(--flaeche))}
+.c-material .chip{background:transparent;color:var(--text);
+  border:1px solid var(--linie);border-radius:6px}
+.c-material .fab{display:inline-block;margin-top:8px;font-size:8px;
+  font-weight:600;background:var(--akzent);color:#fff;padding:5px 11px;
+  border-radius:12px}
+.c-luft{--radius:16px;--weight:200;--num:30px;--gap:9px}
+.c-luft .flaeche{border:1px solid var(--kante,var(--linie))}
+.c-luft .zeile{border-bottom:0}
+.c-luft .chip{border-radius:99px}
+.c-raster{--radius:2px;--weight:400;--num:23px;--gap:5px}
+.c-raster .flaeche{background:transparent}
+.c-raster .blocks{display:flex;border-top:1px solid var(--linie);
+  border-bottom:1px solid var(--linie)}
+.c-raster .blocks div{flex:1;padding:6px 0 5px;text-align:center}
+.c-raster .blocks div+div{border-left:1px solid var(--linie)}
+.c-raster .blocks b{display:block;font-size:var(--num);font-weight:400;
+  line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.c-raster .blocks span{font-size:7px;letter-spacing:.14em;color:var(--muted-c)}
+.c-raster .spaltenkopf{display:flex;justify-content:space-between;font-size:7px;
+  letter-spacing:.12em;color:var(--muted-c);padding-bottom:3px;
+  border-bottom:1px solid var(--linie);margin-top:9px}
+.c-raster .chip{background:transparent;color:var(--kat);border:0;border-radius:0;
+  padding:0;font-weight:600}
+.c-band{--radius:0px;--weight:500;--num:27px;--gap:8px}
+.c-band .pad{padding:0}
+.c-band .kopfband{background:var(--kat-flaeche);padding:11px 12px 12px}
+.c-band .rest{padding:2px 12px 12px}
+.c-band .zeile{border-bottom:0}
+.c-band .liste{background:var(--flaeche);margin:6px -12px -12px;
+  padding:4px 12px 8px}
+.c-band .chip{display:none}
+.c-band .kopf{color:var(--text);opacity:.62;font-weight:600}
+
+/* — Paletten — */
+.p-papier{--grund:#faf9f7;--flaeche:#fff;--text:#1b1b1a;--muted-c:#6f6d68;
+  --linie:#e4e1db;--akzent:#1b1b1a;--kat:#b05f42;--kat-flaeche:#eddcd3;
+  --kante:#e4e1db}
+.p-himmel{--grund:#f2f5fb;--flaeche:#fff;--text:#182034;--muted-c:#6b7590;
+  --linie:#e2e8f3;--akzent:#4f7fd8;--kat:#d9553c;--kat-flaeche:#f3d9d3;
+  --kante:#e2e8f3}
+.p-flieder{--grund:#fef7ff;--flaeche:#fff;--flaeche2:#e8def8;--text:#1d1b20;
+  --muted-c:#49454f;--linie:#e7e0ec;--akzent:#6750a4;--kat:#d9553c;
+  --kat-flaeche:#f2dbd6;--kante:#e7e0ec}
+.p-nacht{--grund:#14181f;--flaeche:rgba(255,255,255,.043);--text:#e8ecf2;
+  --muted-c:#94a0b0;--linie:rgba(255,255,255,.071);--akzent:#6c5ce7;
+  --kat:#c9705e;--kat-flaeche:#3a2a26;--kante:rgba(255,255,255,.071)}
+.p-petrol{--grund:#f5f6f4;--flaeche:#fff;--text:#171a1c;--muted-c:#6c7377;
+  --linie:#dee0dc;--akzent:#087f78;--kat:#b05f42;--kat-flaeche:#ecd9d1;
+  --kante:#dee0dc}
+.p-salbei{--grund:#eceeeb;--flaeche:#fff;--text:#16211f;--muted-c:#6b7671;
+  --linie:#e3e6e3;--akzent:#0e5c4c;--kat:#c08a5e;--kat-flaeche:#e8c9a8;
+  --kante:#e3e6e3}
+
+/* — Schriften — */
+.s-system{--schrift:system-ui,-apple-system,"Segoe UI",sans-serif}
+.s-grotesk{--schrift:"Archivo","Helvetica Neue",Arial,sans-serif}
+.s-serif{--schrift:"Source Serif 4",Georgia,serif}
+.s-technisch{--schrift:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+
+/* ---------- Kopplungen ---------- */
+.kopplung{border:1px solid var(--rule);background:var(--panel);padding:20px 22px;
+  margin-bottom:18px}
+.kopplung .tag{display:inline-block;font-family:var(--mono);font-size:.68rem;
+  color:var(--warn);background:var(--warn-bg);padding:2px 8px;margin-bottom:10px;
+  letter-spacing:.02em}
+.paar{display:flex;gap:22px;flex-wrap:wrap;margin-top:16px;align-items:flex-start}
+.paar figure{margin:0}
+.paar figcaption{font-family:var(--mono);font-size:.68rem;color:var(--muted);
+  margin-top:8px;max-width:170px;line-height:1.5}
+.paar .bad figcaption{color:var(--warn)}
+
+table.werte{width:100%;border-collapse:collapse;margin:14px 0 4px;
+  font-size:.875rem}
+table.werte th{font-size:.7rem;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);text-align:left;padding:0 12px 7px 0;font-weight:600;
+  border-bottom:1px solid var(--rule)}
+table.werte td{padding:7px 12px 7px 0;border-bottom:1px solid var(--rule-soft);
+  vertical-align:top}
+table.werte td:first-child{font-family:var(--sans);font-weight:600;
+  font-size:.82rem;white-space:nowrap}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;
+  vertical-align:-1px;margin-right:5px;border:1px solid rgba(128,128,128,.35)}
+
+/* ---------- Gewichtsleiter ---------- */
+.leiter{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:1px;background:var(--rule);border:1px solid var(--rule);margin:18px 0}
+.leiter div{background:var(--panel);padding:14px 16px}
+.leiter .zahl{font-size:2.1rem;line-height:1;letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums;display:block;margin-bottom:8px}
+.leiter .lbl{font-family:var(--mono);font-size:.66rem;color:var(--muted);
+  line-height:1.5}
+.leiter .fehlt .zahl{color:var(--warn)}
+.leiter .fehlt .lbl{color:var(--warn)}
+
+/* ---------- Auswahl-Skizze ---------- */
+.auswahl{background:var(--panel);border:1px solid var(--rule);padding:22px;
+  max-width:420px}
+.feld{margin-bottom:16px}
+.feld:last-child{margin-bottom:0}
+.feld label{display:block;font-family:var(--sans);font-size:.7rem;
+  font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:6px}
+.feld .box{display:flex;justify-content:space-between;align-items:center;
+  border:1px solid var(--rule);background:var(--ground);padding:11px 13px;
+  font-family:var(--sans);font-size:.9rem;border-radius:4px}
+.feld .box .chev{color:var(--muted);font-size:.7rem}
+.feld .sub{font-size:.76rem;color:var(--muted);margin-top:5px;
+  font-family:var(--serif)}
+
+ul{padding-left:1.1em;max-width:66ch}
+li{margin-bottom:.45rem}
+.note{font-size:.9rem;color:var(--muted);max-width:64ch}
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--rule);
+  font-family:var(--mono);font-size:.7rem;color:var(--muted);line-height:1.7}
+:focus-visible{outline:2px solid var(--slate);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">Sphygma · Gestaltung</p>
+  <h1>Form, Farbe, Schrift</h1>
+  <p class="lede">Sechs Gestaltungen, vier davon kaum unterscheidbar — weil sie
+  vermengen, was drei Dinge sind. Trennt man sie, wird aus sechs Namen ein
+  Raum, und die heutigen sechs sind nur noch seine Diagonale.</p>
+  <p class="byline">Entwurf 08.09.2026 · noch nicht gebaut · Werte gemessen an <span class="mono">lib/ui/theme/variants.dart</span></p>
+</header>
+
+<section>
+  <div class="section-head">
+    <span class="num">01</span><div><h2>Der Befund</h2></div>
+  </div>
+  <p>Messinstrument, Material 3, Pulse Grid und Pegel haben alle hellen Grund,
+  keinen Schatten, Radius zwischen 0 und 12 und ähnliche Abstände. Sie
+  unterscheiden sich in Akzentfarbe und Schriftgewicht — Details, die man ohne
+  direkten Vergleich nicht sieht.</p>
+  <p><strong>So waren sie nie entworfen.</strong> Die Entwurfstafel stellt ihrem
+  Abschnitt die Überschrift <em>„Nicht die Farben, sondern der Aufbau"</em> voran
+  und gibt jeder Handschrift ein strukturelles Merkmal. Gebaut ist davon fast
+  nichts.</p>
+
+  <div class="finding">
+    <div><span class="n">0</span><span class="t">Bildschirme verzweigen nach der
+      Gestaltung. <span class="mono">ThemeVariant</span> steht außerhalb der
+      Theme-Schicht nur in der Auswahlliste.</span></div>
+    <div><span class="n">0</span><span class="t">Dateien mit
+      <span class="mono">FloatingActionButton</span>,
+      <span class="mono">FilterChip</span>, <span class="mono">DataTable</span>
+      oder <span class="mono">LinearGradient</span> — den Merkmalen von Material,
+      Raster und Tagebuch.</span></div>
+    <div><span class="n">0</span><span class="t">Schriftfamilien. Alle sechs
+      laufen in der System-Schrift; <span class="mono">pubspec.yaml</span> bettet
+      keine ein. Gestaltet sind nur Größe und Gewicht.</span></div>
+  </div>
+  <p class="note">Sie sind nicht zu ähnlich <em>entworfen</em>, sondern zu
+  ähnlich <em>gebaut</em>.</p>
+</section>
+
+<section>
+  <div class="section-head">
+    <span class="num">02</span><div><h2>Die Matrix</h2></div>
+  </div>
+  <p>Dieselbe Messung in jeder Kombination: <span class="mono">Nr. 430,
+  12.07.2026 07:13, 144/92, Puls 89</span> — ein echter Wert aus dem
+  Beispieldatensatz, mit Bewegungs-Kennzeichen. <strong>Waagerecht die Palette,
+  senkrecht die Charakteristik.</strong> Die markierte Diagonale ist der heutige
+  Bestand; die übrigen 30 Felder sind neu.</p>
+
+  <div class="scroller">
+  <table class="matrix">
+    <thead>
+      <tr><th></th>
+        <th>Papier</th><th>Himmel</th><th>Flieder</th>
+        <th>Nacht</th><th>Petrol</th><th>Salbei</th></tr>
+    </thead>
+    <tbody id="matrix-body"></tbody>
+  </table>
+  </div>
+  <p class="note" style="margin-top:14px">Die Charakteristik bestimmt Trennung,
+  Radius, Gewicht und Aufbau; die Palette nur die Töne. Keine Zelle weiß etwas
+  von der anderen Achse — das ist der Beleg, dass sie einander nicht ins Gehege
+  kommen.</p>
+</section>
+
+<section>
+  <div class="section-head">
+    <span class="num">03</span><div><h2>Die dritte Achse: Schrift</h2></div>
+  </div>
+  <p>Sie ist heute keine Achse, sondern eine Leerstelle: <strong>Sphygma hat
+  keine eigene Schrift.</strong> Alle sechs Handschriften laufen in der
+  System-Schrift des Telefons — nur Größe und Gewicht sind gestaltet. Dieselbe
+  Charakteristik auf derselben Palette, viermal:</p>
+
+  <div class="scroller">
+  <table class="matrix">
+    <thead><tr>
+      <th>System</th><th>Grotesk</th><th>Serif</th><th>Technisch</th>
+    </tr></thead>
+    <tbody><tr id="schrift-zeile"></tr></tbody>
+  </table>
+  </div>
+
+  <p class="note" style="margin-top:14px">Charakteristik <em>Messinstrument</em>
+  auf Palette <em>Papier</em>. Nur die Familie wechselt — Radius, Gewicht,
+  Trennung und Farben bleiben gleich. Die hier gezeigten Schriften sind die
+  dieser Tafel; welche die App bekommt, ist offen.</p>
+
+  <p>Zwei Dinge sind vor der Auswahl zu klären, und beide sind
+  Projektentscheidungen, keine Geschmacksfragen: <strong>Lizenz</strong> — für
+  F-Droid muss jede eingebettete Schrift frei sein — und <strong>Umfang</strong>:
+  Jede Familie in vier Schnitten wiegt in der APK, und Sphygma liefert
+  <span class="mono">--split-per-abi</span> ohnehin schon mehrere Pakete aus.</p>
+</section>
+
+<section>
+  <div class="section-head">
+    <span class="num">04</span><div><h2>Vier Kopplungen, die aufzulösen sind</h2></div>
+  </div>
+  <p>Ohne sie bricht die Trennung leise: Die Kombination baut sich, sieht aber
+  falsch aus. Alle vier sind an den heutigen Werten nachgemessen.</p>
+
+  <div class="kopplung">
+    <span class="tag">Kopplung 1 · Fläche</span>
+    <h3>Aura setzt seine Flächen relativ, alle anderen absolut</h3>
+    <p>Auras Flächenfarbe ist <span class="mono">weiß mit 4,3 % Deckung</span>,
+    die Kante 7,1 % — Aufhellungen über dunklem Grund. Alle anderen tragen
+    deckende Farben. Auf hellem Grund ist 4 % Weiß auf Weiß unsichtbar.</p>
+    <div class="paar">
+      <figure><div class="probe c-luft p-nacht" data-probe></div>
+        <figcaption>Luft auf Nacht — die Fläche hebt sich ab.</figcaption></figure>
+      <figure class="bad"><div class="probe c-luft p-papier"
+        style="--flaeche:rgba(255,255,255,.043);--kante:rgba(255,255,255,.071)"
+        data-probe></div>
+        <figcaption>Dieselbe Rechnung auf hellem Grund: Fläche und Kante
+        verschwinden.</figcaption></figure>
+      <figure><div class="probe c-luft p-papier" data-probe></div>
+        <figcaption>Aufgelöst: Die Palette liefert ihre Flächen selbst.</figcaption></figure>
+    </div>
+    <p class="note" style="margin-top:14px">Die naheliegende Alternative —
+    „Fläche = Grund gemischt mit der Kontrastfarbe" — erklärt Material 3 nicht,
+    dessen Fläche weder heller noch dunkler, sondern <em>farbiger</em> ist als
+    der Grund.</p>
+  </div>
+
+  <div class="kopplung">
+    <span class="tag">Kopplung 2 · Akzent</span>
+    <h3>Messinstrument ist monochrom</h3>
+    <p>Bei Messinstrument gilt <span class="mono">accent == onSurface</span> — als
+    einzigem der sechs. Der Entwurf sagt warum: <em>„Das Einordnungsband ist die
+    einzige Farbe."</em> Das ist eine Aussage der Form, nicht der Palette. Eine
+    Charakteristik muss den Akzent ihrer Palette also <strong>ablehnen</strong>
+    dürfen. Die Kategorienfarben bleiben davon unberührt — sie tragen Bedeutung
+    und sind nie Schmuck.</p>
+  </div>
+
+  <div class="kopplung">
+    <span class="tag">Kopplung 3 · Kategorien</span>
+    <h3>Pegel braucht Kategorienfarben, die als Fläche taugen</h3>
+    <p>Pegels Kategorienfarben sind blass, die der anderen kräftig. Kein Zufall:
+    Bei Pegel färbt die Einordnung die <strong>ganze Kopffläche</strong>, und
+    darauf muss Text lesbar bleiben. Ein Chip von 60 Pixeln verträgt einen Ton,
+    der über die halbe Breite unerträglich wird.</p>
+    <div class="paar">
+      <figure><div class="probe c-band p-salbei" data-probe></div>
+        <figcaption>Band auf Salbei — die eigene, blasse Fassung.</figcaption></figure>
+      <figure class="bad"><div class="probe c-band p-petrol"
+        style="--kat-flaeche:#b05f42" data-probe></div>
+        <figcaption>Mit der Markierungsfarbe einer fremden Palette: Text auf
+        Signalfarbe.</figcaption></figure>
+      <figure><div class="probe c-band p-petrol" data-probe></div>
+        <figcaption>Aufgelöst: jede Palette führt beide Rollen.</figcaption></figure>
+    </div>
+    <table class="werte">
+      <thead><tr><th>Palette</th><th>Markierung</th><th>Fläche</th><th>wofür</th></tr></thead>
+      <tbody>
+        <tr><td>Papier</td>
+          <td class="mono"><span class="sw" style="background:#b05f42"></span>#b05f42</td>
+          <td class="mono"><span class="sw" style="background:#eddcd3"></span>#eddcd3</td>
+          <td>Punkte, Chips, Rasterzellen — nicht für große Flächen</td></tr>
+        <tr><td>Salbei</td>
+          <td class="mono"><span class="sw" style="background:#c08a5e"></span>#c08a5e</td>
+          <td class="mono"><span class="sw" style="background:#e8c9a8"></span>#e8c9a8</td>
+          <td>heute schon vorhanden — die Vorlage für alle</td></tr>
+        <tr><td>Nacht</td>
+          <td class="mono"><span class="sw" style="background:#c9705e"></span>#c9705e</td>
+          <td class="mono"><span class="sw" style="background:#3a2a26"></span>#3a2a26</td>
+          <td>auf dunklem Grund abgedunkelt statt aufgehellt</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="kopplung">
+    <span class="tag">Kopplung 4 · Gewicht</span>
+    <h3>Nicht jede Schrift trägt jedes Gewicht</h3>
+    <p>Die Charakteristiken nennen heute feste Zahlen: <span class="mono">200</span>
+    für Luft, <span class="mono">300</span> für Messinstrument,
+    <span class="mono">700</span> für Tagebuch. Eine Familie, die keinen
+    ExtraLight-Schnitt hat, fällt lautlos auf den nächsten zurück — und Luft
+    verliert genau das, was es ausmacht.</p>
+    <div class="leiter">
+      <div><span class="zahl s-grotesk" style="font-family:var(--sans);font-weight:200">144</span>
+        <span class="lbl">Grotesk w200<br>vorhanden</span></div>
+      <div><span class="zahl" style="font-family:var(--serif);font-weight:300">144</span>
+        <span class="lbl">Serif w300<br>vorhanden</span></div>
+      <div class="fehlt"><span class="zahl" style="font-family:var(--mono);font-weight:300">144</span>
+        <span class="lbl">Technisch w200<br>fehlt — zeigt w300</span></div>
+      <div><span class="zahl" style="font-family:var(--sans);font-weight:700">144</span>
+        <span class="lbl">Grotesk w700<br>vorhanden</span></div>
+    </div>
+    <p><strong>Auflösung:</strong> Die Charakteristik nennt eine <em>Rolle</em> —
+    leicht, normal, kräftig — statt einer Zahl. Die Schrift deklariert, welche
+    Schnitte sie wirklich führt, und bildet die Rolle auf den nächstliegenden ab.
+    Damit ist ein fehlender Schnitt eine bekannte Abbildung statt eines stillen
+    Rückfalls.</p>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <span class="num">05</span><div><h2>Die Auswahl</h2></div>
+  </div>
+  <p>Drei Achsen mal sechs Möglichkeiten sind achtzehn Optionen. Als
+  Radiolisten untereinander wäre das Einstellungsblatt unlesbar — je Achse ein
+  Auswahlfeld hält es auf drei Zeilen. In Material 3 ist das
+  <span class="mono">DropdownMenu&lt;T&gt;</span> mit
+  <span class="mono">DropdownMenuEntry&lt;T&gt;</span>.</p>
+
+  <div class="auswahl">
+    <div class="feld">
+      <label>Charakteristik</label>
+      <div class="box"><span>Messinstrument</span><span class="chev">▾</span></div>
+      <p class="sub">Wie getrennt und geordnet wird.</p>
+    </div>
+    <div class="feld">
+      <label>Palette</label>
+      <div class="box"><span>Papier</span><span class="chev">▾</span></div>
+      <p class="sub">Grund, Text, Akzent und die Kategorienfarben.</p>
+    </div>
+    <div class="feld">
+      <label>Schrift</label>
+      <div class="box"><span>System</span><span class="chev">▾</span></div>
+      <p class="sub">Die Familie. Größe und Gewicht bestimmt die Charakteristik.</p>
+    </div>
+  </div>
+
+  <p class="note" style="margin-top:16px">Die Vorschau darunter — dieselbe Probe
+  wie in der Matrix — wäre wertvoller als jede Beschreibung: Wer die Wahl trifft,
+  sieht sie, ohne das Blatt zu verlassen. Das ist derselbe Grund, aus dem der
+  Gestaltungswechsel am 07.09. sofort durchschlagen musste.</p>
+</section>
+
+<section>
+  <div class="section-head">
+    <span class="num">06</span><div><h2>Was das kostet, was es bringt</h2></div>
+  </div>
+  <p><strong>Die Trennung allein ändert am Eindruck nichts.</strong> Die vier
+  sähen weiter gleich aus, nur wären sie dann Kombinationen statt Gestaltungen.
+  Der sichtbare Unterschied kommt aus den fehlenden Struktur-Merkmalen —
+  getrennte SYS/DIA-Blöcke, Datentabelle, eingefärbte Kopffläche, Chips und FAB.
+  Also: erst die Merkmale, oder beides zusammen.</p>
+  <p>Was die Trennung <em>dafür</em> bringt, ist Prüfbarkeit. Bei echter
+  Orthogonalität prüft man sechs Charakteristika <strong>plus</strong> sechs
+  Paletten <strong>plus</strong> die Schriften — statt jede Kombination. Mit vier
+  Ausnahmen: Genau die Kopplungen oben bekommen je einen eigenen Test, weil nur
+  sie beim Kreuzen brechen können.</p>
+  <p>Und niemand verliert sein Aussehen: Die gespeicherte Wahl wird einmal auf
+  die Diagonale abgebildet — <span class="mono">pegel → Band · Salbei ·
+  System</span>. <span class="mono">AppSettings</span> ist eine
+  Schlüssel-Wert-Tabelle, ein Schemawechsel entfällt.</p>
+  <ul>
+    <li><strong>Offen:</strong> wie ein Bildschirm sein Merkmal erfährt. Heute
+    kennt keiner die Gestaltung, und das war Absicht. Entweder fragt der
+    Bildschirm die Charakteristik ab, oder sie liefert Bausteine statt Werte —
+    letzteres passt zu dem, was <span class="mono">SurfacePanel</span> schon
+    tut.</li>
+    <li><strong>Offen:</strong> ob sechs Paletten nötig sind. Bei den
+    Charakteristika ist jede begründet; Papier, Petrol und Salbei liegen dicht
+    beieinander.</li>
+    <li><strong>Offen:</strong> welche Schriften, unter welcher Lizenz, zu
+    welchem Preis in Megabyte.</li>
+  </ul>
+</section>
+
+<footer>
+  Sphygma · Blutdruck-Tagebuch für Omron HEM-6232T<br>
+  Werte gemessen 08.09.2026 an <span class="mono">lib/ui/theme/variants.dart</span> ·
+  Merkmale aus <span class="mono">docs/design/handschriften.html</span> ·
+  Messung Nr. 430 aus <span class="mono">docs/design/beispieldaten.md</span>
+</footer>
+
+</div>
+
+<script>
+const CHARAKTERISTIKA = [
+  ["c-instrument","Messinstrument","Haarlinien · r3 · leicht"],
+  ["c-tagebuch","Tagebuch","Karte + Schatten · r16 · kräftig"],
+  ["c-material","Material","Karte · r12 · Chips · FAB"],
+  ["c-luft","Luft","keine Striche · Kante · sehr leicht"],
+  ["c-raster","Raster","Spalten · SYS/DIA · r2"],
+  ["c-band","Band","Flächenwechsel · r0 · halbfett"],
+];
+const PALETTEN = ["p-papier","p-himmel","p-flieder","p-nacht","p-petrol","p-salbei"];
+const SCHRIFTEN = ["s-system","s-grotesk","s-serif","s-technisch"];
+
+// Eine echte Messung aus dem Beispieldatensatz.
+const M = {sys:144, dia:92, puls:89, zeit:"07:13", kat:"Hypertonie Grad 1"};
+const ZEILEN = [["140/91","07:15"],["129/86","gestern"]];
+
+function inhalt(charKlasse){
+  const liste = ZEILEN.map(z =>
+    `<div class="zeile"><span>${z[0]}</span><span>${z[1]}</span></div>`).join("");
+
+  if (charKlasse === "c-raster") {
+    return `<div class="pad"><div class="kopf">12.07. ${M.zeit} · Nr. 430</div>
+      <div class="blocks">
+        <div><b>${M.sys}</b><span>SYS</span></div>
+        <div><b>${M.dia}</b><span>DIA</span></div>
+      </div>
+      <div class="chip">${M.kat}</div>
+      <div class="spaltenkopf"><span>WERT</span><span>ZEIT</span></div>
+      <div class="liste">${liste}</div></div>`;
+  }
+
+  if (charKlasse === "c-band") {
+    return `<div class="pad">
+      <div class="kopfband">
+        <div class="kopf">${M.kat}</div>
+        <div class="zahl">${M.sys}<span class="dia">/${M.dia}</span></div>
+        <div class="puls">Puls ${M.puls} · Bewegung</div>
+      </div>
+      <div class="rest"><div class="liste">${liste}</div></div></div>`;
+  }
+
+  const kennzahlen = charKlasse === "c-tagebuch"
+    ? `<div class="kennzahlen">
+         <div><b>${M.sys}</b>systolisch</div>
+         <div><b>${M.dia}</b>diastolisch</div>
+       </div>` : "";
+  const fab = charKlasse === "c-material"
+    ? `<div class="fab">Abgleichen</div>` : "";
+
+  return `<div class="pad"><div class="flaeche" style="padding:10px;margin:-2px">
+      <div class="kopf">12.07. ${M.zeit} · Nr. 430</div>
+      <div class="zahl">${M.sys}<span class="dia">/${M.dia}</span></div>
+      <div class="puls">Puls ${M.puls} · Bewegung</div>
+      ${kennzahlen}
+      <div class="chip">${M.kat}</div>
+      ${fab}
+      <div class="liste">${liste}</div>
+    </div></div>`;
+}
+
+function probe(klassen){
+  const el = document.createElement("div");
+  el.className = "probe " + klassen.join(" ");
+  const c = klassen.find(k => k.startsWith("c-"));
+  el.innerHTML = inhalt(c);
+  return el;
+}
+
+// Matrix: Charakteristik × Palette
+const body = document.getElementById("matrix-body");
+CHARAKTERISTIKA.forEach(([klasse, name, hinweis], zeile) => {
+  const tr = document.createElement("tr");
+  const th = document.createElement("th");
+  th.className = "row-h";
+  th.innerHTML = `${name}<span class="hint">${hinweis}</span>`;
+  tr.appendChild(th);
+  PALETTEN.forEach((pal, spalte) => {
+    const td = document.createElement("td");
+    td.className = "cell" + (zeile === spalte ? " diag" : "");
+    td.appendChild(probe([klasse, pal]));
+    tr.appendChild(td);
+  });
+  body.appendChild(tr);
+});
+
+// Schriftzeile: eine Kombination, vier Familien
+const zeile = document.getElementById("schrift-zeile");
+SCHRIFTEN.forEach(s => {
+  const td = document.createElement("td");
+  td.className = "cell";
+  td.appendChild(probe(["c-instrument","p-papier",s]));
+  zeile.appendChild(td);
+});
+
+// Die Einzelproben in Abschnitt 4
+document.querySelectorAll("[data-probe]").forEach(el => {
+  const klasse = [...el.classList].find(c => c.startsWith("c-"));
+  el.innerHTML = inhalt(klasse);
+});
+</script>
+
+</body>
+</html>
