@@ -50,8 +50,8 @@ class _OccasionHomeState extends State<OccasionHome> {
             elevation: 0,
             actions: [
               IconButton(
-                tooltip: 'Konzept und Gestaltung ändern',
-                icon: const Icon(Icons.tune),
+                tooltip: 'Einstellungen',
+                icon: const Icon(Icons.settings),
                 onPressed: () =>
                     showSettings(context, controller: widget.controller),
               ),

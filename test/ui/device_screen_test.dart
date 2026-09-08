@@ -105,41 +105,6 @@ void main() {
     expect(find.textContaining('Automatischer Abgleich'), findsOneWidget);
   });
 
-  testWidgets('ohne Kopplung fuehrt der Knopf zum Koppeln', (tester) async {
-    await boot(paired: false);
-
-    await pumpWith(tester, ThemeVariant.instrument);
-
-    expect(find.text('Koppeln'), findsOneWidget);
-  });
-
-  testWidgets('die Speicherplatzwahl erscheint nur ohne Kopplung', (
-    tester,
-  ) async {
-    await boot(paired: false, withSlot: false);
-
-    await pumpWith(tester, ThemeVariant.instrument);
-
-    expect(find.text('Benutzer 1'), findsOneWidget);
-  });
-
-  testWidgets('ohne gewählten Slot ist keiner ausgewählt und Slot 1 lässt '
-      'sich mit einem Tipp wählen', (tester) async {
-    await boot(paired: false, withSlot: false);
-
-    await pumpWith(tester, ThemeVariant.instrument);
-
-    final button = tester.widget<SegmentedButton<int>>(
-      find.byType(SegmentedButton<int>),
-    );
-    expect(button.selected, isEmpty);
-
-    await tester.tap(find.text('Benutzer 1'));
-    await tester.pumpAndSettle();
-
-    expect(controller.userSlot, 1);
-  });
-
   testWidgets('eine fehlschlagende Aktion meldet, statt unbeobachtet zu '
       'scheitern', (tester) async {
     await boot(sink: _FailingSink());
@@ -167,21 +132,6 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(controller.status, contains('Fehler'));
-  });
-
-  testWidgets('gekoppelt ist die Speicherplatzwahl verdeckt, "Neu koppeln" '
-      'holt sie zurück', (tester) async {
-    await boot();
-
-    await pumpWith(tester, ThemeVariant.instrument);
-    expect(find.byType(SegmentedButton<int>), findsNothing);
-
-    await tester.ensureVisible(find.text('Neu koppeln'));
-    await tester.tap(find.text('Neu koppeln'));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(SegmentedButton<int>), findsOneWidget);
-    expect(find.text('Koppeln'), findsOneWidget);
   });
 
   testWidgets('ohne Speicherplatz ist "Übertragene entfernen" abgeschaltet', (

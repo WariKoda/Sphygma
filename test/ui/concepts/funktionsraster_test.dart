@@ -333,9 +333,7 @@ void main() {
         );
       });
 
-      testWidgets('F6 bis F9 — Gerät, Abgleich und Health Connect', (
-        tester,
-      ) async {
+      testWidgets('F7 bis F9 — Abgleich und Health Connect', (tester) async {
         await boot();
         await pump(tester, k);
         await weg.zumGeraet(tester);
@@ -355,10 +353,26 @@ void main() {
           find.text('Alle übertragen'),
           reason: 'F9 fehlt in ${k.name}',
         );
+      });
+
+      testWidgets('F6 — koppeln steht bei den Einstellungen', (tester) async {
+        await boot();
+        await pump(tester, k);
+
+        // Seit dem 08.09.2026 trennt die App zwischen einstellen und tun:
+        // Kopplung und Speicherplatz sind Entscheidungen und stehen hinter
+        // dem Zahnrad, Abgleich und Übertragung sind Handlungen und bleiben
+        // im Gerätebereich.
+        await _tippe(tester, find.byIcon(Icons.settings));
         await _erwarte(
           tester,
           find.text('Neu koppeln'),
           reason: 'F6 fehlt in ${k.name}',
+        );
+        await _erwarte(
+          tester,
+          find.textContaining('Speicherplatz'),
+          reason: 'die Speicherplatzwahl gehört dazu',
         );
       });
 

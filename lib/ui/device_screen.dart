@@ -1,5 +1,8 @@
-// Alles Technische an einem Ort: Geraet, Abgleich, Health Connect,
-// Gestaltung. Vorn auf "Heute" stoert es damit nicht mehr.
+// Zustand und Handlungen: Was das Gerät gerade tut, und was man auslösen
+// kann.
+//
+// Was man einstellt — Kopplung, Speicherplatz, Konzept, Gestaltung — steht
+// hinter dem Zahnrad. Die Grenze verläuft zwischen einstellen und tun.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -8,6 +11,7 @@ import '../app/app_controller.dart';
 import 'theme/sphygma_theme.dart';
 import 'widgets/surface_panel.dart';
 import 'widgets/section_header.dart';
+import 'widgets/setting_row.dart';
 
 class DeviceScreen extends StatefulWidget {
   const DeviceScreen({super.key, required this.controller});
@@ -19,18 +23,10 @@ class DeviceScreen extends StatefulWidget {
 }
 
 class _DeviceScreenState extends State<DeviceScreen> {
-  /// Der Kopplungsteil samt Speicherplatzwahl. Im Alltag verdeckt - die Wahl
-  /// faellt einmal beim Einrichten (Spezifikation vom 2026-09-05). Erreichbar
-  /// bleibt er trotzdem: Nach einem Werksreset am Geraet oder einer Kopplung
-  /// mit der Omron-App muss neu gekoppelt werden, und ein falsch gewaehlter
-  /// Speicherplatz laesst sonst dauerhaft den falschen Benutzer auslesen.
-  bool _pairingOpen = false;
-
   @override
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
     final c = widget.controller;
-    final showPairing = !c.paired || _pairingOpen;
 
     return Material(
       color: t.surface,
@@ -40,66 +36,30 @@ class _DeviceScreenState extends State<DeviceScreen> {
           child: Column(
             children: [
               const SectionHeader(title: 'Gerät'),
-              _Row(
+              SettingRow(
                 label: 'RS7 Intelli IT',
                 value: c.paired ? 'gekoppelt' : 'nicht gekoppelt',
               ),
               if (c.userSlot != null)
-                _Row(label: 'Speicherplatz', value: 'Benutzer ${c.userSlot}'),
-              if (c.paired && !_pairingOpen)
-                _Button(
-                  label: 'Neu koppeln',
-                  onPressed: c.busy
-                      ? null
-                      : () => setState(() => _pairingOpen = true),
+                SettingRow(
+                  label: 'Speicherplatz',
+                  value: 'Benutzer ${c.userSlot}',
                 ),
-              if (showPairing) ...[
-                SizedBox(height: t.gapSmall),
-                Text(
-                  'Welcher Speicherplatz gehört dir am Gerät?',
-                  style: TextStyle(fontSize: 12, color: t.muted),
-                ),
-                SizedBox(height: t.gapSmall),
-                SegmentedButton<int>(
-                  segments: const [
-                    ButtonSegment(value: 1, label: Text('Benutzer 1')),
-                    ButtonSegment(value: 2, label: Text('Benutzer 2')),
-                  ],
-                  // Ohne gewaehlten Slot ist nichts ausgewaehlt. Ein
-                  // vorgetaeuschtes "Benutzer 1" liesse sich nicht antippen:
-                  // SegmentedButton meldet keinen Wechsel auf das bereits
-                  // ausgewaehlte einzige Segment (segmented_button.dart:489).
-                  emptySelectionAllowed: true,
-                  selected: c.userSlot == null ? const <int>{} : {c.userSlot!},
-                  onSelectionChanged: (s) =>
-                      s.isEmpty ? null : c.setUserSlot(s.first),
-                ),
-                SizedBox(height: t.gapSmall),
-                Text(
-                  'Zum Koppeln die Bluetooth-Taste am Gerät lange drücken, '
-                  'bis "-P-" blinkt.',
-                  style: TextStyle(fontSize: 12, color: t.muted),
-                ),
-                _Button(
-                  label: 'Koppeln',
-                  filled: true,
-                  onPressed: c.busy || c.userSlot == null
-                      ? null
-                      : () => _start(c.pair),
-                ),
-              ],
+              // Kopplung und Speicherplatzwahl stehen in den Einstellungen:
+              // Hier geht es um den Zustand und um Handlungen, dort um das,
+              // was man einmal entscheidet.
 
               const SectionHeader(title: 'Abgleich'),
-              _Row(
+              SettingRow(
                 label: 'Automatischer Abgleich',
                 value: c.autoSyncActive ? 'wartet auf Messungen' : 'aus',
                 dot: c.autoSyncActive,
               ),
-              _Row(
+              SettingRow(
                 label: 'Gespeichert',
                 value: '${c.measurements.length} Messungen',
               ),
-              _Button(
+              SettingButton(
                 label: 'Jetzt abgleichen',
                 filled: true,
                 onPressed: c.busy || !c.paired ? null : () => _start(c.sync),
@@ -110,19 +70,19 @@ class _DeviceScreenState extends State<DeviceScreen> {
               ],
 
               const SectionHeader(title: 'Health Connect'),
-              _Row(
+              SettingRow(
                 label: 'Übertragen',
                 value:
                     '${c.measurements.length - c.pendingExport} '
                     'von ${c.measurements.length}',
               ),
-              _Button(
+              SettingButton(
                 label: 'Alle übertragen',
                 onPressed: c.busy || c.pendingExport == 0
                     ? null
                     : () => _start(c.exportAll),
               ),
-              _Button(
+              SettingButton(
                 label: 'Übertragene entfernen',
                 onPressed: c.busy || c.userSlot == null
                     ? null
@@ -146,85 +106,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
       action().catchError((Object e) {
         debugPrint('[Sphygma] Aktion fehlgeschlagen: $e');
       }),
-    );
-  }
-}
-
-class _Row extends StatelessWidget {
-  const _Row({required this.label, required this.value, this.dot = false});
-
-  final String label;
-  final String value;
-
-  /// Gruener Punkt vor dem Text - zeigt einen laufenden Zustand an.
-  final bool dot;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = SphygmaTheme.of(context);
-
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: t.rowSpacing(t.gapSmall + 2)),
-      decoration: t.rowDivider,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              if (dot) ...[
-                Container(
-                  width: 7,
-                  height: 7,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: t.categoryColors.values.first,
-                  ),
-                ),
-                const SizedBox(width: 6),
-              ],
-              Text(label, style: TextStyle(fontSize: 13, color: t.onSurface)),
-            ],
-          ),
-          Flexible(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: t.onSurface,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Button extends StatelessWidget {
-  const _Button({
-    required this.label,
-    required this.onPressed,
-    this.filled = false,
-  });
-
-  final String label;
-  final VoidCallback? onPressed;
-  final bool filled;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = SphygmaTheme.of(context);
-
-    return Padding(
-      padding: EdgeInsets.only(top: t.gapSmall),
-      child: SizedBox(
-        width: double.infinity,
-        child: filled
-            ? FilledButton(onPressed: onPressed, child: Text(label))
-            : OutlinedButton(onPressed: onPressed, child: Text(label)),
-      ),
     );
   }
 }

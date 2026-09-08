@@ -164,9 +164,9 @@ void main() {
       await tester.pumpWidget(SphygmaApp(controller: controller));
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.tune), findsOneWidget, reason: k.name);
+      expect(find.byIcon(Icons.settings), findsOneWidget, reason: k.name);
 
-      await tester.tap(find.byIcon(Icons.tune));
+      await tester.tap(find.byIcon(Icons.settings));
       await tester.pumpAndSettle();
       expect(find.text('KONZEPT'), findsOneWidget, reason: k.name);
       expect(find.text('GESTALTUNG'), findsOneWidget, reason: k.name);
@@ -185,7 +185,7 @@ void main() {
     await tester.pumpWidget(SphygmaApp(controller: controller));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.tune));
+    await tester.tap(find.byIcon(Icons.settings));
     await tester.pumpAndSettle();
     expect(find.text('KONZEPT'), findsOneWidget);
 

@@ -259,10 +259,10 @@ void main() {
     await boot();
 
     await pumpWith(tester, ThemeVariant.instrument);
-    await tester.tap(find.byIcon(Icons.tune));
+    await tester.tap(find.byIcon(Icons.settings));
     await tester.pumpAndSettle();
 
-    expect(find.text('Konzept und Gestaltung'), findsOneWidget);
+    expect(find.text('Einstellungen'), findsOneWidget);
     expect(find.text('KONZEPT'), findsOneWidget);
   });
 

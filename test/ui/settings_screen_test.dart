@@ -29,8 +29,8 @@ void main() {
   late InMemoryPairingKeyStore keyStore;
   late AppController controller;
 
-  Future<void> boot() async {
-    await keyStore.save(Uint8List(16));
+  Future<void> boot({bool paired = true, bool withSlot = true}) async {
+    if (paired) await keyStore.save(Uint8List(16));
     final repository = MeasurementRepository(db);
     controller = AppController(
       settings: SettingsRepository(db),
@@ -42,7 +42,7 @@ void main() {
       statusStream: () => const Stream.empty(),
     );
     await controller.init();
-    await controller.setUserSlot(1);
+    if (paired && withSlot) await controller.setUserSlot(1);
   }
 
   Future<void> pumpWith(WidgetTester tester, ThemeVariant v) =>
@@ -124,5 +124,59 @@ void main() {
       find.textContaining('Keine Messung wird dabei kopiert'),
       findsOneWidget,
     );
+  });
+
+  // Kopplung und Speicherplatz sind am 08.09.2026 aus dem Gerätebereich
+  // hierher gezogen: Sie sind Entscheidungen, keine Handlungen. Die Tests
+  // sind mitgewandert.
+
+  testWidgets('ohne Kopplung fuehrt der Knopf zum Koppeln', (tester) async {
+    await boot(paired: false);
+
+    await pumpWith(tester, ThemeVariant.instrument);
+
+    expect(find.text('Koppeln'), findsOneWidget);
+  });
+
+  testWidgets('die Speicherplatzwahl erscheint nur ohne Kopplung', (
+    tester,
+  ) async {
+    await boot(paired: false, withSlot: false);
+
+    await pumpWith(tester, ThemeVariant.instrument);
+
+    expect(find.text('Benutzer 1'), findsOneWidget);
+  });
+
+  testWidgets('ohne gewählten Slot ist keiner ausgewählt und Slot 1 lässt '
+      'sich mit einem Tipp wählen', (tester) async {
+    await boot(paired: false, withSlot: false);
+
+    await pumpWith(tester, ThemeVariant.instrument);
+
+    final button = tester.widget<SegmentedButton<int>>(
+      find.byType(SegmentedButton<int>),
+    );
+    expect(button.selected, isEmpty);
+
+    await tester.tap(find.text('Benutzer 1'));
+    await tester.pumpAndSettle();
+
+    expect(controller.userSlot, 1);
+  });
+
+  testWidgets('gekoppelt ist die Speicherplatzwahl verdeckt, "Neu koppeln" '
+      'holt sie zurück', (tester) async {
+    await boot();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+    expect(find.byType(SegmentedButton<int>), findsNothing);
+
+    await tester.ensureVisible(find.text('Neu koppeln'));
+    await tester.tap(find.text('Neu koppeln'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SegmentedButton<int>), findsOneWidget);
+    expect(find.text('Koppeln'), findsOneWidget);
   });
 }

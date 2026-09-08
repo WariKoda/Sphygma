@@ -192,12 +192,12 @@ void main() {
     await teilwoche();
 
     await pumpWith(tester, ThemeVariant.instrument);
-    await tester.tap(find.byIcon(Icons.tune));
+    await tester.tap(find.byIcon(Icons.settings));
     await tester.pumpAndSettle();
 
     // Wer mit einem Konzept unzufrieden ist, sucht die Alternative dort, wo
     // er sie sieht — nicht im Gerätebereich.
-    expect(find.text('Konzept und Gestaltung'), findsOneWidget);
+    expect(find.text('Einstellungen'), findsOneWidget);
     expect(find.text('KONZEPT'), findsOneWidget);
     expect(find.text('GESTALTUNG'), findsOneWidget);
   });
