@@ -7,13 +7,11 @@
 import 'package:flutter/material.dart';
 
 import '../../app/app_controller.dart';
-import '../../app/concept.dart';
 import '../device_screen.dart';
 import '../history_screen.dart';
 import '../settings_screen.dart';
 import '../theme/sphygma_theme.dart';
 import '../today_screen.dart';
-import 'day_profile/day_profile_screen.dart';
 
 class TabbedHome extends StatefulWidget {
   const TabbedHome({
@@ -38,11 +36,7 @@ class _TabbedHomeState extends State<TabbedHome> {
   @override
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
-    final titles = [
-      widget.controller.concept == AppConcept.tagesprofil ? 'Muster' : 'Heute',
-      'Verlauf',
-      'Gerät',
-    ];
+    const titles = ['Heute', 'Verlauf', 'Gerät'];
 
     return ListenableBuilder(
       listenable: widget.controller,
@@ -65,15 +59,9 @@ class _TabbedHomeState extends State<TabbedHome> {
         // Das Konzept bestimmt, was auf dem ersten Reiter steht. Der
         // Gerätebereich bleibt in jedem Konzept derselbe — dort geht es
         // zur Konzeptwahl.
-        body: switch ((widget.controller.concept, _index)) {
-          (AppConcept.tagesprofil, 0) => DayProfileScreen(
-            controller: widget.controller,
-          ),
-          (_, 0) => TodayScreen(
-            controller: widget.controller,
-            clock: widget.clock,
-          ),
-          (_, 1) => HistoryScreen(controller: widget.controller),
+        body: switch (_index) {
+          0 => TodayScreen(controller: widget.controller, clock: widget.clock),
+          1 => HistoryScreen(controller: widget.controller),
           _ => DeviceScreen(controller: widget.controller),
         },
         bottomNavigationBar: NavigationBar(
@@ -81,12 +69,9 @@ class _TabbedHomeState extends State<TabbedHome> {
           selectedIndex: _index,
           onDestinationSelected: (i) => setState(() => _index = i),
           destinations: [
-            NavigationDestination(
-              // Dieselbe Beschriftung wie oben in der Titelzeile: Ein Reiter,
-              // der „Heute" heißt und das Muster aller Messungen zeigt, würde
-              // einen Tagesfilter versprechen, den es dort nicht gibt.
-              icon: const Icon(Icons.favorite_outline),
-              label: titles[0],
+            const NavigationDestination(
+              icon: Icon(Icons.favorite_outline),
+              label: 'Heute',
             ),
             const NavigationDestination(
               icon: Icon(Icons.show_chart),

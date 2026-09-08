@@ -14,7 +14,6 @@ import 'package:sphygma/db/settings_repository.dart';
 import 'package:sphygma/sync/export_service.dart';
 import 'package:sphygma/sync/health_sink.dart';
 import 'package:sphygma/sync/sync_service.dart';
-import 'package:sphygma/ui/concepts/day_profile/day_profile_screen.dart';
 import 'package:sphygma/ui/device_screen.dart';
 import 'package:sphygma/ui/history_screen.dart';
 import 'package:sphygma/ui/sphygma_app.dart';
@@ -102,35 +101,12 @@ void main() {
     expect(SphygmaTheme.of(context).name, themeFor(ThemeVariant.material).name);
   });
 
-  testWidgets('das Konzept bestimmt den ersten Bildschirm', (tester) async {
-    await tester.pumpWidget(SphygmaApp(controller: controller));
-    await tester.pumpAndSettle();
-    expect(find.byType(TodayScreen), findsOneWidget);
-
-    await controller.setConcept(AppConcept.tagesprofil);
-    await tester.pumpAndSettle();
-
-    expect(find.byType(DayProfileScreen), findsOneWidget);
-    expect(find.byType(TodayScreen), findsNothing);
-  });
-
-  testWidgets('Titel und Navigationseintrag heißen gleich', (tester) async {
-    // Sonst verspräche der Reiter „Heute" einen Tagesfilter, den das
-    // Tagesprofil gerade nicht anwendet.
-    await controller.setConcept(AppConcept.tagesprofil);
-    await tester.pumpWidget(SphygmaApp(controller: controller));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Muster'), findsNWidgets(2));
-    expect(find.text('Heute'), findsNothing);
-  });
-
   testWidgets('der Gerätebereich bleibt in jedem Konzept erreichbar', (
     tester,
   ) async {
     // Dort wird das Konzept gewechselt — wäre er in einem Konzept
     // unerreichbar, käme man nicht mehr heraus.
-    await controller.setConcept(AppConcept.tagesprofil);
+    await controller.setConcept(AppConcept.phase);
     await tester.pumpWidget(SphygmaApp(controller: controller));
     await tester.pumpAndSettle();
 
@@ -176,8 +152,9 @@ void main() {
     }
   });
 
-  testWidgets('ein Gestaltungswechsel wirkt sofort, auch im offenen Blatt',
-      (tester) async {
+  testWidgets('ein Gestaltungswechsel wirkt sofort, auch im offenen Blatt', (
+    tester,
+  ) async {
     // Bis zum 07.09.2026 nahm jede geschobene Route die Gestaltung beim
     // Öffnen mit und hielt sie fest. Wer im Einstellungsblatt die Gestaltung
     // wechselte, sah die Änderung erst nach dem Zurückgehen — ausgerechnet
@@ -206,8 +183,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Tagebuch'));
     await tester.pumpAndSettle();
-    expect(controller.themeVariant, ThemeVariant.diary,
-        reason: 'der Wechsel selbst muss ankommen');
+    expect(
+      controller.themeVariant,
+      ThemeVariant.diary,
+      reason: 'der Wechsel selbst muss ankommen',
+    );
 
     // Ohne Zurückgehen: Das Blatt trägt jetzt die Maße der neuen Handschrift.
     expect(

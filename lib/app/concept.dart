@@ -22,23 +22,7 @@ enum AppConcept {
     'Heute, Verlauf und Gerät. Der Zeitraum filtert alle Messungen.',
   ),
 
-  /// Einheit: die Messwoche. Sieben Tage, morgens und abends, erster Tag
-  /// verworfen — so verlangt es die Leitlinie für die Selbstmessung.
-  siebenTage(
-    'Sieben Tage',
-    'Die Messwoche',
-    'Vierzehn Felder je Woche. Eine Woche ist vollständig oder nicht, und '
-        'ihr Wert gilt in der Sprechstunde.',
-  ),
 
-  /// Einheit: die Tageszeit. Alle Messungen liegen auf einer Tagesachse,
-  /// die Chronologie ist nicht mehr die Zugangsachse.
-  tagesprofil(
-    'Tagesprofil',
-    'Die Tageszeit',
-    'Wann ist der Druck hoch — morgens, abends, nachts? Die Antwort, die '
-        'kein anderes Konzept gibt.',
-  ),
 
   /// Einheit: das einzelne Messen. Wer zweimal hintereinander misst, hat
   /// ein Ergebnis mit mehreren Rohwerten, nicht zwei Einträge.

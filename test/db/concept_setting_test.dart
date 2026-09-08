@@ -21,8 +21,8 @@ void main() {
   });
 
   test('die Wahl wird gespeichert und gelesen', () async {
-    await settings.setConcept(AppConcept.tagesprofil);
-    expect(await settings.concept(), AppConcept.tagesprofil);
+    await settings.setConcept(AppConcept.phase);
+    expect(await settings.concept(), AppConcept.phase);
   });
 
   test('jedes Konzept lässt sich wählen', () async {

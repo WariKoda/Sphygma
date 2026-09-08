@@ -94,11 +94,11 @@ void main() {
     await boot();
 
     await pumpWith(tester, ThemeVariant.instrument);
-    await tester.ensureVisible(find.text('Tagesprofil'));
-    await tester.tap(find.text('Tagesprofil'));
+    await tester.ensureVisible(find.text('Phase'));
+    await tester.tap(find.text('Phase'));
     await tester.pumpAndSettle();
 
-    expect(controller.concept, AppConcept.tagesprofil);
+    expect(controller.concept, AppConcept.phase);
   });
 
   testWidgets('die Gestaltung lässt sich umschalten', (tester) async {

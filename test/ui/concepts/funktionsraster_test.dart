@@ -132,7 +132,15 @@ Future<void> _erwarte(
   required String reason,
 }) async {
   if (f.evaluate().isEmpty && find.byType(Scrollable).evaluate().isNotEmpty) {
-    await tester.scrollUntilVisible(f, 240, maxScrolls: 40);
+    await tester.scrollUntilVisible(
+      // Am Ende ruft dragUntilVisible element() mit .single — ein Finder mit
+      // mehreren Treffern (etwa „alle Messzeilen") wäre dort mehrdeutig.
+      f.first,
+      240,
+      maxScrolls: 40,
+      // Mehrere Scrollables im Baum: das äußere ist gemeint.
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
   }
   expect(f, findsWidgets, reason: reason);
@@ -143,7 +151,15 @@ Future<void> _tippe(WidgetTester tester, Finder f) async {
   // wird erst durch Scrollen auffindbar. „Nicht sichtbar" ist kein „nicht
   // vorhanden".
   if (f.evaluate().isEmpty && find.byType(Scrollable).evaluate().isNotEmpty) {
-    await tester.scrollUntilVisible(f, 240, maxScrolls: 40);
+    await tester.scrollUntilVisible(
+      // Am Ende ruft dragUntilVisible element() mit .single — ein Finder mit
+      // mehreren Treffern (etwa „alle Messzeilen") wäre dort mehrdeutig.
+      f.first,
+      240,
+      maxScrolls: 40,
+      // Mehrere Scrollables im Baum: das äußere ist gemeint.
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
   }
   await tester.ensureVisible(f.first);
@@ -157,30 +173,8 @@ final Map<AppConcept, _Weg> _wege = {
     zumGeraet: (t) => _tippe(t, find.text('Gerät')),
     zurAuswertung: (t) => _tippe(t, find.text('Verlauf')),
     zurEinzelmessung: (t) async {
-      await _tippe(t, find.text('Verlauf'));
-      // „Woche" misst ab der echten Uhr, der Testbestand liegt in der
-      // Vorwoche — über „Alles" ist er unabhängig davon erreichbar.
-      await _tippe(t, find.text('Alles'));
-      await _tippe(t, _messzeile);
-    },
-  ),
-  AppConcept.tagesprofil: _Weg(
-    zumGeraet: (t) => _tippe(t, find.text('Gerät')),
-    zurAuswertung: (t) => _tippe(t, find.text('Verlauf')),
-    zurEinzelmessung: (t) async {
-      // Über den Tagesabschnitt, nicht über den Kalender.
-      await _tippe(t, find.text('Morgens'));
-      await _tippe(t, _messzeile);
-    },
-  ),
-  AppConcept.siebenTage: _Weg(
-    zumGeraet: (t) => _tippe(t, find.text('Gerät und Übertragung')),
-    zurAuswertung: (t) async {
-      await _tippe(t, find.text('Frühere Wochen'));
-      await _tippe(t, find.byIcon(Icons.calculate_outlined));
-    },
-    zurEinzelmessung: (t) async {
-      // Über das Feld im Wochenraster.
+      // Seit „Heute" die laufende Woche zeigt, führt der kürzeste Weg über
+      // ein Rasterfeld — wie im aufgelösten Konzept „Sieben Tage".
       await _tippe(t, find.text('148'));
     },
   ),
