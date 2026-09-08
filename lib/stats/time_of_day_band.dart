@@ -1,12 +1,15 @@
-// Tageszeit als Ordnungsgröße — gemeinsame Grundlage mehrerer Konzepte.
+// Tageszeit als Ordnungsgröße — gemeinsame Grundlage zweier Ansichten.
 //
-// „Sieben Tage" braucht die grobe Teilung morgens/abends, um die vierzehn
-// Felder einer Messwoche zu belegen. „Tagesprofil" braucht die feine, weil
-// die Tageszeit dort die Zugangsachse ist. Beide kommen aus derselben Quelle;
+// Das Wochenraster auf „Heute" braucht die grobe Teilung morgens/abends, um
+// die vierzehn Felder einer Messwoche zu belegen. Der Verlauf braucht die
+// feine für seine fünf Tagesabschnitte. Beide kommen aus derselben Quelle;
 // sonst driften sie auseinander, sobald jemand eine Grenze verschiebt.
 //
-// Die Grenzen sind einstellbar. Wer im Schichtdienst arbeitet, hat einen
-// anderen Morgen als der Rest.
+// Die Grenzen sind **hier** frei wählbar: Jede Rechnung nimmt ihr Raster als
+// Parameter. Bis in die Einstellungen geführt ist das nicht — die App ruft
+// überall die beiden festen Raster auf. Wer im Schichtdienst arbeitet, hat
+// also weiterhin den Morgen dieser Datei und nicht seinen eigenen
+// (docs/design/umsetzung-konzepte.md, „Der Abgleich").
 import '../db/app_database.dart';
 import 'trend_stats.dart';
 
@@ -106,7 +109,7 @@ class BandGrid {
 
   final List<BandBoundary> boundaries;
 
-  /// Fünf Abschnitte, wie „Tagesprofil" sie braucht.
+  /// Fünf Abschnitte, wie der Verlauf sie für „Nach Tageszeit" braucht.
   static final BandGrid fein = BandGrid([
     BandBoundary(TimeOfDayMinutes(6, 0), TimeBand.morgens),
     BandBoundary(TimeOfDayMinutes(10, 0), TimeBand.vormittags),
@@ -115,7 +118,8 @@ class BandGrid {
     BandBoundary(TimeOfDayMinutes(23, 0), TimeBand.nachts),
   ]);
 
-  /// Zwei Abschnitte, wie „Sieben Tage" sie für die vierzehn Felder braucht.
+  /// Zwei Abschnitte, wie das Wochenraster sie für die vierzehn Felder
+  /// braucht.
   static final BandGrid grob = grobMit(schnitt: TimeOfDayMinutes(12, 0));
 
   /// Die grobe Teilung mit verschobenem Schnitt — für Schichtdienst.

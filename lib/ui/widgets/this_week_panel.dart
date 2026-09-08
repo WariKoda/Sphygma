@@ -4,9 +4,9 @@
 // sondern **was noch fehlt**. Deshalb steht sie auf „Heute" und nicht bei den
 // Kurven.
 //
-// Gemeinsamer Baustein von „Messung und Filter" und „Sieben Tage": Dort ist
-// die Woche das ganze Konzept, hier ein Abschnitt unter dem letzten Wert.
-// Zwei Fassungen desselben Rasters liefen auseinander.
+// Kam aus dem aufgelösten Konzept „Sieben Tage", wo die Woche das ganze
+// Programm war; hier ist sie ein Abschnitt unter dem letzten Wert. Wer nicht
+// nach Wochenplan misst, schaltet sie in den Einstellungen ab.
 import 'package:flutter/material.dart';
 
 import '../../db/app_database.dart';
@@ -21,7 +21,6 @@ class ThisWeekPanel extends StatelessWidget {
     required this.measurements,
     required this.now,
     this.onFieldTap,
-    this.showHeading = true,
   });
 
   /// Alle Messungen eines Speicherplatzes; die laufende Woche wird daraus
@@ -33,10 +32,6 @@ class ThisWeekPanel extends StatelessWidget {
   final DateTime now;
 
   final void Function(WeekField field)? onFieldTap;
-
-  /// Ob die Überschrift mitgezeichnet wird. „Sieben Tage" hat sie schon im
-  /// Bildschirmtitel.
-  final bool showHeading;
 
   /// Die laufende Woche — nicht die jüngste.
   ///
@@ -79,7 +74,7 @@ class ThisWeekPanel extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (showHeading) _Ueberschrift(text: 'DIESE WOCHE'),
+          const _Ueberschrift(text: 'DIESE WOCHE'),
           Text(
             'In dieser Woche wurde noch nicht gemessen.',
             style: TextStyle(fontSize: 12, color: t.muted, height: 1.5),
@@ -91,7 +86,7 @@ class ThisWeekPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (showHeading) _Ueberschrift(text: 'DIESE WOCHE'),
+        const _Ueberschrift(text: 'DIESE WOCHE'),
         WeekGrid(week: woche, onFieldTap: onFieldTap),
         Text(
           openToday(woche, now),

@@ -1,11 +1,13 @@
 // Das Wochenraster: sieben Spalten, zwei Zeilen, vierzehn Felder.
 //
-// Es ist die Hauptsache des Konzepts „Sieben Tage" — und liegt trotzdem hier
-// bei den allgemeinen Bausteinen: „Messung und Filter" zeigt es auf „Heute",
-// um die Frage zu beantworten, die der Verlauf nicht stellt — was fehlt noch.
-// Zwei Kopien liefen auseinander, sobald eine angefasst wird. Man sieht in einem Blick,
-// was gemessen wurde, was fehlt und wo die Werte liegen. Leere Felder bleiben
-// stehen — „hier wurde nicht gemessen" ist die halbe Aussage der Woche.
+// Man sieht in einem Blick, was gemessen wurde, was fehlt und wo die Werte
+// liegen. Leere Felder bleiben stehen — „hier wurde nicht gemessen" ist die
+// halbe Aussage der Woche.
+//
+// Es war die Hauptsache des aufgelösten Konzepts „Sieben Tage" und steht
+// heute auf „Heute", wo es die Frage beantwortet, die der Verlauf nicht
+// stellt: was noch fehlt. Abschaltbar, für den, der nicht nach Wochenplan
+// misst.
 import 'package:flutter/material.dart';
 
 import '../../stats/measurement_week.dart';
