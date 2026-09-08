@@ -5,13 +5,13 @@
 // zeitliche Nähe liefern einen Vorschlag; bei Grenzfällen entscheidet der
 // Mensch.
 //
-// Vier Bereiche, weil dieses Konzept einen eigenen Ort für offene Fragen
+// Drei Bereiche, weil dieses Konzept einen eigenen Ort für offene Fragen
 // braucht: „Prüfen" ist kein Untermenü, sondern eine sichtbare Aufgabe mit
-// Anzahl. Sie zu verstecken hieße, sie zuzudecken.
+// Anzahl. Sie zu verstecken hieße, sie zuzudecken. Die Technik steht wie in
+// jedem Konzept hinter dem Zahnrad.
 import 'package:flutter/material.dart';
 
 import '../../../app/app_controller.dart';
-import '../../device_screen.dart';
 import '../../settings_screen.dart';
 import '../../theme/sphygma_theme.dart';
 import 'last_occasion_screen.dart';
@@ -30,7 +30,7 @@ class OccasionHome extends StatefulWidget {
 class _OccasionHomeState extends State<OccasionHome> {
   int _index = 0;
 
-  static const _titel = ['Letztes Messen', 'Archiv', 'Zu prüfen', 'Gerät'];
+  static const _titel = ['Letztes Messen', 'Archiv', 'Zu prüfen'];
 
   @override
   Widget build(BuildContext context) {
@@ -63,8 +63,7 @@ class _OccasionHomeState extends State<OccasionHome> {
               onReview: () => setState(() => _index = 2),
             ),
             1 => OccasionArchiveScreen(controller: widget.controller),
-            2 => OccasionReviewScreen(controller: widget.controller),
-            _ => DeviceScreen(controller: widget.controller),
+            _ => OccasionReviewScreen(controller: widget.controller),
           },
           bottomNavigationBar: NavigationBar(
             backgroundColor: t.surface,
@@ -90,10 +89,6 @@ class _OccasionHomeState extends State<OccasionHome> {
                         child: const Icon(Icons.checklist_outlined),
                       ),
                 label: 'Prüfen',
-              ),
-              const NavigationDestination(
-                icon: Icon(Icons.bluetooth),
-                label: 'Gerät',
               ),
             ],
           ),

@@ -86,6 +86,39 @@ class SettingsRepository {
   Future<void> setConcept(AppConcept concept) =>
       setRawSetting(_conceptKey, concept.name);
 
+  static const String _weekPanelKey = 'week_panel_visible';
+
+  /// Ob das Wochenraster auf „Heute" mitgezeichnet wird.
+  ///
+  /// Es kam aus dem aufgeloesten Konzept „Sieben Tage" und ist dort das
+  /// ganze Programm gewesen; auf „Heute" ist es ein Abschnitt unter dem
+  /// letzten Wert — nuetzlich fuer den, der eine Woche lang zweimal taeglich
+  /// misst, ueberfluessig fuer den, der gelegentlich einen Wert nimmt.
+  /// Deshalb abschaltbar, und deshalb standardmaessig an.
+  Future<bool> weekPanelVisible() async {
+    final row = await (_db.select(_db.appSettings)
+          ..where((s) => s.key.equals(_weekPanelKey)))
+        .getSingleOrNull();
+    if (row == null) return true;
+    return switch (row.value) {
+      'true' => true,
+      'false' => false,
+      // Wie bei Gestaltung und Konzept: nicht werfen, aber auch nicht
+      // lautlos. Eine unlesbare Sichtbarkeitsangabe darf die App nicht
+      // unbenutzbar machen.
+      _ => () {
+        debugPrint(
+          '[Sphygma] Unlesbare Wochenraster-Einstellung "${row.value}", '
+          'zeige es.',
+        );
+        return true;
+      }(),
+    };
+  }
+
+  Future<void> setWeekPanelVisible(bool visible) =>
+      setRawSetting(_weekPanelKey, '$visible');
+
 
   /// Schreibt einen Einstellungswert unmittelbar. Oeffentlich, weil Tests
   /// ungueltige Zustaende herstellen koennen muessen.

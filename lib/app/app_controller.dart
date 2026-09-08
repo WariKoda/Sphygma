@@ -78,6 +78,10 @@ class AppController extends ChangeNotifier {
   /// kombinierbar — jedes Konzept trägt denselben Funktionsumfang.
   AppConcept concept = AppConcept.klassisch;
 
+  /// Ob das Wochenraster auf „Heute" erscheint. Wird in [init] aus der DB
+  /// geladen.
+  bool weekPanelVisible = true;
+
 
   /// Die Messanlässe des gewählten Speicherplatzes: Rohmessungen, die kurz
   /// nacheinander entstanden sind, gehören zu einem Messen. Abgeleitet, nicht
@@ -124,6 +128,12 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setWeekPanelVisible(bool value) async {
+    await settings.setWeekPanelVisible(value);
+    weekPanelVisible = value;
+    notifyListeners();
+  }
+
   /// Nur fuer Tests: erzwingt das Neuladen aus der DB.
   @visibleForTesting
   Future<void> refreshForTest() => _refresh();
@@ -137,6 +147,7 @@ class AppController extends ChangeNotifier {
     paired = await keyStore.load() != null;
     themeVariant = await settings.themeVariant();
     concept = await settings.concept();
+    weekPanelVisible = await settings.weekPanelVisible();
     await _refresh();
     _startWatching();
   }

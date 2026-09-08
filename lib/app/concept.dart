@@ -14,15 +14,13 @@ library;
 
 /// Die Ordnungen, in denen die App dieselben Daten zeigen kann.
 enum AppConcept {
-  /// Einheit: die einzelne Messung. Drei Bereiche, Zeitraumfilter darüber.
+  /// Einheit: die einzelne Messung. Zwei Bereiche, Zeitraumfilter darüber.
   /// So ist die App gewachsen — nie ausgesprochen, aber vorhanden.
   klassisch(
     'Messung und Filter',
     'Die einzelne Messung',
-    'Heute, Verlauf und Gerät. Der Zeitraum filtert alle Messungen.',
+    'Heute und Verlauf. Der Zeitraum filtert alle Messungen.',
   ),
-
-
 
   /// Einheit: das einzelne Messen. Wer zweimal hintereinander misst, hat
   /// ein Ergebnis mit mehreren Rohwerten, nicht zwei Einträge.

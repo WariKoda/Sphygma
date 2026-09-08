@@ -1,9 +1,8 @@
-// Zeile und Knopf der technischen Blätter.
+// Zeile und Knopf der technischen Abschnitte.
 //
-// Gerätebereich und Einstellungen zeigen dieselben Bauformen: eine Zeile mit
+// Alle Karten der Einstellungen zeigen dieselben Bauformen: eine Zeile mit
 // Beschriftung links und Wert rechts, und einen Knopf über die volle Breite.
-// Als Kopie in beiden Dateien liefen sie auseinander, sobald eine von beiden
-// angefasst wird.
+// Als Kopie je Abschnitt liefen sie auseinander, sobald eine angefasst wird.
 import 'package:flutter/material.dart';
 
 import '../theme/sphygma_theme.dart';

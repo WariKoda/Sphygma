@@ -562,7 +562,7 @@ gerade er entscheidet oft, ob ein Ausreißer einer ist.
   denselben Schlüssel wie `OccasionDecisions` und `PhaseAssignments`.
 * **Nicht** nach Health Connect. Dorthin gehen Messwerte, nichts sonst; ein
   Freitext wäre keine Geräteaufzeichnung.
-* Jedes der fünf Konzepte braucht einen Ort dafür — die Notiz ist eine
+* Jedes Konzept braucht einen Ort dafür — die Notiz ist eine
   Funktion wie F1–F15 und darf nicht in einem Konzept fehlen.
 * Offen: Ob eine Notiz an der Rohmessung oder am Messanlass hängt. Beim
   Konzept „Messanlass" sind das verschiedene Dinge.

@@ -4,13 +4,13 @@
 // 5 mg", „Urlaub", „nach der Umstellung" geben Messungen einen Zusammenhang,
 // den ein Kalenderfilter nicht kennt.
 //
-// Vier Bereiche. „Zuordnen" ist eigener Ort, weil die falsche Geräteuhr für
+// Drei Bereiche. „Zuordnen" ist eigener Ort, weil die falsche Geräteuhr für
 // dieses Konzept kein Randproblem ist, sondern sein zentrales Risiko: Ein
-// Vergleich ist nur so belastbar wie seine Zuordnung.
+// Vergleich ist nur so belastbar wie seine Zuordnung. Die Technik steht wie
+// in jedem Konzept hinter dem Zahnrad.
 import 'package:flutter/material.dart';
 
 import '../../../app/app_controller.dart';
-import '../../device_screen.dart';
 import '../../settings_screen.dart';
 import '../../theme/sphygma_theme.dart';
 import 'current_phase_screen.dart';
@@ -29,7 +29,7 @@ class PhaseHome extends StatefulWidget {
 class _PhaseHomeState extends State<PhaseHome> {
   int _index = 0;
 
-  static const _titel = ['Jetzt', 'Lebensabschnitte', 'Zeitzuordnung', 'Gerät'];
+  static const _titel = ['Jetzt', 'Lebensabschnitte', 'Zeitzuordnung'];
 
   @override
   Widget build(BuildContext context) {
@@ -62,8 +62,7 @@ class _PhaseHomeState extends State<PhaseHome> {
               onAssign: () => setState(() => _index = 2),
             ),
             1 => PhaseListScreen(controller: widget.controller),
-            2 => PhaseAssignScreen(controller: widget.controller),
-            _ => DeviceScreen(controller: widget.controller),
+            _ => PhaseAssignScreen(controller: widget.controller),
           },
           bottomNavigationBar: NavigationBar(
             backgroundColor: t.surface,
@@ -86,10 +85,6 @@ class _PhaseHomeState extends State<PhaseHome> {
                         child: const Icon(Icons.help_outline),
                       ),
                 label: 'Zuordnen',
-              ),
-              const NavigationDestination(
-                icon: Icon(Icons.bluetooth),
-                label: 'Gerät',
               ),
             ],
           ),

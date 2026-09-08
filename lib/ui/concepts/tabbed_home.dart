@@ -1,13 +1,16 @@
-// Die Reiterhülle: Heute, Verlauf, Gerät.
+// Die Reiterhülle: Heute und Verlauf.
 //
-// Sie ist die Organisation des Konzepts „Messung und Filter" — und die des
-// Tagesprofils, das dieselbe Aufteilung übernimmt und nur den ersten Reiter
-// anders füllt. Konzepte mit eigener Ordnung bringen stattdessen eine eigene
-// Hülle mit; deshalb steht diese hier und nicht mehr in `sphygma_app.dart`.
+// Sie ist die Organisation des Konzepts „Messung und Filter". Konzepte mit
+// eigener Ordnung bringen stattdessen eine eigene Hülle mit; deshalb steht
+// diese hier und nicht mehr in `sphygma_app.dart`.
+//
+// Der dritte Reiter „Gerät" ist am 08.09.2026 entfallen: Sein Inhalt war
+// durchweg Einstellung, und Einstellungen stehen hinter dem Zahnrad. Ein
+// Reiter, der nur an eine andere Stelle verweist, kostet einen Platz in der
+// Leiste und liefert nichts.
 import 'package:flutter/material.dart';
 
 import '../../app/app_controller.dart';
-import '../device_screen.dart';
 import '../history_screen.dart';
 import '../settings_screen.dart';
 import '../theme/sphygma_theme.dart';
@@ -36,7 +39,7 @@ class _TabbedHomeState extends State<TabbedHome> {
   @override
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
-    const titles = ['Heute', 'Verlauf', 'Gerät'];
+    const titles = ['Heute', 'Verlauf'];
 
     return ListenableBuilder(
       listenable: widget.controller,
@@ -56,13 +59,10 @@ class _TabbedHomeState extends State<TabbedHome> {
             ),
           ],
         ),
-        // Das Konzept bestimmt, was auf dem ersten Reiter steht. Der
-        // Gerätebereich bleibt in jedem Konzept derselbe — dort geht es
-        // zur Konzeptwahl.
+        // Das Konzept bestimmt, was auf dem ersten Reiter steht.
         body: switch (_index) {
           0 => TodayScreen(controller: widget.controller, clock: widget.clock),
-          1 => HistoryScreen(controller: widget.controller),
-          _ => DeviceScreen(controller: widget.controller),
+          _ => HistoryScreen(controller: widget.controller),
         },
         bottomNavigationBar: NavigationBar(
           backgroundColor: t.surface,
@@ -76,10 +76,6 @@ class _TabbedHomeState extends State<TabbedHome> {
             const NavigationDestination(
               icon: Icon(Icons.show_chart),
               label: 'Verlauf',
-            ),
-            const NavigationDestination(
-              icon: Icon(Icons.bluetooth),
-              label: 'Gerät',
             ),
           ],
         ),

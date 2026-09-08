@@ -10,6 +10,8 @@ import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/db/measurement_repository.dart';
 import 'package:sphygma/db/occasion_repository.dart';
 import 'package:sphygma/db/settings_repository.dart';
+import 'package:sphygma/protocol/readout.dart';
+import 'package:sphygma/protocol/record.dart';
 import 'package:sphygma/sync/export_service.dart';
 import 'package:sphygma/sync/health_sink.dart';
 import 'package:sphygma/sync/sync_service.dart';
@@ -24,12 +26,29 @@ class _NoopSink implements HealthSink {
   Future<void> deleteBloodPressure(String clientRecordId) async {}
 }
 
+/// Health Connect verweigert die Berechtigung — ein alltaeglicher Fall.
+class _FailingSink implements HealthSink {
+  @override
+  Future<void> writeBloodPressure(BloodPressureWrite write) async {
+    throw StateError('Keine Berechtigung.');
+  }
+
+  @override
+  Future<void> deleteBloodPressure(String clientRecordId) async {
+    throw StateError('Keine Berechtigung.');
+  }
+}
+
 void main() {
   late AppDatabase db;
   late InMemoryPairingKeyStore keyStore;
   late AppController controller;
 
-  Future<void> boot({bool paired = true, bool withSlot = true}) async {
+  Future<void> boot({
+    bool paired = true,
+    bool withSlot = true,
+    HealthSink? sink,
+  }) async {
     if (paired) await keyStore.save(Uint8List(16));
     final repository = MeasurementRepository(db);
     controller = AppController(
@@ -38,21 +57,32 @@ void main() {
       repository: repository,
       occasionRepository: OccasionRepository(db),
       syncService: SyncService(keyStore: keyStore, repository: repository),
-      exportService: ExportService(repository: repository, sink: _NoopSink()),
+      exportService: ExportService(
+        repository: repository,
+        sink: sink ?? _NoopSink(),
+      ),
       statusStream: () => const Stream.empty(),
     );
     await controller.init();
     if (paired && withSlot) await controller.setUserSlot(1);
   }
 
-  Future<void> pumpWith(WidgetTester tester, ThemeVariant v) =>
-      tester.pumpWidget(
-        MaterialApp(
-          builder: (context, child) =>
-              SphygmaThemeScope(theme: themeFor(v), child: child!),
-          home: SettingsScreen(controller: controller),
-        ),
-      );
+  Future<void> pumpWith(WidgetTester tester, ThemeVariant v) {
+    // Ein hohes Testfenster: Seit die gesamte Technik hier steht, ist das
+    // Blatt sechs Karten lang. Auf 600 Pixeln waere die Haelfte nicht
+    // gebaut, und jede Pruefung hinge am Scrollen statt an der Sache.
+    tester.view.physicalSize = const Size(1080, 4200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    return tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) =>
+            SphygmaThemeScope(theme: themeFor(v), child: child!),
+        home: SettingsScreen(controller: controller),
+      ),
+    );
+  }
 
   setUp(() {
     db = AppDatabase(NativeDatabase.memory());
@@ -178,5 +208,107 @@ void main() {
 
     expect(find.byType(SegmentedButton<int>), findsOneWidget);
     expect(find.text('Koppeln'), findsOneWidget);
+  });
+
+  // Abgleich und Uebertragung sind am 08.09.2026 aus dem aufgeloesten Reiter
+  // „Geraet" hierher gewandert. Ihre Tests sind mitgekommen.
+
+  testWidgets('Abgleich und Übertragung stehen bei den Einstellungen', (
+    tester,
+  ) async {
+    await boot();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+
+    expect(find.textContaining('Automatischer Abgleich'), findsOneWidget);
+    expect(find.text('Jetzt abgleichen'), findsOneWidget);
+    expect(find.text('Alle übertragen'), findsOneWidget);
+  });
+
+  testWidgets('die Reihenfolge folgt der Häufigkeit', (tester) async {
+    await boot();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+
+    // Was im Alltag vorkommt, steht oben; was man einmal einstellt, unten.
+    // Ohne diese Prüfung rutscht die Reihenfolge beim nächsten Umbau
+    // zurück in die Zufälligkeit.
+    double y(String titel) => tester.getTopLeft(find.text(titel)).dy;
+    final reihe = [
+      'ABGLEICH',
+      'HEALTH CONNECT',
+      'GERÄT',
+      'ANSICHT',
+      'KONZEPT',
+      'GESTALTUNG',
+    ];
+    for (var i = 1; i < reihe.length; i++) {
+      expect(
+        y(reihe[i - 1]),
+        lessThan(y(reihe[i])),
+        reason: '${reihe[i - 1]} muss über ${reihe[i]} stehen',
+      );
+    }
+  });
+
+  testWidgets('das Wochenraster lässt sich abschalten, und es bleibt aus', (
+    tester,
+  ) async {
+    await boot();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+    expect(controller.weekPanelVisible, isTrue, reason: 'Standard ist an');
+
+    await tester.tap(find.byType(SwitchListTile));
+    await tester.pumpAndSettle();
+
+    expect(controller.weekPanelVisible, isFalse);
+    // Nicht nur im Steuerungsteil: Ein Schalter, der den Neustart nicht
+    // überlebt, ist keiner.
+    expect(await SettingsRepository(db).weekPanelVisible(), isFalse);
+  });
+
+  testWidgets('eine fehlschlagende Aktion meldet, statt unbeobachtet zu '
+      'scheitern', (tester) async {
+    await boot(sink: _FailingSink());
+    await MeasurementRepository(db).importAll([
+      SlotRecord(
+        userSlot: 1,
+        record: BloodPressureRecord(
+          systolic: 128,
+          diastolic: 87,
+          pulse: 82,
+          timestamp: DateTime.now(),
+          arrhythmiaFlag: false,
+          movementFlag: false,
+          sequence: 1,
+        ),
+        rawBytes: Uint8List(14),
+      ),
+    ]);
+    await controller.refreshForTest();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+    await tester.tap(find.text('Alle übertragen'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(controller.status, contains('Fehler'));
+  });
+
+  testWidgets('ohne Speicherplatz ist "Übertragene entfernen" abgeschaltet', (
+    tester,
+  ) async {
+    await boot(withSlot: false);
+
+    await pumpWith(tester, ThemeVariant.instrument);
+
+    final button = tester.widget<OutlinedButton>(
+      find.ancestor(
+        of: find.text('Übertragene entfernen'),
+        matching: find.byType(OutlinedButton),
+      ),
+    );
+    expect(button.onPressed, isNull);
   });
 }

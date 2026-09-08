@@ -109,15 +109,17 @@ Finder get _messzeile => find.descendant(
 /// das ist der Punkt des Rasters: dieselbe Funktion, ein anderer Weg — aber
 /// keiner darf fehlen.
 class _Weg {
-  const _Weg({
-    required this.zumGeraet,
-    required this.zurAuswertung,
-    required this.zurEinzelmessung,
-  });
+  const _Weg({required this.zurAuswertung, required this.zurEinzelmessung});
 
-  final Future<void> Function(WidgetTester) zumGeraet;
   final Future<void> Function(WidgetTester) zurAuswertung;
   final Future<void> Function(WidgetTester) zurEinzelmessung;
+
+  /// Der Weg zur Technik ist in **jedem** Konzept derselbe: oben rechts das
+  /// Zahnrad. Seit dem 08.09.2026 gibt es keinen Reiter „Gerät" mehr — sein
+  /// Inhalt war durchweg Einstellung. Deshalb steht dieser Weg nicht mehr je
+  /// Konzept, sondern einmal hier.
+  static Future<void> zurTechnik(WidgetTester t) =>
+      _tippe(t, find.byIcon(Icons.settings));
 }
 
 /// Prüft, dass etwas da ist — notfalls, nachdem danach gescrollt wurde.
@@ -175,7 +177,6 @@ Future<void> _tippe(WidgetTester tester, Finder f) async {
 
 final Map<AppConcept, _Weg> _wege = {
   AppConcept.klassisch: _Weg(
-    zumGeraet: (t) => _tippe(t, find.text('Gerät')),
     zurAuswertung: (t) => _tippe(t, find.text('Verlauf')),
     zurEinzelmessung: (t) async {
       // Seit „Heute" die laufende Woche zeigt, führt der kürzeste Weg über
@@ -184,7 +185,6 @@ final Map<AppConcept, _Weg> _wege = {
     },
   ),
   AppConcept.messanlass: _Weg(
-    zumGeraet: (t) => _tippe(t, find.text('Gerät')),
     zurAuswertung: (t) async {
       await _tippe(t, find.text('Archiv'));
       await _tippe(t, find.text('Anlässe auswerten'));
@@ -196,7 +196,6 @@ final Map<AppConcept, _Weg> _wege = {
     },
   ),
   AppConcept.phase: _Weg(
-    zumGeraet: (t) => _tippe(t, find.text('Gerät')),
     zurAuswertung: (t) => _tippe(t, find.text('Vergleich ansehen')),
     zurEinzelmessung: (t) async {
       await _tippe(t, find.text('Phasen'));
@@ -343,7 +342,7 @@ void main() {
       testWidgets('F7 bis F9 — Abgleich und Health Connect', (tester) async {
         await boot();
         await pump(tester, k);
-        await weg.zumGeraet(tester);
+        await _Weg.zurTechnik(tester);
 
         await _erwarte(
           tester,
@@ -366,11 +365,10 @@ void main() {
         await boot();
         await pump(tester, k);
 
-        // Seit dem 08.09.2026 trennt die App zwischen einstellen und tun:
-        // Kopplung und Speicherplatz sind Entscheidungen und stehen hinter
-        // dem Zahnrad, Abgleich und Übertragung sind Handlungen und bleiben
-        // im Gerätebereich.
-        await _tippe(tester, find.byIcon(Icons.settings));
+        // Seit dem 08.09.2026 steht die gesamte Technik hinter dem Zahnrad —
+        // Kopplung, Speicherplatz, Abgleich und Übertragung. Der Reiter
+        // „Gerät" ist entfallen.
+        await _Weg.zurTechnik(tester);
         await _erwarte(
           tester,
           find.text('Neu koppeln'),

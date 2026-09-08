@@ -67,7 +67,12 @@ void main() {
         MaterialApp(
           builder: (context, child) =>
               SphygmaThemeScope(theme: themeFor(v), child: child!),
-          home: Scaffold(body: TodayScreen(controller: controller)),
+          home: Scaffold(
+            body: ListenableBuilder(
+              listenable: controller,
+              builder: (context, _) => TodayScreen(controller: controller),
+            ),
+          ),
         ),
       );
 
@@ -184,6 +189,36 @@ void main() {
     expect(find.text('So'), findsOneWidget);
     // Freitag morgens gemessen, abends noch nicht.
     expect(find.text('Heute fehlt noch die Abendmessung.'), findsOneWidget);
+  });
+
+  testWidgets('abgeschaltet verschwindet das Wochenraster, sonst nichts', (
+    tester,
+  ) async {
+    // Wer nicht nach Wochenplan misst, sieht im Raster vor allem leere
+    // Felder. Abschalten darf aber nur das Raster kosten — keine Messung
+    // und keinen anderen Abschnitt.
+    final montag = previousMonday(mondayOf(DateTime.now()));
+    DateTime tag(int versatz, int stunde) =>
+        DateTime(montag.year, montag.month, montag.day + versatz, stunde);
+
+    controller = await boot();
+    await repository.importAll([
+      _rec(1, tag(0, 7), systolic: 128),
+      _rec(2, tag(0, 20), systolic: 124),
+    ]);
+    await controller.refreshForTest();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+    expect(find.text('DIESE WOCHE'), findsOneWidget);
+
+    await controller.setWeekPanelVisible(false);
+    await tester.pumpAndSettle();
+
+    expect(find.text('DIESE WOCHE'), findsNothing);
+    expect(find.text('Mo'), findsNothing);
+    // Der letzte Wert und die letzten Tage bleiben.
+    expect(find.textContaining('124'), findsWidgets);
+    expect(find.text('LETZTE TAGE'), findsOneWidget);
   });
 
   testWidgets('über Mitternacht wandert die Wochenansicht mit', (tester) async {

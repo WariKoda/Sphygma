@@ -230,6 +230,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Einstellungen'), findsOneWidget);
+    // Die Konzeptwahl steht weit unten: Vor ihr liegen Abgleich,
+    // Übertragung und Kopplung — was häufiger gebraucht wird, steht oben.
+    await tester.scrollUntilVisible(find.text('KONZEPT'), 300);
+    await tester.pumpAndSettle();
     expect(find.text('KONZEPT'), findsOneWidget);
   });
 

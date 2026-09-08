@@ -1,5 +1,5 @@
-// Drei Handschriften für dieselbe Struktur. Der Nutzer wählt unter
-// "Gerät"; die Wahl liegt in SettingsRepository.
+// Sechs Handschriften für dieselbe Struktur. Der Nutzer wählt sie in den
+// Einstellungen; die Wahl liegt in SettingsRepository.
 import 'package:flutter/widgets.dart';
 
 import '../../stats/esc_classification.dart';

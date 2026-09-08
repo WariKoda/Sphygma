@@ -78,7 +78,10 @@ class TodayScreen extends StatelessWidget {
             ),
           ),
           ..._notices(),
-          if (controller.measurements.isNotEmpty)
+          // Abschaltbar: Wer nicht nach Wochenplan misst, sieht im Raster
+          // vor allem leere Felder. Die Einstellung steht hinter dem
+          // Zahnrad unter „Ansicht".
+          if (controller.measurements.isNotEmpty && controller.weekPanelVisible)
             SurfacePanel(
               tone: 1,
               // Der Wecker gehört hierher, nicht in den Bildschirm: Ohne ihn
@@ -148,7 +151,7 @@ class TodayScreen extends StatelessWidget {
         title: 'Kein automatischer Abgleich',
         message:
             'Neue Messungen werden nicht von selbst geholt. '
-            'Unter "Gerät" lässt sich der Abgleich von Hand auslösen.',
+            'Oben rechts über das Zahnrad lässt er sich von Hand auslösen.',
       ),
   ];
 }

@@ -14,12 +14,24 @@ import 'package:sphygma/db/settings_repository.dart';
 import 'package:sphygma/sync/export_service.dart';
 import 'package:sphygma/sync/health_sink.dart';
 import 'package:sphygma/sync/sync_service.dart';
-import 'package:sphygma/ui/device_screen.dart';
 import 'package:sphygma/ui/history_screen.dart';
+import 'package:sphygma/ui/settings_screen.dart';
 import 'package:sphygma/ui/sphygma_app.dart';
 import 'package:sphygma/ui/theme/sphygma_theme.dart';
 import 'package:sphygma/ui/theme/variants.dart';
 import 'package:sphygma/ui/today_screen.dart';
+
+/// Ein hohes Testfenster.
+///
+/// Seit die gesamte Technik hinter dem Zahnrad steht, ist das
+/// Einstellungsblatt sechs Karten lang. Auf der Standardhöhe von 600 Pixeln
+/// ist die Hälfte davon nicht gebaut, und jede Prüfung hinge am Scrollen
+/// statt an der Sache.
+void _hohesFenster(WidgetTester tester) {
+  tester.view.physicalSize = const Size(1080, 4200);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.reset);
+}
 
 class _NoopSink implements HealthSink {
   @override
@@ -64,17 +76,13 @@ void main() {
     expect(find.byType(TodayScreen), findsOneWidget);
   });
 
-  testWidgets('wechselt in die drei Bereiche', (tester) async {
+  testWidgets('wechselt zwischen den Bereichen', (tester) async {
     await tester.pumpWidget(SphygmaApp(controller: controller));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Verlauf'));
     await tester.pumpAndSettle();
     expect(find.byType(HistoryScreen), findsOneWidget);
-
-    await tester.tap(find.text('Gerät'));
-    await tester.pumpAndSettle();
-    expect(find.byType(DeviceScreen), findsOneWidget);
 
     await tester.tap(find.text('Heute'));
     await tester.pumpAndSettle();
@@ -101,19 +109,20 @@ void main() {
     expect(SphygmaTheme.of(context).name, themeFor(ThemeVariant.material).name);
   });
 
-  testWidgets('der Gerätebereich bleibt in jedem Konzept erreichbar', (
-    tester,
-  ) async {
-    // Dort wird das Konzept gewechselt — wäre er in einem Konzept
-    // unerreichbar, käme man nicht mehr heraus.
+  testWidgets('die Technik bleibt in jedem Konzept erreichbar', (tester) async {
+    // Seit dem 08.09.2026 gibt es keinen Reiter „Gerät" mehr: Abgleich,
+    // Übertragung, Kopplung und die Wahl von Konzept und Gestaltung stehen
+    // gemeinsam hinter dem Zahnrad. Fehlte es in einem Konzept, käme man
+    // weder an das Gerät noch aus dem Konzept heraus.
     await controller.setConcept(AppConcept.phase);
     await tester.pumpWidget(SphygmaApp(controller: controller));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Gerät'));
+    await tester.tap(find.byIcon(Icons.settings));
     await tester.pumpAndSettle();
 
-    expect(find.byType(DeviceScreen), findsOneWidget);
+    expect(find.byType(SettingsScreen), findsOneWidget);
+    expect(find.text('Jetzt abgleichen'), findsOneWidget);
   });
 
   testWidgets('eine Meldung des Steuerungsteils erscheint', (tester) async {
@@ -131,10 +140,10 @@ void main() {
   testWidgets('jedes Konzept trägt den Zugang zur Wahl an derselben Stelle', (
     tester,
   ) async {
-    // Die fünf Konzepte schließen einander aus — ein Zahnrad je Hülle sind
-    // deshalb nicht fünf Zugänge, sondern einer. Fehlte er in einem, käme
-    // man aus diesem Konzept nicht mehr heraus, ohne den Gerätebereich zu
-    // durchsuchen.
+    _hohesFenster(tester);
+    // Die Konzepte schließen einander aus — ein Zahnrad je Hülle sind
+    // deshalb nicht drei Zugänge, sondern einer. Fehlte er in einem, käme
+    // man aus diesem Konzept nicht mehr heraus.
     for (final k in allConcepts) {
       await controller.setConcept(k);
       await tester.pumpWidget(SphygmaApp(controller: controller));
@@ -155,6 +164,7 @@ void main() {
   testWidgets('ein Gestaltungswechsel wirkt sofort, auch im offenen Blatt', (
     tester,
   ) async {
+    _hohesFenster(tester);
     // Bis zum 07.09.2026 nahm jede geschobene Route die Gestaltung beim
     // Öffnen mit und hielt sie fest. Wer im Einstellungsblatt die Gestaltung
     // wechselte, sah die Änderung erst nach dem Zurückgehen — ausgerechnet
@@ -177,9 +187,7 @@ void main() {
 
     expect(radiusImBlatt(), themeFor(ThemeVariant.instrument).radius);
 
-    // „Tagebuch" steht unter der Konzeptliste — ohne Scrollen ist es nicht
-    // gebaut und der Tipp ginge ins Leere.
-    await tester.scrollUntilVisible(find.text('Tagebuch'), 200);
+    await tester.ensureVisible(find.text('Tagebuch'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Tagebuch'));
     await tester.pumpAndSettle();
