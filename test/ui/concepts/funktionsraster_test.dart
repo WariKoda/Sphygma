@@ -131,37 +131,42 @@ Future<void> _erwarte(
   Finder f, {
   required String reason,
 }) async {
-  if (f.evaluate().isEmpty && find.byType(Scrollable).evaluate().isNotEmpty) {
-    await tester.scrollUntilVisible(
-      // Am Ende ruft dragUntilVisible element() mit .single — ein Finder mit
-      // mehreren Treffern (etwa „alle Messzeilen") wäre dort mehrdeutig.
-      f.first,
-      240,
-      maxScrolls: 40,
-      // Mehrere Scrollables im Baum: das äußere ist gemeint.
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.pumpAndSettle();
-  }
+  await _suchen(tester, f);
   expect(f, findsWidgets, reason: reason);
+}
+
+/// Scrollt, bis [f] gebaut ist — durch jedes Scrollable, das der Baum hat.
+///
+/// Welches das richtige ist, hängt vom Bildschirm ab: mal die Hauptliste, mal
+/// eine innere. Statt zu raten, werden sie der Reihe nach versucht. Findet
+/// keines etwas, bleibt der Finder leer und die Erwartung schlägt fehl — mit
+/// ihrer eigenen Begründung statt einer Ausnahme aus dem Scrollcode.
+Future<void> _suchen(WidgetTester tester, Finder f) async {
+  if (f.evaluate().isNotEmpty) return;
+  final anzahl = find.byType(Scrollable).evaluate().length;
+  for (var i = 0; i < anzahl; i++) {
+    try {
+      await tester.scrollUntilVisible(
+        // dragUntilVisible ruft am Ende element() mit .single — ein Finder
+        // mit mehreren Treffern wäre dort mehrdeutig.
+        f.first,
+        240,
+        maxScrolls: 40,
+        scrollable: find.byType(Scrollable).at(i),
+      );
+      await tester.pumpAndSettle();
+      if (f.evaluate().isNotEmpty) return;
+    } catch (_) {
+      // Dieses Scrollable war es nicht — das nächste versuchen.
+    }
+  }
 }
 
 Future<void> _tippe(WidgetTester tester, Finder f) async {
   // Wie bei _erwarte: Was nicht ins Fenster passt, ist noch nicht gebaut und
   // wird erst durch Scrollen auffindbar. „Nicht sichtbar" ist kein „nicht
   // vorhanden".
-  if (f.evaluate().isEmpty && find.byType(Scrollable).evaluate().isNotEmpty) {
-    await tester.scrollUntilVisible(
-      // Am Ende ruft dragUntilVisible element() mit .single — ein Finder mit
-      // mehreren Treffern (etwa „alle Messzeilen") wäre dort mehrdeutig.
-      f.first,
-      240,
-      maxScrolls: 40,
-      // Mehrere Scrollables im Baum: das äußere ist gemeint.
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.pumpAndSettle();
-  }
+  await _suchen(tester, f);
   await tester.ensureVisible(f.first);
   await tester.pumpAndSettle();
   await tester.tap(f.first);
@@ -253,6 +258,14 @@ void main() {
   }
 
   Future<void> pump(WidgetTester tester, AppConcept k) async {
+    // Ein hohes Testfenster: Die Konzeptbildschirme sind lang, mit
+    // eingeschalteter Einordnung noch länger. Auf der Standardhöhe von 600
+    // Pixeln ist der halbe Bildschirm nicht gebaut, und jede Prüfung hinge am
+    // Scrollen statt an der Sache.
+    tester.view.physicalSize = const Size(1080, 4200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
     await controller.setConcept(k);
     await tester.pumpWidget(
       MaterialApp(
