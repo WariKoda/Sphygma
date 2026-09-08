@@ -622,16 +622,20 @@ binden:
   und wer sie trotzdem deklariert, wird von der Veröffentlichung
   ausgeschlossen. Bleibt `SCHEDULE_EXACT_ALARM` — die der Nutzer erteilen muss
   und die bei einem Gerätewechsel verloren geht.
-* **App Standby trifft ausgerechnet den vorbildlichen Nutzer.** Wer Sphygma so
-  benutzt, wie sie gedacht ist, öffnet sie kaum: Der Abgleich läuft von selbst.
-  Genau diese App landet im Standby und bekommt ihre Alarme verschoben. Ohne
-  exakten Alarm kann eine Erinnerung für 07:00 erst um 08:40 kommen — und eine
-  um anderthalb Stunden verschobene Morgenmessung ist für einen nach Tageszeit
-  ausgewerteten Messplan eine verfälschte.
-* **Zu entscheiden ist deshalb vorab:** ungefähre Erinnerung ohne Sonderrechte,
-  ehrlich als ungefähr angekündigt — oder `SCHEDULE_EXACT_ALARM` erbitten und
-  begründen. Ausgeschlossen ist nur der Mittelweg, der Pünktlichkeit verspricht
-  und keine liefert.
+* **Wir brauchen die Minutengenauigkeit aber gar nicht.**
+  `setAndAllowWhileIdle()` feuert auch im Ruhemodus, verlangt **keine**
+  Berechtigung und ist laut Quelltext auf etwa eine Viertelstunde genau. Für
+  „miss morgens" reicht das; die Tageszeit-Zuordnung einer Messung verschiebt
+  sich dadurch nicht. **Damit wird begonnen** — und ob es trägt, entscheidet
+  eine Messung am Gerät, keine Vermutung.
+* `SCHEDULE_EXACT_ALARM` hebt seit Android 14 den Standby-Bucket **nicht mehr**
+  an, löst das Standby-Problem also gerade nicht. Sie meldet ihren Entzug auch
+  nicht: Der zugehörige Rundfunk kommt nur bei der Erteilung, während beim
+  Entzug alle exakten Alarme gelöscht werden. Wer sie nutzt, muss beim
+  Zurückkehren in die App aktiv nachfragen.
+* Ausgeschlossen ist nur der Mittelweg, der Pünktlichkeit verspricht und keine
+  liefert. Eine Erinnerung, die auf eine Viertelstunde genau ist, darf man auch
+  so ankündigen.
 
 Dazu unverändert gültig:
 
