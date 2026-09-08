@@ -98,7 +98,10 @@ SphygmaTheme themeFor(ThemeVariant variant, {SurfaceStyle? surface}) => switch (
           showDividers: true,
           surfaceStyle: surface ?? defaultSurfaceFor(variant),
           panelBase: Color(0xFFFFFFFF),
-          panelRaised: Color(0xFFFFFFFF),
+          // Der blaugraue Grund der Handschrift: Als Band braucht die zweite
+          // Tonstufe einen sichtbaren Unterschied, sonst verschmelzen zwei
+          // Abschnitte trotz Tonwechsel.
+          panelRaised: Color(0xFFF2F5FB),
           panelBorder: null,
           panelShadow: [BoxShadow(color: Color(0x264F7FD8), blurRadius: 20, offset: Offset(0, 8))],
         ),

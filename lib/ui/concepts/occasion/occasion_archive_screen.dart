@@ -10,6 +10,7 @@ import '../../../stats/target_range.dart';
 import '../../theme/sphygma_theme.dart';
 import '../../theme/zone_color.dart';
 import '../../widgets/surface_panel.dart';
+import '../../widgets/surface_sliver.dart';
 import 'occasion_detail_screen.dart';
 import 'occasion_range_screen.dart';
 import 'occasion_widgets.dart';
@@ -37,43 +38,58 @@ class OccasionArchiveScreen extends StatelessWidget {
           );
         }
 
-        return ListView(
-          padding: t.listPadding,
-          children: [
-            SurfacePanel(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${anlaesse.length} '
-                    '${anlaesse.length == 1 ? "Messanlass" : "Messanlässe"} aus '
-                    '${controller.measurements.length} Rohmessungen',
-                    style: TextStyle(fontSize: 14, color: t.onSurface),
-                  ),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton(
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => SphygmaThemeScope(
-                            theme: t,
-                            child: OccasionRangeScreen(controller: controller),
+        return CustomScrollView(
+          slivers: [
+            SliverPadding(
+              padding: t.listPadding,
+              sliver: SliverMainAxisGroup(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: SurfacePanel(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${anlaesse.length} '
+                            '${anlaesse.length == 1 ? "Messanlass" : "Messanlässe"} '
+                            'aus ${controller.measurements.length} Rohmessungen',
+                            style: TextStyle(fontSize: 14, color: t.onSurface),
                           ),
-                        ),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton(
+                              onPressed: () => Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => SphygmaThemeScope(
+                                    theme: t,
+                                    child: OccasionRangeScreen(
+                                      controller: controller,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              child: const Text('Anlässe auswerten'),
+                            ),
+                          ),
+                        ],
                       ),
-                      child: const Text('Anlässe auswerten'),
                     ),
                   ),
-                ],
-              ),
-            ),
-            SurfacePanel(
-              tone: 1,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (final o in anlaesse)
-                    _AnlassZeile(controller: controller, occasion: o),
+                  // Die Anlassliste bleibt virtualisiert: Im echten Bestand
+                  // sind es 89 Zeilen, und eine Column baute sie alle auf
+                  // einmal.
+                  SurfaceSliver(
+                    tone: 1,
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, i) => _AnlassZeile(
+                          controller: controller,
+                          occasion: anlaesse[i],
+                        ),
+                        childCount: anlaesse.length,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

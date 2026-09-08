@@ -256,4 +256,23 @@ void main() {
       expect(container.decoration, isNull);
     });
   });
+
+  group('Jede Gestaltung kann Abschnitte trennen', () {
+    test('die beiden Tonstufen sind überall unterscheidbar', () {
+      // Im Bandmodus zeichnet SurfacePanel weder Abstand noch Rand noch
+      // Schatten — der Tonwechsel ist die einzige Zäsur. Sind beide Stufen
+      // gleich, verschmelzen benachbarte Abschnitte, und der Test auf
+      // wechselnde tone-Werte hilft nichts: Er prüft die Zahl, nicht die
+      // Farbe. Genau so war „Tagebuch" mit zweimal Weiß durchgerutscht.
+      for (final v in allVariants) {
+        final t = themeFor(v, surface: SurfaceStyle.band);
+        expect(
+          t.panelBase == t.panelRaised,
+          isFalse,
+          reason: '${v.name}: beide Tonstufen sind ${t.panelBase} — '
+              'benachbarte Bänder verschmelzen',
+        );
+      }
+    });
+  });
 }
