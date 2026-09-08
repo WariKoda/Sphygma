@@ -82,19 +82,30 @@ void main() {
       var seq = 1;
       // Tag 1 deutlich höher als der Rest — er darf nicht durchschlagen.
       for (final stunde in [7, 20]) {
-        ms.add(_m(seq++, _montag.add(Duration(hours: stunde)), sys: 160, dia: 100));
+        ms.add(
+          _m(seq++, _montag.add(Duration(hours: stunde)), sys: 160, dia: 100),
+        );
       }
       for (var tag = 1; tag < 7; tag++) {
         for (final stunde in [7, 20]) {
-          ms.add(_m(seq++, _montag.add(Duration(days: tag, hours: stunde)),
-              sys: 120, dia: 80));
+          ms.add(
+            _m(
+              seq++,
+              _montag.add(Duration(days: tag, hours: stunde)),
+              sys: 120,
+              dia: 80,
+            ),
+          );
         }
       }
 
       final woche = buildWeeks(ms).single;
       expect(woche.average!.systolic, 120);
-      expect(woche.averageWithFirstDay!.systolic, greaterThan(120),
-          reason: 'der Vollwert bleibt abrufbar');
+      expect(
+        woche.averageWithFirstDay!.systolic,
+        greaterThan(120),
+        reason: 'der Vollwert bleibt abrufbar',
+      );
     });
 
     test('eine Woche mit nur einem Tag hat keinen Wochenwert', () {
@@ -114,7 +125,9 @@ void main() {
       var seq = 1;
       for (var tag = 0; tag < 7; tag++) {
         ms.add(_m(seq++, _montag.add(Duration(days: tag, hours: 7)), sys: 135));
-        ms.add(_m(seq++, _montag.add(Duration(days: tag, hours: 20)), sys: 125));
+        ms.add(
+          _m(seq++, _montag.add(Duration(days: tag, hours: 20)), sys: 125),
+        );
       }
 
       final woche = buildWeeks(ms).single;
@@ -161,19 +174,15 @@ void main() {
       final normal = buildWeeks(ms).single;
       expect(normal.morningAverage, isNull, reason: '14 Uhr ist nachmittags');
 
-      final spaet = buildWeeks(
-        ms,
-        schnitt: TimeOfDayMinutes(15, 0),
-      ).single;
+      final spaet = buildWeeks(ms, schnitt: TimeOfDayMinutes(15, 0)).single;
       expect(spaet.morningAverage!.systolic, 140);
     });
   });
 
   group('Die vierzehn Felder', () {
     test('gibt es immer alle, auch die leeren', () {
-      final woche = buildWeeks([
-        _m(1, _montag.add(const Duration(hours: 7))),
-      ]).single;
+      final woche = buildWeeks([_m(1, _montag.add(const Duration(hours: 7)))])
+          .single;
 
       // Ein leeres Feld ist die Aussage "hier wurde nicht gemessen" — es
       // fehlt nicht, es steht leer da.
@@ -195,8 +204,10 @@ void main() {
         ..add(_m(99, _montag.add(const Duration(hours: 7, minutes: 2))));
       final woche = buildWeeks(ms).single;
 
-      final feld =
-          woche.fieldAt(weekday: DateTime.monday, band: TimeBand.morgens);
+      final feld = woche.fieldAt(
+        weekday: DateTime.monday,
+        band: TimeBand.morgens,
+      );
       expect(feld.measurements, hasLength(2), reason: 'ein Messen, zwei Werte');
       expect(feld.average, isNotNull);
     });
@@ -215,8 +226,11 @@ void main() {
       // in Stunden landet dann eine Stunde vor Mitternacht — und damit einen
       // Tag zu früh. Die Prüfung gilt in jeder Zeitzone, in der umgestellt
       // wird, ohne eine bestimmte vorauszusetzen.
-      for (var tag = DateTime(2026); tag.year == 2026;
-          tag = DateTime(tag.year, tag.month, tag.day + 1)) {
+      for (
+        var tag = DateTime(2026);
+        tag.year == 2026;
+        tag = DateTime(tag.year, tag.month, tag.day + 1)
+      ) {
         final montag = mondayOf(tag);
         expect(montag.weekday, DateTime.monday, reason: '$tag');
         expect(montag.hour, 0, reason: '$tag');
@@ -227,14 +241,19 @@ void main() {
     });
 
     test('die Vorwoche liegt genau einen Montag zurück', () {
-      for (var tag = DateTime(2026); tag.year == 2026;
-          tag = DateTime(tag.year, tag.month, tag.day + 1)) {
+      for (
+        var tag = DateTime(2026);
+        tag.year == 2026;
+        tag = DateTime(tag.year, tag.month, tag.day + 1)
+      ) {
         final montag = mondayOf(tag);
         final davor = previousMonday(montag);
         expect(davor.weekday, DateTime.monday, reason: '$tag');
-        expect(mondayOf(DateTime(davor.year, davor.month, davor.day + 7)),
-            montag,
-            reason: '$tag');
+        expect(
+          mondayOf(DateTime(davor.year, davor.month, davor.day + 7)),
+          montag,
+          reason: '$tag',
+        );
       }
     });
   });

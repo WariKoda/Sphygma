@@ -37,10 +37,7 @@ class _NoticeCardState extends State<NoticeCard> {
       padding: EdgeInsets.all(t.panelPadding),
       decoration: BoxDecoration(
         border: Border(
-          left: BorderSide(
-            color: t.categoryColors.values.last,
-            width: 3,
-          ),
+          left: BorderSide(color: t.categoryColors.values.last, width: 3),
         ),
         borderRadius: BorderRadius.circular(t.radius),
         color: t.line.withValues(alpha: 0.35),

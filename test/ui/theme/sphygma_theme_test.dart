@@ -33,13 +33,17 @@ const _t = SphygmaTheme(
 void main() {
   testWidgets('of() liefert die eingesetzte Gestaltung', (tester) async {
     late SphygmaTheme seen;
-    await tester.pumpWidget(SphygmaThemeScope(
-      theme: _t,
-      child: Builder(builder: (context) {
-        seen = SphygmaTheme.of(context);
-        return const SizedBox();
-      }),
-    ));
+    await tester.pumpWidget(
+      SphygmaThemeScope(
+        theme: _t,
+        child: Builder(
+          builder: (context) {
+            seen = SphygmaTheme.of(context);
+            return const SizedBox();
+          },
+        ),
+      ),
+    );
 
     expect(seen.name, 'Prüfmuster');
     expect(seen.headlineSize, 56);
@@ -51,12 +55,17 @@ void main() {
     }
   });
 
-  testWidgets('of() wirft ohne Scope statt still einen Default zu liefern',
-      (tester) async {
-    await tester.pumpWidget(Builder(builder: (context) {
-      expect(() => SphygmaTheme.of(context), throwsFlutterError);
-      return const SizedBox();
-    }));
+  testWidgets('of() wirft ohne Scope statt still einen Default zu liefern', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      Builder(
+        builder: (context) {
+          expect(() => SphygmaTheme.of(context), throwsFlutterError);
+          return const SizedBox();
+        },
+      ),
+    );
   });
 
   group('Die Handschrift entscheidet über die Gliederung', () {

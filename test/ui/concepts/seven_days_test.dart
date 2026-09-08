@@ -89,12 +89,13 @@ void main() {
   }
 
   Future<void> pumpWith(WidgetTester tester, ThemeVariant v) =>
-      tester.pumpWidget(MaterialApp(
-        home: SphygmaThemeScope(
-          theme: themeFor(v),
-          child: SevenDaysHome(controller: controller, clock: () => _jetzt),
+      tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) =>
+              SphygmaThemeScope(theme: themeFor(v), child: child!),
+          home: SevenDaysHome(controller: controller, clock: () => _jetzt),
         ),
-      ));
+      );
 
   setUp(() {
     db = AppDatabase(NativeDatabase.memory());
@@ -134,8 +135,9 @@ void main() {
     expect(find.text('Abends'), findsOneWidget);
   });
 
-  testWidgets('es gibt keine Reiterleiste — ein Weg statt vier Reiter',
-      (tester) async {
+  testWidgets('es gibt keine Reiterleiste — ein Weg statt vier Reiter', (
+    tester,
+  ) async {
     await boot();
     await teilwoche();
 
@@ -147,8 +149,9 @@ void main() {
     expect(find.byType(NavigationBar), findsNothing);
   });
 
-  testWidgets('nennt den Stand der Woche und was heute noch fehlt',
-      (tester) async {
+  testWidgets('nennt den Stand der Woche und was heute noch fehlt', (
+    tester,
+  ) async {
     await boot();
     await teilwoche();
 
@@ -182,8 +185,9 @@ void main() {
     expect(find.text('Gerät und Übertragung'), findsOneWidget);
   });
 
-  testWidgets('die Konzeptwahl sitzt oben rechts, nicht hinter Bluetooth',
-      (tester) async {
+  testWidgets('die Konzeptwahl sitzt oben rechts, nicht hinter Bluetooth', (
+    tester,
+  ) async {
     await boot();
     await teilwoche();
 
@@ -210,8 +214,9 @@ void main() {
     expect(find.textContaining('Speicherplatz'), findsWidgets);
   });
 
-  testWidgets('ohne Messung steht dort ein Satz, keine leere Fläche',
-      (tester) async {
+  testWidgets('ohne Messung steht dort ein Satz, keine leere Fläche', (
+    tester,
+  ) async {
     await boot();
 
     await pumpWith(tester, ThemeVariant.instrument);
@@ -219,8 +224,9 @@ void main() {
     expect(find.text('Noch keine Messwoche'), findsOneWidget);
   });
 
-  testWidgets('eine lange Pause nennt den Grund und den Weg zurück',
-      (tester) async {
+  testWidgets('eine lange Pause nennt den Grund und den Weg zurück', (
+    tester,
+  ) async {
     await boot();
     // Acht Wochen vor dem Bezugszeitpunkt gemessen, seither nichts.
     var alt = _montag;
@@ -240,8 +246,9 @@ void main() {
     expect(find.text('Morgens'), findsOneWidget);
   });
 
-  testWidgets('ohne Kopplung sagt der Bildschirm, wo man koppelt',
-      (tester) async {
+  testWidgets('ohne Kopplung sagt der Bildschirm, wo man koppelt', (
+    tester,
+  ) async {
     await boot(paired: false);
 
     await pumpWith(tester, ThemeVariant.instrument);
@@ -249,19 +256,30 @@ void main() {
     expect(find.text('Nicht gekoppelt'), findsWidgets);
   });
 
-  testWidgets('über Mitternacht wandert der Bildschirm auf den neuen Tag',
-      (tester) async {
+  testWidgets('über Mitternacht wandert der Bildschirm auf den neuen Tag', (
+    tester,
+  ) async {
     await boot();
     await teilwoche();
 
     // Freitag 23:59:30 — dreißig Sekunden vor dem Tageswechsel.
-    var jetzt = DateTime(_montag.year, _montag.month, _montag.day + 4, 23, 59, 30);
-    await tester.pumpWidget(MaterialApp(
-      home: SphygmaThemeScope(
-        theme: themeFor(ThemeVariant.instrument),
-        child: SevenDaysHome(controller: controller, clock: () => jetzt),
+    var jetzt = DateTime(
+      _montag.year,
+      _montag.month,
+      _montag.day + 4,
+      23,
+      59,
+      30,
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => SphygmaThemeScope(
+          theme: themeFor(ThemeVariant.instrument),
+          child: child!,
+        ),
+        home: SevenDaysHome(controller: controller, clock: () => jetzt),
       ),
-    ));
+    );
     expect(find.textContaining('Tag 5 von 7'), findsOneWidget);
 
     // Der Steuerungsteil meldet nichts — es hat sich keine Messung geändert,

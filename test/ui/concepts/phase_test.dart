@@ -66,12 +66,13 @@ void main() {
   }
 
   Future<void> pumpWith(WidgetTester tester, ThemeVariant v) =>
-      tester.pumpWidget(MaterialApp(
-        home: SphygmaThemeScope(
-          theme: themeFor(v),
-          child: PhaseHome(controller: controller),
+      tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) =>
+              SphygmaThemeScope(theme: themeFor(v), child: child!),
+          home: PhaseHome(controller: controller),
         ),
-      ));
+      );
 
   setUp(() {
     db = AppDatabase(NativeDatabase.memory());
@@ -97,8 +98,9 @@ void main() {
     }
   });
 
-  testWidgets('ohne Phase erklärt der Einstieg, wozu eine gut ist',
-      (tester) async {
+  testWidgets('ohne Phase erklärt der Einstieg, wozu eine gut ist', (
+    tester,
+  ) async {
     await boot();
 
     await pumpWith(tester, ThemeVariant.instrument);
@@ -107,8 +109,9 @@ void main() {
     expect(find.text('Neue Phase beginnen'), findsOneWidget);
   });
 
-  testWidgets('eine laufende Phase zeigt ihr Mittel und ihre Größe',
-      (tester) async {
+  testWidgets('eine laufende Phase zeigt ihr Mittel und ihre Größe', (
+    tester,
+  ) async {
     await boot();
     await occasions.startPhase(
       name: 'Ramipril 5 mg',
@@ -128,8 +131,9 @@ void main() {
     expect(find.textContaining('2 zugeordnete Messungen'), findsOneWidget);
   });
 
-  testWidgets('der Vergleich nennt sich ausdrücklich keinen Wirkungsnachweis',
-      (tester) async {
+  testWidgets('der Vergleich nennt sich ausdrücklich keinen Wirkungsnachweis', (
+    tester,
+  ) async {
     await boot();
     await occasions.startPhase(
       name: 'Ohne Medikament',
@@ -157,8 +161,9 @@ void main() {
     expect(find.textContaining('kein Wirkungsnachweis'), findsOneWidget);
   });
 
-  testWidgets('"nicht zugeordnet" steht als eigener Bestand in der Liste',
-      (tester) async {
+  testWidgets('"nicht zugeordnet" steht als eigener Bestand in der Liste', (
+    tester,
+  ) async {
     await boot();
     await occasions.startPhase(
       name: 'Ramipril 5 mg',
@@ -179,39 +184,44 @@ void main() {
     expect(find.text('Nicht zugeordnet'), findsOneWidget);
   });
 
-  testWidgets('eine unglaubwürdig datierte Messung landet im Zuordnen-Bereich',
-      (tester) async {
-    await boot();
-    await occasions.startPhase(
-      name: 'Ramipril 5 mg',
-      anchor: PhaseAnchor.bestaetigt,
-      begin: _vorTagen(30),
-    );
-    await repository.importAll([
-      _rec(1, _vorTagen(20), sys: 124),
-      _rec(2, _vorTagen(19), sys: 126),
-      // Höchste Nummer, Datum von 2023: Die Uhr stand falsch.
-      _rec(3, DateTime(2023, 4, 18, 11), sys: 136),
-    ]);
-    await controller.refreshForTest();
+  testWidgets(
+    'eine unglaubwürdig datierte Messung landet im Zuordnen-Bereich',
+    (tester) async {
+      await boot();
+      await occasions.startPhase(
+        name: 'Ramipril 5 mg',
+        anchor: PhaseAnchor.bestaetigt,
+        begin: _vorTagen(30),
+      );
+      await repository.importAll([
+        _rec(1, _vorTagen(20), sys: 124),
+        _rec(2, _vorTagen(19), sys: 126),
+        // Höchste Nummer, Datum von 2023: Die Uhr stand falsch.
+        _rec(3, DateTime(2023, 4, 18, 11), sys: 136),
+      ]);
+      await controller.refreshForTest();
 
-    await pumpWith(tester, ThemeVariant.instrument);
+      await pumpWith(tester, ThemeVariant.instrument);
 
-    expect(find.widgetWithText(Badge, '1'), findsOneWidget);
+      expect(find.widgetWithText(Badge, '1'), findsOneWidget);
 
-    await tester.tap(find.text('Zuordnen'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Zuordnen'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Messung Nr. 3'), findsOneWidget);
-    expect(find.textContaining('Sphygma ändert den Zeitstempel nicht'),
-        findsOneWidget);
-    // Beide Zeiten stehen nebeneinander, keine wird zur Wahrheit erklärt.
-    expect(find.text('Laut Gerät'), findsOneWidget);
-    expect(find.text('Eingelesen'), findsOneWidget);
-  });
+      expect(find.text('Messung Nr. 3'), findsOneWidget);
+      expect(
+        find.textContaining('Sphygma ändert den Zeitstempel nicht'),
+        findsOneWidget,
+      );
+      // Beide Zeiten stehen nebeneinander, keine wird zur Wahrheit erklärt.
+      expect(find.text('Laut Gerät'), findsOneWidget);
+      expect(find.text('Eingelesen'), findsOneWidget);
+    },
+  );
 
-  testWidgets('der Nutzer ordnet sie zu, ohne dass eine Zeit verschoben wird',
-      (tester) async {
+  testWidgets('der Nutzer ordnet sie zu, ohne dass eine Zeit verschoben wird', (
+    tester,
+  ) async {
     await boot();
     await occasions.startPhase(
       name: 'Ramipril 5 mg',
@@ -256,8 +266,9 @@ void main() {
     expect(find.text('KONZEPT'), findsOneWidget);
   });
 
-  testWidgets('eine neue Phase entsteht mit Namen und Zeitanker',
-      (tester) async {
+  testWidgets('eine neue Phase entsteht mit Namen und Zeitanker', (
+    tester,
+  ) async {
     await boot();
 
     await pumpWith(tester, ThemeVariant.instrument);

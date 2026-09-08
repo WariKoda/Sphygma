@@ -92,13 +92,8 @@ class _PhasenZeile extends StatelessWidget {
     return InkWell(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => SphygmaThemeScope(
-            theme: t,
-            child: PhaseMeasurementsScreen(
-              controller: controller,
-              phaseId: p.id,
-            ),
-          ),
+          builder: (_) =>
+              PhaseMeasurementsScreen(controller: controller, phaseId: p.id),
         ),
       ),
       child: Container(

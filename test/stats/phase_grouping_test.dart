@@ -5,29 +5,34 @@ import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/stats/phase_grouping.dart';
 
 Measurement _m(int seq, DateTime at, {int sys = 128}) => Measurement(
-      id: seq,
-      userSlot: 1,
-      deviceSequence: seq,
-      systolic: sys,
-      diastolic: 84,
-      pulse: 78,
-      measuredAt: at,
-      movement: false,
-      arrhythmia: false,
-      rawBytes: Uint8List(14),
-      importedAt: DateTime(2026, 9, 5, 23, 58),
-      exportedAt: null,
-    );
+  id: seq,
+  userSlot: 1,
+  deviceSequence: seq,
+  systolic: sys,
+  diastolic: 84,
+  pulse: 78,
+  measuredAt: at,
+  movement: false,
+  arrhythmia: false,
+  rawBytes: Uint8List(14),
+  importedAt: DateTime(2026, 9, 5, 23, 58),
+  exportedAt: null,
+);
 
-Phase _p(int id, String name, DateTime von, {DateTime? bis, DateTime? angelegt}) =>
-    Phase(
-      id: id,
-      name: name,
-      beginsAt: von,
-      endsAt: bis,
-      anchor: 'bestaetigt',
-      createdAt: angelegt ?? von,
-    );
+Phase _p(
+  int id,
+  String name,
+  DateTime von, {
+  DateTime? bis,
+  DateTime? angelegt,
+}) => Phase(
+  id: id,
+  name: name,
+  beginsAt: von,
+  endsAt: bis,
+  anchor: 'bestaetigt',
+  createdAt: angelegt ?? von,
+);
 
 final _jetzt = DateTime(2026, 9, 6, 12);
 
@@ -35,10 +40,7 @@ void main() {
   group('Zuordnung über den Zeitraum', () {
     test('eine Messung fällt in die Phase, die sie enthält', () {
       final gruppen = groupByPhase(
-        [
-          _m(1, DateTime(2026, 8, 15, 8)),
-          _m(2, DateTime(2026, 8, 20, 8)),
-        ],
+        [_m(1, DateTime(2026, 8, 15, 8)), _m(2, DateTime(2026, 8, 20, 8))],
         phases: [_p(1, 'Ramipril 5 mg', DateTime(2026, 8, 12))],
         assignments: const {},
         now: _jetzt,
@@ -87,8 +89,9 @@ void main() {
         now: _jetzt,
       );
 
-      final urlaub =
-          gruppen.memberships.firstWhere((m) => m.phase.name == 'Urlaub');
+      final urlaub = gruppen.memberships.firstWhere(
+        (m) => m.phase.name == 'Urlaub',
+      );
       expect(urlaub.count, 1);
       expect(gruppen.total, 1, reason: 'keine Messung zählt doppelt');
     });
@@ -164,9 +167,7 @@ void main() {
     ];
     final gruppen = groupByPhase(
       messungen,
-      phases: [
-        _p(1, 'Ramipril 5 mg', DateTime(2026, 8, 15)),
-      ],
+      phases: [_p(1, 'Ramipril 5 mg', DateTime(2026, 8, 15))],
       assignments: const {},
       now: _jetzt,
     );
@@ -193,10 +194,14 @@ void main() {
           assignments: const {},
           now: _jetzt,
         );
-        final treffer =
-            gruppen.memberships.firstWhere((m) => m.count == 1).phase;
-        expect(treffer.name, 'Danach angelegt',
-            reason: 'die Reihenfolge der Liste darf nichts entscheiden');
+        final treffer = gruppen.memberships
+            .firstWhere((m) => m.count == 1)
+            .phase;
+        expect(
+          treffer.name,
+          'Danach angelegt',
+          reason: 'die Reihenfolge der Liste darf nichts entscheiden',
+        );
       }
     });
   });

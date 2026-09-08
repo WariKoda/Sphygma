@@ -62,12 +62,13 @@ void main() {
   }
 
   Future<void> pumpWith(WidgetTester tester, ThemeVariant v) =>
-      tester.pumpWidget(MaterialApp(
-        home: SphygmaThemeScope(
-          theme: themeFor(v),
-          child: Scaffold(body: DayProfileScreen(controller: controller)),
+      tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) =>
+              SphygmaThemeScope(theme: themeFor(v), child: child!),
+          home: Scaffold(body: DayProfileScreen(controller: controller)),
         ),
-      ));
+      );
 
   setUp(() {
     db = AppDatabase(NativeDatabase.memory());
@@ -86,9 +87,21 @@ void main() {
         await boot();
         final heute = DateTime.now();
         await repository.importAll([
-          _rec(1, DateTime(heute.year, heute.month, heute.day - 2, 7), sys: 135),
-          _rec(2, DateTime(heute.year, heute.month, heute.day - 2, 20), sys: 124),
-          _rec(3, DateTime(heute.year, heute.month, heute.day - 1, 7), sys: 133),
+          _rec(
+            1,
+            DateTime(heute.year, heute.month, heute.day - 2, 7),
+            sys: 135,
+          ),
+          _rec(
+            2,
+            DateTime(heute.year, heute.month, heute.day - 2, 20),
+            sys: 124,
+          ),
+          _rec(
+            3,
+            DateTime(heute.year, heute.month, heute.day - 1, 7),
+            sys: 133,
+          ),
         ]);
         await controller.refreshForTest();
 
@@ -117,8 +130,7 @@ void main() {
     expect(find.text('Nachts'), findsNothing);
   });
 
-  testWidgets('nennt den Unterschied zwischen den Abschnitten',
-      (tester) async {
+  testWidgets('nennt den Unterschied zwischen den Abschnitten', (tester) async {
     await boot();
     final heute = DateTime.now();
     await repository.importAll([
@@ -133,8 +145,9 @@ void main() {
     expect(find.textContaining('mmHg'), findsWidgets);
   });
 
-  testWidgets('ohne Messungen steht dort ein Satz, keine leere Fläche',
-      (tester) async {
+  testWidgets('ohne Messungen steht dort ein Satz, keine leere Fläche', (
+    tester,
+  ) async {
     await boot();
 
     await pumpWith(tester, ThemeVariant.instrument);
@@ -142,8 +155,9 @@ void main() {
     expect(find.textContaining('Noch keine Messung'), findsOneWidget);
   });
 
-  testWidgets('bei fraglicher Gerätezeit erscheint ein Hinweis',
-      (tester) async {
+  testWidgets('bei fraglicher Gerätezeit erscheint ein Hinweis', (
+    tester,
+  ) async {
     await boot();
     // Höchste Nummer, aber Datum von 2023: Die Uhr stand falsch.
     await repository.importAll([

@@ -12,20 +12,19 @@ SlotRecord _slotRecord({
   required int sequence,
   int systolic = 120,
   DateTime? measuredAt,
-}) =>
-    SlotRecord(
-      userSlot: slot,
-      record: BloodPressureRecord(
-        systolic: systolic,
-        diastolic: 80,
-        pulse: 70,
-        timestamp: measuredAt ?? DateTime(2026, 9, 3, 20, 0, 0),
-        arrhythmiaFlag: false,
-        movementFlag: sequence.isOdd,
-        sequence: sequence,
-      ),
-      rawBytes: Uint8List.fromList(List.filled(14, sequence & 0xff)),
-    );
+}) => SlotRecord(
+  userSlot: slot,
+  record: BloodPressureRecord(
+    systolic: systolic,
+    diastolic: 80,
+    pulse: 70,
+    timestamp: measuredAt ?? DateTime(2026, 9, 3, 20, 0, 0),
+    arrhythmiaFlag: false,
+    movementFlag: sequence.isOdd,
+    sequence: sequence,
+  ),
+  rawBytes: Uint8List.fromList(List.filled(14, sequence & 0xff)),
+);
 
 void main() {
   late AppDatabase db;
@@ -67,8 +66,7 @@ void main() {
   group('Sortierung', () {
     // Angezeigt wird nach Datum, wie am Geraet abgelesen. Die
     // Messungsnummer bleibt fuer Dedup und Uhr-Pruefung zustaendig.
-    test('allForSlot sortiert nach Datum, nicht nach Messungsnummer',
-        () async {
+    test('allForSlot sortiert nach Datum, nicht nach Messungsnummer', () async {
       await repository.importAll([
         // Hoechste Nummer, aber aeltestes Datum: falsch gestellte Uhr.
         _slotRecord(
@@ -90,11 +88,11 @@ void main() {
 
       final all = await repository.allForSlot(1);
 
-      expect(
-        all.map((m) => m.deviceSequence).toList(),
-        [300, 100, 200],
-        reason: 'aelteste zuerst nach Datum: 2023, dann 01.09., dann 03.09.',
-      );
+      expect(all.map((m) => m.deviceSequence).toList(), [
+        300,
+        100,
+        200,
+      ], reason: 'aelteste zuerst nach Datum: 2023, dann 01.09., dann 03.09.');
     });
 
     test('bei gleichem Datum entscheidet die Messungsnummer', () async {
@@ -123,30 +121,34 @@ void main() {
       expect(await repository.allForSlot(2), hasLength(1));
     });
 
-    test('wiederholter Import derselben Records erzeugt keine Duplikate',
-        () async {
-      final batch = [
-        _slotRecord(slot: 1, sequence: 0x0210),
-        _slotRecord(slot: 1, sequence: 0x0211),
-      ];
-      await repository.importAll(batch);
+    test(
+      'wiederholter Import derselben Records erzeugt keine Duplikate',
+      () async {
+        final batch = [
+          _slotRecord(slot: 1, sequence: 0x0210),
+          _slotRecord(slot: 1, sequence: 0x0211),
+        ];
+        await repository.importAll(batch);
 
-      final insertedAgain = await repository.importAll(batch);
+        final insertedAgain = await repository.importAll(batch);
 
-      expect(insertedAgain, 0);
-      expect(await repository.allForSlot(1), hasLength(2));
-    });
+        expect(insertedAgain, 0);
+        expect(await repository.allForSlot(1), hasLength(2));
+      },
+    );
 
-    test('dieselbe Messungsnummer in verschiedenen Slots sind zwei Records',
-        () async {
-      await repository.importAll([
-        _slotRecord(slot: 1, sequence: 7),
-        _slotRecord(slot: 2, sequence: 7),
-      ]);
+    test(
+      'dieselbe Messungsnummer in verschiedenen Slots sind zwei Records',
+      () async {
+        await repository.importAll([
+          _slotRecord(slot: 1, sequence: 7),
+          _slotRecord(slot: 2, sequence: 7),
+        ]);
 
-      expect(await repository.allForSlot(1), hasLength(1));
-      expect(await repository.allForSlot(2), hasLength(1));
-    });
+        expect(await repository.allForSlot(1), hasLength(1));
+        expect(await repository.allForSlot(2), hasLength(1));
+      },
+    );
 
     test('speichert Werte, Flags, Zeit und Rohbytes', () async {
       await repository.importAll([
@@ -172,8 +174,7 @@ void main() {
   });
 
   group('Export-Buchhaltung', () {
-    test('pendingExport liefert nur unexportierte Records des Slots',
-        () async {
+    test('pendingExport liefert nur unexportierte Records des Slots', () async {
       await repository.importAll([
         _slotRecord(slot: 1, sequence: 1),
         _slotRecord(slot: 1, sequence: 2),
@@ -189,22 +190,24 @@ void main() {
       expect(await repository.pendingExport(2), hasLength(1));
     });
 
-    test('exported liefert nur exportierte Records; markUnexported hebt es auf',
-        () async {
-      await repository.importAll([
-        _slotRecord(slot: 1, sequence: 1),
-        _slotRecord(slot: 1, sequence: 2),
-      ]);
-      final all = await repository.allForSlot(1);
-      await repository.markExported([all.first.id], DateTime(2026, 9, 4));
+    test(
+      'exported liefert nur exportierte Records; markUnexported hebt es auf',
+      () async {
+        await repository.importAll([
+          _slotRecord(slot: 1, sequence: 1),
+          _slotRecord(slot: 1, sequence: 2),
+        ]);
+        final all = await repository.allForSlot(1);
+        await repository.markExported([all.first.id], DateTime(2026, 9, 4));
 
-      expect(await repository.exported(1), hasLength(1));
+        expect(await repository.exported(1), hasLength(1));
 
-      await repository.markUnexported([all.first.id]);
+        await repository.markUnexported([all.first.id]);
 
-      expect(await repository.exported(1), isEmpty);
-      expect(await repository.pendingExport(1), hasLength(2));
-    });
+        expect(await repository.exported(1), isEmpty);
+        expect(await repository.pendingExport(1), hasLength(2));
+      },
+    );
 
     test('markExported setzt exportedAt', () async {
       await repository.importAll([_slotRecord(slot: 1, sequence: 1)]);

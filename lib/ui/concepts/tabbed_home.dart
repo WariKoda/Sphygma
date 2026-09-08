@@ -58,8 +58,9 @@ class _TabbedHomeState extends State<TabbedHome> {
         // Gerätebereich bleibt in jedem Konzept derselbe — dort geht es
         // zur Konzeptwahl.
         body: switch ((widget.controller.concept, _index)) {
-          (AppConcept.tagesprofil, 0) =>
-            DayProfileScreen(controller: widget.controller),
+          (AppConcept.tagesprofil, 0) => DayProfileScreen(
+            controller: widget.controller,
+          ),
           (_, 0) => TodayScreen(controller: widget.controller),
           (_, 1) => HistoryScreen(controller: widget.controller),
           _ => DeviceScreen(controller: widget.controller),

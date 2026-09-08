@@ -44,10 +44,7 @@ class WeekGrid extends StatelessWidget {
         ),
         SizedBox(height: t.gapSmall),
         for (final band in const [TimeBand.morgens, TimeBand.abends]) ...[
-          Text(
-            band.label,
-            style: TextStyle(fontSize: 11, color: t.muted),
-          ),
+          Text(band.label, style: TextStyle(fontSize: 11, color: t.muted)),
           SizedBox(height: t.gapSmall / 2),
           Row(
             children: [
@@ -80,7 +77,8 @@ class _Zelle extends StatelessWidget {
 
     if (mittel == null) {
       return Semantics(
-        label: '${_tagName(field.weekday)} ${field.band.label}: '
+        label:
+            '${_tagName(field.weekday)} ${field.band.label}: '
             'nicht gemessen',
         child: Container(
           height: 34,
@@ -93,12 +91,15 @@ class _Zelle extends StatelessWidget {
       );
     }
 
-    final zone = TargetRange.heim
-        .classify(systolic: mittel.systolic, diastolic: mittel.diastolic);
+    final zone = TargetRange.heim.classify(
+      systolic: mittel.systolic,
+      diastolic: mittel.diastolic,
+    );
     final grund = zoneColor(t, zone);
 
     return Semantics(
-      label: '${_tagName(field.weekday)} ${field.band.label}: '
+      label:
+          '${_tagName(field.weekday)} ${field.band.label}: '
           '${mittel.systolic} zu ${mittel.diastolic}, ${zone.label}',
       button: onTap != null,
       child: InkWell(
@@ -129,11 +130,11 @@ class _Zelle extends StatelessWidget {
 }
 
 String _tagName(int weekday) => const {
-      DateTime.monday: 'Montag',
-      DateTime.tuesday: 'Dienstag',
-      DateTime.wednesday: 'Mittwoch',
-      DateTime.thursday: 'Donnerstag',
-      DateTime.friday: 'Freitag',
-      DateTime.saturday: 'Samstag',
-      DateTime.sunday: 'Sonntag',
-    }[weekday]!;
+  DateTime.monday: 'Montag',
+  DateTime.tuesday: 'Dienstag',
+  DateTime.wednesday: 'Mittwoch',
+  DateTime.thursday: 'Donnerstag',
+  DateTime.friday: 'Freitag',
+  DateTime.saturday: 'Samstag',
+  DateTime.sunday: 'Sonntag',
+}[weekday]!;

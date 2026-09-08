@@ -59,9 +59,9 @@ class _OccasionHomeState extends State<OccasionHome> {
           ),
           body: switch (_index) {
             0 => LastOccasionScreen(
-                controller: widget.controller,
-                onReview: () => setState(() => _index = 2),
-              ),
+              controller: widget.controller,
+              onReview: () => setState(() => _index = 2),
+            ),
             1 => OccasionArchiveScreen(controller: widget.controller),
             2 => OccasionReviewScreen(controller: widget.controller),
             _ => DeviceScreen(controller: widget.controller),

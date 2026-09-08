@@ -5,19 +5,19 @@ import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/stats/chart_geometry.dart';
 
 Measurement _m(int sys, int dia, DateTime at) => Measurement(
-      id: at.millisecondsSinceEpoch,
-      userSlot: 1,
-      deviceSequence: at.millisecondsSinceEpoch ~/ 1000,
-      systolic: sys,
-      diastolic: dia,
-      pulse: 70,
-      measuredAt: at,
-      movement: false,
-      arrhythmia: false,
-      rawBytes: Uint8List(14),
-      importedAt: at,
-      exportedAt: null,
-    );
+  id: at.millisecondsSinceEpoch,
+  userSlot: 1,
+  deviceSequence: at.millisecondsSinceEpoch ~/ 1000,
+  systolic: sys,
+  diastolic: dia,
+  pulse: 70,
+  measuredAt: at,
+  movement: false,
+  arrhythmia: false,
+  rawBytes: Uint8List(14),
+  importedAt: at,
+  exportedAt: null,
+);
 
 void main() {
   final t0 = DateTime(2026, 9, 1);
@@ -53,8 +53,7 @@ void main() {
     expect(g.systolicPoints, hasLength(3));
   });
 
-  test('eine einzelne Messung sitzt am linken Rand, ohne Division durch 0',
-      () {
+  test('eine einzelne Messung sitzt am linken Rand, ohne Division durch 0', () {
     final g = ChartGeometry.fit(
       measurements: [_m(120, 80, t0)],
       width: 200,
@@ -97,8 +96,7 @@ void main() {
     expect(g.thresholdY, lessThanOrEqualTo(100));
   });
 
-  test('wirft bei leerer Liste - eine leere Kurve ist ein Aufruferfehler',
-      () {
+  test('wirft bei leerer Liste - eine leere Kurve ist ein Aufruferfehler', () {
     expect(
       () => ChartGeometry.fit(measurements: [], width: 100, height: 100),
       throwsArgumentError,

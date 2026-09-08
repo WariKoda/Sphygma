@@ -22,7 +22,8 @@ class ReadingHeadline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
-    final zeit = '${_twoDigits(measuredAt.day)}.'
+    final zeit =
+        '${_twoDigits(measuredAt.day)}.'
         '${_twoDigits(measuredAt.month)}.${measuredAt.year}, '
         '${_twoDigits(measuredAt.hour)}:${_twoDigits(measuredAt.minute)}';
 
@@ -31,11 +32,7 @@ class ReadingHeadline extends StatelessWidget {
       children: [
         Text(
           zeit,
-          style: TextStyle(
-            fontSize: 11,
-            letterSpacing: 1.4,
-            color: t.muted,
-          ),
+          style: TextStyle(fontSize: 11, letterSpacing: 1.4, color: t.muted),
         ),
         SizedBox(height: t.gapSmall),
         Text(

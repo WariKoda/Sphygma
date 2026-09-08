@@ -43,14 +43,16 @@ void main() {
       expect(await settings.themeVariant(), ThemeVariant.diary);
     });
 
-    test('ein unbekannter gespeicherter Wert faellt auf den Standard',
-        () async {
-      // Kann nach einem Rueckbau vorkommen. Die Gestaltung ist kein
-      // korrektheitsrelevanter Wert - hier ist der Standard richtig.
-      await settings.setThemeVariant(ThemeVariant.material);
-      await settings.setRawSetting('theme_variant', 'gibtsnicht');
+    test(
+      'ein unbekannter gespeicherter Wert faellt auf den Standard',
+      () async {
+        // Kann nach einem Rueckbau vorkommen. Die Gestaltung ist kein
+        // korrektheitsrelevanter Wert - hier ist der Standard richtig.
+        await settings.setThemeVariant(ThemeVariant.material);
+        await settings.setRawSetting('theme_variant', 'gibtsnicht');
 
-      expect(await settings.themeVariant(), ThemeVariant.instrument);
-    });
+        expect(await settings.themeVariant(), ThemeVariant.instrument);
+      },
+    );
   });
 }

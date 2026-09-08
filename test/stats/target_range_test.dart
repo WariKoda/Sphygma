@@ -6,8 +6,14 @@ void main() {
     final z = TargetRange.heim;
 
     test('deutlich darunter liegt im Zielbereich', () {
-      expect(z.classify(systolic: 118, diastolic: 76), TargetZone.imZielbereich);
-      expect(z.classify(systolic: 129, diastolic: 79), TargetZone.imZielbereich);
+      expect(
+        z.classify(systolic: 118, diastolic: 76),
+        TargetZone.imZielbereich,
+      );
+      expect(
+        z.classify(systolic: 129, diastolic: 79),
+        TargetZone.imZielbereich,
+      );
     });
 
     test('knapp unter der Schwelle ist grenzwertig', () {
@@ -68,7 +74,10 @@ void main() {
 
     test('nicht positiv ist kein Blutdruck', () {
       expect(() => z.classify(systolic: 0, diastolic: 80), throwsArgumentError);
-      expect(() => z.classify(systolic: 120, diastolic: -5), throwsArgumentError);
+      expect(
+        () => z.classify(systolic: 120, diastolic: -5),
+        throwsArgumentError,
+      );
     });
 
     test('diastolisch über systolisch ist ein Messfehler', () {

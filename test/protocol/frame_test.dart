@@ -10,7 +10,14 @@ void main() {
   group('xorChecksum', () {
     test('is zero for a well-formed start-transmission frame', () {
       final bytes = Uint8List.fromList([
-        0x08, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x18,
+        0x08,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x10,
+        0x00,
+        0x18,
       ]);
 
       expect(xorChecksum(bytes), 0);
@@ -47,9 +54,7 @@ void main() {
 
       expect(
         frame,
-        Uint8List.fromList(
-          [0x08, 0x01, 0x00, 0x02, 0x60, 0x26, 0x00, 0x4d],
-        ),
+        Uint8List.fromList([0x08, 0x01, 0x00, 0x02, 0x60, 0x26, 0x00, 0x4d]),
       );
     });
 
@@ -80,9 +85,22 @@ void main() {
       expect(
         frame,
         Uint8List.fromList([
-          0x10, 0x01, 0xc0, 0x0d, 0xca, 0x08,
-          0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-          0x00, 0x1e,
+          0x10,
+          0x01,
+          0xc0,
+          0x0d,
+          0xca,
+          0x08,
+          0xff,
+          0xff,
+          0xff,
+          0xff,
+          0xff,
+          0xff,
+          0xff,
+          0xff,
+          0x00,
+          0x1e,
         ]),
       );
     });
@@ -154,9 +172,7 @@ void main() {
     });
 
     test('teilt einen 24-Byte-Rahmen in 16 plus 8', () {
-      final frame = Uint8List.fromList(
-        List.generate(24, (i) => i),
-      );
+      final frame = Uint8List.fromList(List.generate(24, (i) => i));
 
       final parts = splitIntoTxChannels(frame);
 
@@ -191,18 +207,34 @@ void main() {
       0x00, 0x7b,
     ]);
 
-    test('buildWriteEepromCommand erzeugt exakt den mitgeschnittenen Rahmen',
-        () {
-      final frame = buildWriteEepromCommand(
-        address: 0x02a4,
-        data: Uint8List.fromList([
-          0x80, 0x05, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00,
-          0x02, 0x1d, 0x00, 0x00, 0x00, 0x0e, 0x00, 0x00,
-        ]),
-      );
+    test(
+      'buildWriteEepromCommand erzeugt exakt den mitgeschnittenen Rahmen',
+      () {
+        final frame = buildWriteEepromCommand(
+          address: 0x02a4,
+          data: Uint8List.fromList([
+            0x80,
+            0x05,
+            0x80,
+            0x00,
+            0x80,
+            0x00,
+            0x80,
+            0x00,
+            0x02,
+            0x1d,
+            0x00,
+            0x00,
+            0x00,
+            0x0e,
+            0x00,
+            0x00,
+          ]),
+        );
 
-      expect(frame, capturedFrame);
-    });
+        expect(frame, capturedFrame);
+      },
+    );
 
     test('die Aufteilung trifft die beiden mitgeschnittenen TX-Kanaele', () {
       final parts = splitIntoTxChannels(capturedFrame);
@@ -277,9 +309,18 @@ void main() {
 
   group('parseResponseFrame', () {
     test('liest Typ, Adresse und Nutzdaten aus einer 8100-Antwort', () {
-      final raw = Uint8List.fromList(
-        [0x0a, 0x81, 0x00, 0x01, 0x00, 0x02, 0xab, 0xcd, 0x00, 0xee],
-      );
+      final raw = Uint8List.fromList([
+        0x0a,
+        0x81,
+        0x00,
+        0x01,
+        0x00,
+        0x02,
+        0xab,
+        0xcd,
+        0x00,
+        0xee,
+      ]);
 
       final response = parseResponseFrame(raw);
 
@@ -288,40 +329,67 @@ void main() {
       expect(response.data, Uint8List.fromList([0xab, 0xcd]));
     });
 
-    test('Sonderfall 8f00: Byte 6 ist der Fehlercode, nicht laengenbestimmt', () {
-      final ok = Uint8List.fromList(
-        [0x08, 0x8f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x87],
-      );
-      final err = Uint8List.fromList(
-        [0x08, 0x8f, 0x00, 0x00, 0x00, 0x00, 0x03, 0x84],
-      );
-
-      expect(parseResponseFrame(ok).data, Uint8List.fromList([0x00]));
-      expect(parseResponseFrame(err).data, Uint8List.fromList([0x03]));
-    });
-
     test(
-      'wirft, wenn Byte 5 mehr Nutzdaten meldet als das Frame traegt',
+      'Sonderfall 8f00: Byte 6 ist der Fehlercode, nicht laengenbestimmt',
       () {
-        // Frueher wurde hier mit 0xFF aufgefuellt. Ein unvollstaendiges
-        // Frame (fehlender RX-Kanal) waere damit von einem echten
-        // Leerbereich nicht zu unterscheiden gewesen, und eine Messung
-        // waere stillschweigend verschwunden.
-        final raw = Uint8List.fromList(
-          [0x08, 0x81, 0x00, 0x00, 0x50, 0x04, 0x00, 0xdd],
-        );
+        final ok = Uint8List.fromList([
+          0x08,
+          0x8f,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x87,
+        ]);
+        final err = Uint8List.fromList([
+          0x08,
+          0x8f,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x03,
+          0x84,
+        ]);
 
-        expect(
-          () => parseResponseFrame(raw),
-          throwsA(isA<ProtocolException>()),
-        );
+        expect(parseResponseFrame(ok).data, Uint8List.fromList([0x00]));
+        expect(parseResponseFrame(err).data, Uint8List.fromList([0x03]));
       },
     );
 
+    test('wirft, wenn Byte 5 mehr Nutzdaten meldet als das Frame traegt', () {
+      // Frueher wurde hier mit 0xFF aufgefuellt. Ein unvollstaendiges
+      // Frame (fehlender RX-Kanal) waere damit von einem echten
+      // Leerbereich nicht zu unterscheiden gewesen, und eine Messung
+      // waere stillschweigend verschwunden.
+      final raw = Uint8List.fromList([
+        0x08,
+        0x81,
+        0x00,
+        0x00,
+        0x50,
+        0x04,
+        0x00,
+        0xdd,
+      ]);
+
+      expect(() => parseResponseFrame(raw), throwsA(isA<ProtocolException>()));
+    });
+
     test('wirft ProtocolException bei ungueltiger Pruefsumme', () {
-      final corrupted = Uint8List.fromList(
-        [0x0a, 0x81, 0x00, 0x01, 0x00, 0x02, 0xab, 0xcd, 0x00, 0xef],
-      );
+      final corrupted = Uint8List.fromList([
+        0x0a,
+        0x81,
+        0x00,
+        0x01,
+        0x00,
+        0x02,
+        0xab,
+        0xcd,
+        0x00,
+        0xef,
+      ]);
 
       expect(
         () => parseResponseFrame(corrupted),

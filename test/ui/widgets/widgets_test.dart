@@ -8,25 +8,26 @@ import 'package:sphygma/ui/widgets/notice_card.dart';
 import 'package:sphygma/ui/widgets/reading_headline.dart';
 
 Widget _wrap(ThemeVariant v, Widget child) => MaterialApp(
-      home: SphygmaThemeScope(
-        theme: themeFor(v),
-        child: Scaffold(body: child),
-      ),
-    );
+  builder: (context, child) =>
+      SphygmaThemeScope(theme: themeFor(v), child: child!),
+  home: Scaffold(body: child),
+);
 
 void main() {
   group('ReadingHeadline in jeder Gestaltung', () {
     for (final v in allVariants) {
       testWidgets('zeigt Werte und Puls (${v.name})', (tester) async {
-        await tester.pumpWidget(_wrap(
-          v,
-          ReadingHeadline(
-            systolic: 128,
-            diastolic: 87,
-            pulse: 82,
-            measuredAt: DateTime(2026, 9, 5, 23, 57),
+        await tester.pumpWidget(
+          _wrap(
+            v,
+            ReadingHeadline(
+              systolic: 128,
+              diastolic: 87,
+              pulse: 82,
+              measuredAt: DateTime(2026, 9, 5, 23, 57),
+            ),
           ),
-        ));
+        );
 
         expect(find.textContaining('128'), findsOneWidget);
         expect(find.textContaining('87'), findsOneWidget);
@@ -38,10 +39,9 @@ void main() {
   group('ClassificationScale in jeder Gestaltung', () {
     for (final v in allVariants) {
       testWidgets('baut ohne Fehler (${v.name})', (tester) async {
-        await tester.pumpWidget(_wrap(
-          v,
-          const ClassificationScale(category: EscCategory.highNormal),
-        ));
+        await tester.pumpWidget(
+          _wrap(v, const ClassificationScale(category: EscCategory.highNormal)),
+        );
 
         expect(tester.takeException(), isNull);
       });
@@ -49,25 +49,30 @@ void main() {
   });
 
   testWidgets('NoticeCard zeigt Titel und Text', (tester) async {
-    await tester.pumpWidget(_wrap(
-      ThemeVariant.instrument,
-      const NoticeCard(title: 'Geräteuhr', message: 'Datum weicht ab.'),
-    ));
+    await tester.pumpWidget(
+      _wrap(
+        ThemeVariant.instrument,
+        const NoticeCard(title: 'Geräteuhr', message: 'Datum weicht ab.'),
+      ),
+    );
 
     expect(find.text('Geräteuhr'), findsOneWidget);
     expect(find.text('Datum weicht ab.'), findsOneWidget);
   });
 
-  testWidgets('NoticeCard klappt Einzelheiten erst auf Tippen auf',
-      (tester) async {
-    await tester.pumpWidget(_wrap(
-      ThemeVariant.instrument,
-      const NoticeCard(
-        title: 'Geräteuhr',
-        message: 'Datum weicht ab.',
-        details: 'Batterien herausnehmen und wieder einlegen.',
+  testWidgets('NoticeCard klappt Einzelheiten erst auf Tippen auf', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        ThemeVariant.instrument,
+        const NoticeCard(
+          title: 'Geräteuhr',
+          message: 'Datum weicht ab.',
+          details: 'Batterien herausnehmen und wieder einlegen.',
+        ),
       ),
-    ));
+    );
 
     expect(find.textContaining('Batterien'), findsNothing);
 

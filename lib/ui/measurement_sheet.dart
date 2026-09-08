@@ -25,13 +25,8 @@ Future<void> showMeasurementSheet(
     context: context,
     backgroundColor: theme.surface,
     isScrollControlled: true,
-    builder: (_) => SphygmaThemeScope(
-      theme: theme,
-      child: MeasurementSheet(
-        controller: controller,
-        measurementId: measurementId,
-      ),
-    ),
+    builder: (_) =>
+        MeasurementSheet(controller: controller, measurementId: measurementId),
   );
 }
 
@@ -82,8 +77,7 @@ class MeasurementSheet extends StatelessWidget {
                   SizedBox(height: t.gapLarge),
                   if (m.movement)
                     const _Flag(text: 'Bewegung während der Messung'),
-                  if (m.arrhythmia)
-                    const _Flag(text: 'Unregelmäßiger Puls'),
+                  if (m.arrhythmia) const _Flag(text: 'Unregelmäßiger Puls'),
                 ],
                 SizedBox(height: t.gapLarge),
                 _Row(label: 'Messung Nr.', value: '${m.deviceSequence}'),
@@ -165,9 +159,11 @@ class _HealthConnect extends StatelessWidget {
   /// `status` erneut. Ohne diesen Fang liefe der Fehler als unbeobachtete
   /// Ausnahme in die Zone, statt als Meldung sichtbar zu werden.
   static void _start(Future<void> Function() action) {
-    unawaited(action().catchError((Object e) {
-      debugPrint('[Sphygma] Aktion fehlgeschlagen: $e');
-    }));
+    unawaited(
+      action().catchError((Object e) {
+        debugPrint('[Sphygma] Aktion fehlgeschlagen: $e');
+      }),
+    );
   }
 
   @override
@@ -194,10 +190,10 @@ class _HealthConnect extends StatelessWidget {
           onPressed: controller.busy
               ? null
               : () => _start(
-                    () => exported
-                        ? controller.retractOne(measurement)
-                        : controller.exportOne(measurement),
-                  ),
+                  () => exported
+                      ? controller.retractOne(measurement)
+                      : controller.exportOne(measurement),
+                ),
           child: Text(
             exported
                 ? 'Aus Health Connect entfernen'

@@ -75,18 +75,19 @@ void main() {
 
   /// Eine volle Woche: sieben Tage, morgens und abends.
   List<SlotRecord> volleWoche(DateTime montag, {int sys = 124}) => [
-        for (var tag = 0; tag < 7; tag++) ...[
-          _rec(seq++, _in(montag, tag, 7), sys: sys - 3),
-          _rec(seq++, _in(montag, tag, 20), sys: sys + 3),
-        ],
-      ];
+    for (var tag = 0; tag < 7; tag++) ...[
+      _rec(seq++, _in(montag, tag, 7), sys: sys - 3),
+      _rec(seq++, _in(montag, tag, 20), sys: sys + 3),
+    ],
+  ];
 
   Widget mit(Widget child) => MaterialApp(
-        home: SphygmaThemeScope(
-          theme: themeFor(ThemeVariant.instrument),
-          child: child,
-        ),
-      );
+    builder: (context, child) => SphygmaThemeScope(
+      theme: themeFor(ThemeVariant.instrument),
+      child: child!,
+    ),
+    home: child,
+  );
 
   setUp(() {
     db = AppDatabase(NativeDatabase.memory());
@@ -131,16 +132,19 @@ void main() {
   });
 
   group('Eine Woche im Detail', () {
-    testWidgets('sagt, dass der erste Tag nicht in den Schnitt zählt',
-        (tester) async {
+    testWidgets('sagt, dass der erste Tag nicht in den Schnitt zählt', (
+      tester,
+    ) async {
       await boot();
       await repository.importAll(volleWoche(_juengsterMontag));
       await controller.refreshForTest();
       final woche = buildWeeks(controller.measurements).single;
 
-      await tester.pumpWidget(mit(
-        WeekDetailScreen(controller: controller, weekStart: woche.beginsAt),
-      ));
+      await tester.pumpWidget(
+        mit(
+          WeekDetailScreen(controller: controller, weekStart: woche.beginsAt),
+        ),
+      );
 
       expect(find.textContaining('Mittel ohne den ersten Tag'), findsOneWidget);
       expect(find.textContaining('Über alle sieben Tage'), findsOneWidget);
@@ -152,15 +156,18 @@ void main() {
       await controller.refreshForTest();
       final woche = buildWeeks(controller.measurements).single;
 
-      await tester.pumpWidget(mit(
-        WeekDetailScreen(controller: controller, weekStart: woche.beginsAt),
-      ));
+      await tester.pumpWidget(
+        mit(
+          WeekDetailScreen(controller: controller, weekStart: woche.beginsAt),
+        ),
+      );
 
       expect(find.text('ALLE MESSUNGEN DIESER WOCHE'), findsOneWidget);
     });
 
-    testWidgets('nimmt eine später eingelesene Messung mit auf',
-        (tester) async {
+    testWidgets('nimmt eine später eingelesene Messung mit auf', (
+      tester,
+    ) async {
       await boot();
       await repository.importAll([
         _rec(seq++, _in(_juengsterMontag, 0, 7)),
@@ -168,12 +175,11 @@ void main() {
       ]);
       await controller.refreshForTest();
 
-      await tester.pumpWidget(mit(
-        WeekDetailScreen(
-          controller: controller,
-          weekStart: _juengsterMontag,
+      await tester.pumpWidget(
+        mit(
+          WeekDetailScreen(controller: controller, weekStart: _juengsterMontag),
         ),
-      ));
+      );
       expect(find.text('2 von 14 Feldern'), findsOneWidget);
 
       // Der automatische Abgleich holt eine Messung, während der Bildschirm
@@ -204,12 +210,15 @@ void main() {
       await tester.pumpWidget(mit(WeekRangeScreen(controller: controller)));
 
       // Drei zusammenhängende Wochen, die vierte liegt hinter einer Lücke.
-      expect(find.textContaining('Gemeinsames Mittel aus 3 Wochen'),
-          findsOneWidget);
+      expect(
+        find.textContaining('Gemeinsames Mittel aus 3 Wochen'),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('der Trend nennt beide Werte, aus denen er entsteht',
-        (tester) async {
+    testWidgets('der Trend nennt beide Werte, aus denen er entsteht', (
+      tester,
+    ) async {
       await boot();
       final w2 = previousMonday(_juengsterMontag);
       await repository.importAll([
@@ -225,8 +234,9 @@ void main() {
       expect(find.textContaining('von '), findsWidgets);
     });
 
-    testWidgets('leere Wochen im Zeitraum zählen in die Abdeckung mit',
-        (tester) async {
+    testWidgets('leere Wochen im Zeitraum zählen in die Abdeckung mit', (
+      tester,
+    ) async {
       await boot();
       // Zwei volle Wochen mit einer leeren Woche dazwischen. Rechnete die
       // Abdeckung nur über die vorhandenen Wochen, sähe sie mit 28 von 28

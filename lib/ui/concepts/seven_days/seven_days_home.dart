@@ -123,24 +123,22 @@ class _SevenDaysHomeState extends State<SevenDaysHome> {
           body: ListView(
             padding: t.listPadding,
             children: [
-              SurfacePanel(
-                child: _Statuszeile(controller: widget.controller),
-              ),
+              SurfacePanel(child: _Statuszeile(controller: widget.controller)),
               SurfacePanel(
                 tone: 1,
                 child: wochen.isEmpty
                     ? _NochNichtsGemessen(paired: widget.controller.paired)
                     : laufende == null
-                        ? _LangePause(
-                            controller: widget.controller,
-                            letzte: wochen.first,
-                            jetzt: jetzt,
-                          )
-                        : _LaufendeWoche(
-                            controller: widget.controller,
-                            week: laufende,
-                            jetzt: jetzt,
-                          ),
+                    ? _LangePause(
+                        controller: widget.controller,
+                        letzte: wochen.first,
+                        jetzt: jetzt,
+                      )
+                    : _LaufendeWoche(
+                        controller: widget.controller,
+                        week: laufende,
+                        jetzt: jetzt,
+                      ),
               ),
               ..._hinweise(context),
               SizedBox(height: t.gapLarge),
@@ -151,10 +149,8 @@ class _SevenDaysHomeState extends State<SevenDaysHome> {
                     : '${wochen.length} ${wochen.length == 1 ? "Woche" : "Wochen"}',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                    builder: (_) => SphygmaThemeScope(
-                      theme: t,
-                      child: EarlierWeeksScreen(controller: widget.controller),
-                    ),
+                    builder: (_) =>
+                        EarlierWeeksScreen(controller: widget.controller),
                   ),
                 ),
               ),
@@ -165,18 +161,15 @@ class _SevenDaysHomeState extends State<SevenDaysHome> {
                     : '${widget.controller.pendingExport} offen',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                    builder: (_) => SphygmaThemeScope(
-                      theme: t,
-                      child: Scaffold(
+                    builder: (_) => Scaffold(
+                      backgroundColor: t.surface,
+                      appBar: AppBar(
+                        title: const Text('Gerät und Übertragung'),
                         backgroundColor: t.surface,
-                        appBar: AppBar(
-                          title: const Text('Gerät und Übertragung'),
-                          backgroundColor: t.surface,
-                          foregroundColor: t.onSurface,
-                          elevation: 0,
-                        ),
-                        body: DeviceScreen(controller: widget.controller),
+                        foregroundColor: t.onSurface,
+                        elevation: 0,
                       ),
+                      body: DeviceScreen(controller: widget.controller),
                     ),
                   ),
                 ),
@@ -193,20 +186,26 @@ class _SevenDaysHomeState extends State<SevenDaysHome> {
     final hinweise = <Widget>[];
 
     if (!widget.controller.paired) {
-      hinweise.add(const NoticeCard(
-        title: 'Nicht gekoppelt',
-        message: 'Ohne Kopplung kann Sphygma keine Messungen holen. Unter '
-            '"Gerät und Übertragung" einrichten.',
-      ));
+      hinweise.add(
+        const NoticeCard(
+          title: 'Nicht gekoppelt',
+          message:
+              'Ohne Kopplung kann Sphygma keine Messungen holen. Unter '
+              '"Gerät und Übertragung" einrichten.',
+        ),
+      );
     }
 
     if (widget.controller.clockLooksWrong) {
-      hinweise.add(const NoticeCard(
-        title: 'Geräteuhr geht falsch',
-        message: 'Einzelne Messungen tragen ein Datum, das nicht stimmen '
-            'kann, und fallen damit in die falsche Woche. Sphygma verschiebt '
-            'keine Zeiten; stellen lässt sich die Uhr nur am Gerät.',
-      ));
+      hinweise.add(
+        const NoticeCard(
+          title: 'Geräteuhr geht falsch',
+          message:
+              'Einzelne Messungen tragen ein Datum, das nicht stimmen '
+              'kann, und fallen damit in die falsche Woche. Sphygma verschiebt '
+              'keine Zeiten; stellen lässt sich die Uhr nur am Gerät.',
+        ),
+      );
     }
 
     return [
@@ -242,10 +241,7 @@ class _Statuszeile extends StatelessWidget {
         ),
         SizedBox(width: t.gapSmall / 2),
         Expanded(
-          child: Text(
-            text,
-            style: TextStyle(fontSize: 11, color: t.muted),
-          ),
+          child: Text(text, style: TextStyle(fontSize: 11, color: t.muted)),
         ),
         if (c.busy)
           SizedBox(
@@ -339,12 +335,9 @@ class _LaufendeWoche extends StatelessWidget {
           child: TextButton(
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => SphygmaThemeScope(
-                  theme: t,
-                  child: WeekDetailScreen(
-                    controller: controller,
-                    weekStart: week.beginsAt,
-                  ),
+                builder: (_) => WeekDetailScreen(
+                  controller: controller,
+                  weekStart: week.beginsAt,
                 ),
               ),
             ),
@@ -359,10 +352,12 @@ class _LaufendeWoche extends StatelessWidget {
 /// Der nächste Schritt, sachlich benannt — der Entwurf belohnt regelmäßiges
 /// Messen und macht das Gegenteil sichtbar, soll dabei aber nicht mahnen.
 String _heuteOffen(MeasurementWeek week, DateTime jetzt) {
-  final morgens =
-      week.fieldAt(weekday: jetzt.weekday, band: TimeBand.morgens).isFilled;
-  final abends =
-      week.fieldAt(weekday: jetzt.weekday, band: TimeBand.abends).isFilled;
+  final morgens = week
+      .fieldAt(weekday: jetzt.weekday, band: TimeBand.morgens)
+      .isFilled;
+  final abends = week
+      .fieldAt(weekday: jetzt.weekday, band: TimeBand.abends)
+      .isFilled;
 
   return switch ((morgens, abends)) {
     (true, true) => 'Heute ist morgens und abends gemessen.',
@@ -467,8 +462,8 @@ class _NochNichtsGemessen extends StatelessWidget {
         Text(
           paired
               ? 'Miss am Gerät — Sphygma holt die Messung von selbst. Eine '
-                  'Woche gilt als vollständig, wenn an sieben Tagen morgens '
-                  'und abends gemessen wurde.'
+                    'Woche gilt als vollständig, wenn an sieben Tagen morgens '
+                    'und abends gemessen wurde.'
               : 'Zuerst unter "Gerät und Übertragung" koppeln.',
           style: TextStyle(fontSize: 13, color: t.muted, height: 1.5),
         ),

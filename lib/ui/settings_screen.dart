@@ -118,13 +118,9 @@ Future<void> showSettings(
   BuildContext context, {
   required AppController controller,
 }) {
-  final t = SphygmaTheme.of(context);
   return Navigator.of(context).push(
     MaterialPageRoute<void>(
-      builder: (_) => SphygmaThemeScope(
-        theme: t,
-        child: SettingsScreen(controller: controller),
-      ),
+      builder: (_) => SettingsScreen(controller: controller),
     ),
   );
 }

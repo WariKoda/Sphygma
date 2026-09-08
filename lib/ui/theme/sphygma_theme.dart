@@ -66,7 +66,6 @@ class SphygmaTheme {
   /// die beiden Handschriften nur andere Farben auf derselben Zeichnung.
   final bool showDividers;
 
-
   /// Die Grundfläche, auf der Inhalt steht.
   final Color panelBase;
 
@@ -110,7 +109,9 @@ class SphygmaTheme {
   /// trifft — und eine neue Handschrift nicht an einer vergessenen Stelle
   /// doch wieder Striche zieht.
   BoxDecoration get rowDivider => showDividers
-      ? BoxDecoration(border: Border(bottom: BorderSide(color: line)))
+      ? BoxDecoration(
+          border: Border(bottom: BorderSide(color: line)),
+        )
       : const BoxDecoration();
 
   /// Was ohne Trennstrich an Luft dazukommt, damit die Zeilen nicht kleben.
@@ -127,8 +128,8 @@ class SphygmaTheme {
   /// Wirft, wenn kein [SphygmaThemeScope] darueber liegt. Ein stiller
   /// Ersatzwert wuerde die Gestaltung unbemerkt zerfallen lassen.
   static SphygmaTheme of(BuildContext context) {
-    final scope =
-        context.dependOnInheritedWidgetOfExactType<_SphygmaThemeScope>();
+    final scope = context
+        .dependOnInheritedWidgetOfExactType<_SphygmaThemeScope>();
     if (scope == null) {
       throw FlutterError(
         'SphygmaTheme.of() ohne SphygmaThemeScope aufgerufen. '

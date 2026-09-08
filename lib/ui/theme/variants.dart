@@ -57,138 +57,140 @@ const Map<EscCategory, Color> _vividScale = {
 };
 
 SphygmaTheme themeFor(ThemeVariant variant) => switch (variant) {
-      ThemeVariant.instrument => SphygmaTheme(
-          name: 'Messinstrument',
-          surface: Color(0xFFFAF9F7),
-          onSurface: Color(0xFF1B1B1A),
-          muted: Color(0x8A1B1B1A),
-          line: Color(0xFFE4E1DB),
-          accent: Color(0xFF1B1B1A),
-          categoryColors: _calmScale,
-          radius: 3,
-          gapSmall: 8,
-          gapLarge: 22,
-          headlineSize: 58,
-          // Entwurf: 58px/300
-          headlineWeight: FontWeight.w300,
-          showDividers: true,
-          panelBase: Color(0xFFFFFFFF),
-          panelRaised: Color(0xFFFAF9F7),
-          panelBorder: Color(0xFFE4E1DB),
-          panelShadow: null,
-        ),
-      ThemeVariant.diary => SphygmaTheme(
-          name: 'Tagebuch',
-          surface: Color(0xFFF2F5FB),
-          onSurface: Color(0xFF182034),
-          muted: Color(0x8A182034),
-          line: Color(0xFFE2E8F3),
-          accent: Color(0xFF4F7FD8),
-          categoryColors: _vividScale,
-          radius: 18,
-          gapSmall: 10,
-          gapLarge: 18,
-          headlineSize: 48,
-          // Entwurf: 48px/700 auf der Verlaufskarte
-          headlineWeight: FontWeight.w700,
-          showDividers: true,
-          panelBase: Color(0xFFFFFFFF),
-          // Der blaugraue Grund der Handschrift: Als Band braucht die zweite
-          // Tonstufe einen sichtbaren Unterschied, sonst verschmelzen zwei
-          // Abschnitte trotz Tonwechsel.
-          panelRaised: Color(0xFFF2F5FB),
-          panelBorder: null,
-          panelShadow: [BoxShadow(color: Color(0x264F7FD8), blurRadius: 20, offset: Offset(0, 8))],
-        ),
-      ThemeVariant.material => SphygmaTheme(
-          name: 'Material',
-          surface: Color(0xFFFEF7FF),
-          onSurface: Color(0xFF1D1B20),
-          muted: Color(0xFF49454F),
-          line: Color(0xFFE7E0EC),
-          accent: Color(0xFF6750A4),
-          categoryColors: _vividScale,
-          radius: 12,
-          gapSmall: 8,
-          gapLarge: 16,
-          headlineSize: 42,
-          // Entwurf: 42px/400
-          headlineWeight: FontWeight.w400,
-          showDividers: true,
-          panelBase: Color(0xFFE8DEF8),
-          panelRaised: Color(0xFFFEF7FF),
-          panelBorder: null,
-          panelShadow: null,
-        ),
-      // Aus dem Entwurf docs/design/handschriften.html übernommen, nicht
-      // erfunden: Grundfarben und Maße stehen dort im CSS je Handschrift.
-      //
-      // Die einzige dunkle Handschrift. Der Entwurf hält fest, dass sie fest
-      // dunkel bleibt — dem Systemmodus zu folgen bräuchte eine zweite
-      // Farbtafel, die die Theme-Schicht heute nicht kennt.
-      ThemeVariant.aura => SphygmaTheme(
-          name: 'Aura',
-          surface: Color(0xFF14181F),
-          onSurface: Color(0xFFE8ECF2),
-          muted: Color(0xFF94A0B0),
-          // 7 % Weiß: die feine Kante, der einzige Rest von Glas.
-          line: Color(0x12FFFFFF),
-          accent: Color(0xFF6C5CE7),
-          categoryColors: _duskScale,
-          radius: 18,
-          gapSmall: 11,
-          gapLarge: 20,
-          headlineSize: 58,
-          // Entwurf: 58px/200, ExtraLight
-          headlineWeight: FontWeight.w200,
-          // „Zeilen ohne Trennstrich; Luft gliedert, nicht der Strich."
-          showDividers: false,
-          panelBase: Color(0x0BFFFFFF),
-          panelRaised: Color(0x06FFFFFF),
-          panelBorder: Color(0x12FFFFFF),
-          panelShadow: null,
-        ),
-      ThemeVariant.pulseGrid => SphygmaTheme(
-          name: 'Pulse Grid',
-          surface: Color(0xFFF5F6F4),
-          onSurface: Color(0xFF171A1C),
-          muted: Color(0xFF6C7377),
-          line: Color(0xFFDEE0DC),
-          accent: Color(0xFF087F78),
-          categoryColors: _calmScale,
-          // „Radius nur an Bedienelementen, keine Schatten."
-          radius: 2,
-          gapSmall: 8,
-          gapLarge: 22,
-          headlineSize: 52,
-          // Datentabelle — normal, nicht dünn
-          headlineWeight: FontWeight.w400,
-          showDividers: true,
-          panelBase: Color(0xFFFFFFFF),
-          panelRaised: Color(0xFFF5F6F4),
-          panelBorder: Color(0xFFDEE0DC),
-          panelShadow: null,
-        ),
-      ThemeVariant.pegel => SphygmaTheme(
-          name: 'Pegel',
-          surface: Color(0xFFECEEEB),
-          onSurface: Color(0xFF16211F),
-          muted: Color(0xFF6B7671),
-          line: Color(0xFFE3E6E3),
-          accent: Color(0xFF0E5C4C),
-          categoryColors: _bandScale,
-          // „Ganzflächige Bänder ohne Rand, Schatten, Radius oder Abstand."
-          radius: 0,
-          gapSmall: 10,
-          gapLarge: 18,
-          headlineSize: 50,
-          // Bänder tragen kräftigere Ziffern
-          headlineWeight: FontWeight.w500,
-          // „Ein Abschnitt endet, wo die Fläche ihren Ton wechselt."
-          showDividers: false,
-          panelBase: Color(0xFFFFFFFF),
-          panelRaised: Color(0xFFECEEEB),
-          panelBorder: null,
-          panelShadow: null,
-        ),
-    };
+  ThemeVariant.instrument => SphygmaTheme(
+    name: 'Messinstrument',
+    surface: Color(0xFFFAF9F7),
+    onSurface: Color(0xFF1B1B1A),
+    muted: Color(0x8A1B1B1A),
+    line: Color(0xFFE4E1DB),
+    accent: Color(0xFF1B1B1A),
+    categoryColors: _calmScale,
+    radius: 3,
+    gapSmall: 8,
+    gapLarge: 22,
+    headlineSize: 58,
+    // Entwurf: 58px/300
+    headlineWeight: FontWeight.w300,
+    showDividers: true,
+    panelBase: Color(0xFFFFFFFF),
+    panelRaised: Color(0xFFFAF9F7),
+    panelBorder: Color(0xFFE4E1DB),
+    panelShadow: null,
+  ),
+  ThemeVariant.diary => SphygmaTheme(
+    name: 'Tagebuch',
+    surface: Color(0xFFF2F5FB),
+    onSurface: Color(0xFF182034),
+    muted: Color(0x8A182034),
+    line: Color(0xFFE2E8F3),
+    accent: Color(0xFF4F7FD8),
+    categoryColors: _vividScale,
+    radius: 18,
+    gapSmall: 10,
+    gapLarge: 18,
+    headlineSize: 48,
+    // Entwurf: 48px/700 auf der Verlaufskarte
+    headlineWeight: FontWeight.w700,
+    showDividers: true,
+    panelBase: Color(0xFFFFFFFF),
+    // Der blaugraue Grund der Handschrift: Als Band braucht die zweite
+    // Tonstufe einen sichtbaren Unterschied, sonst verschmelzen zwei
+    // Abschnitte trotz Tonwechsel.
+    panelRaised: Color(0xFFF2F5FB),
+    panelBorder: null,
+    panelShadow: [
+      BoxShadow(color: Color(0x264F7FD8), blurRadius: 20, offset: Offset(0, 8)),
+    ],
+  ),
+  ThemeVariant.material => SphygmaTheme(
+    name: 'Material',
+    surface: Color(0xFFFEF7FF),
+    onSurface: Color(0xFF1D1B20),
+    muted: Color(0xFF49454F),
+    line: Color(0xFFE7E0EC),
+    accent: Color(0xFF6750A4),
+    categoryColors: _vividScale,
+    radius: 12,
+    gapSmall: 8,
+    gapLarge: 16,
+    headlineSize: 42,
+    // Entwurf: 42px/400
+    headlineWeight: FontWeight.w400,
+    showDividers: true,
+    panelBase: Color(0xFFE8DEF8),
+    panelRaised: Color(0xFFFEF7FF),
+    panelBorder: null,
+    panelShadow: null,
+  ),
+  // Aus dem Entwurf docs/design/handschriften.html übernommen, nicht
+  // erfunden: Grundfarben und Maße stehen dort im CSS je Handschrift.
+  //
+  // Die einzige dunkle Handschrift. Der Entwurf hält fest, dass sie fest
+  // dunkel bleibt — dem Systemmodus zu folgen bräuchte eine zweite
+  // Farbtafel, die die Theme-Schicht heute nicht kennt.
+  ThemeVariant.aura => SphygmaTheme(
+    name: 'Aura',
+    surface: Color(0xFF14181F),
+    onSurface: Color(0xFFE8ECF2),
+    muted: Color(0xFF94A0B0),
+    // 7 % Weiß: die feine Kante, der einzige Rest von Glas.
+    line: Color(0x12FFFFFF),
+    accent: Color(0xFF6C5CE7),
+    categoryColors: _duskScale,
+    radius: 18,
+    gapSmall: 11,
+    gapLarge: 20,
+    headlineSize: 58,
+    // Entwurf: 58px/200, ExtraLight
+    headlineWeight: FontWeight.w200,
+    // „Zeilen ohne Trennstrich; Luft gliedert, nicht der Strich."
+    showDividers: false,
+    panelBase: Color(0x0BFFFFFF),
+    panelRaised: Color(0x06FFFFFF),
+    panelBorder: Color(0x12FFFFFF),
+    panelShadow: null,
+  ),
+  ThemeVariant.pulseGrid => SphygmaTheme(
+    name: 'Pulse Grid',
+    surface: Color(0xFFF5F6F4),
+    onSurface: Color(0xFF171A1C),
+    muted: Color(0xFF6C7377),
+    line: Color(0xFFDEE0DC),
+    accent: Color(0xFF087F78),
+    categoryColors: _calmScale,
+    // „Radius nur an Bedienelementen, keine Schatten."
+    radius: 2,
+    gapSmall: 8,
+    gapLarge: 22,
+    headlineSize: 52,
+    // Datentabelle — normal, nicht dünn
+    headlineWeight: FontWeight.w400,
+    showDividers: true,
+    panelBase: Color(0xFFFFFFFF),
+    panelRaised: Color(0xFFF5F6F4),
+    panelBorder: Color(0xFFDEE0DC),
+    panelShadow: null,
+  ),
+  ThemeVariant.pegel => SphygmaTheme(
+    name: 'Pegel',
+    surface: Color(0xFFECEEEB),
+    onSurface: Color(0xFF16211F),
+    muted: Color(0xFF6B7671),
+    line: Color(0xFFE3E6E3),
+    accent: Color(0xFF0E5C4C),
+    categoryColors: _bandScale,
+    // „Ganzflächige Bänder ohne Rand, Schatten, Radius oder Abstand."
+    radius: 0,
+    gapSmall: 10,
+    gapLarge: 18,
+    headlineSize: 50,
+    // Bänder tragen kräftigere Ziffern
+    headlineWeight: FontWeight.w500,
+    // „Ein Abschnitt endet, wo die Fläche ihren Ton wechselt."
+    showDividers: false,
+    panelBase: Color(0xFFFFFFFF),
+    panelRaised: Color(0xFFECEEEB),
+    panelBorder: null,
+    panelShadow: null,
+  ),
+};

@@ -66,7 +66,11 @@ void main() {
     });
 
     test('eine Phase wird angelegt und gefunden', () async {
-      final id = await repo.startPhase(name: 'Ramipril 5 mg', anchor: PhaseAnchor.bestaetigt, begin: DateTime(2026, 8, 10));
+      final id = await repo.startPhase(
+        name: 'Ramipril 5 mg',
+        anchor: PhaseAnchor.bestaetigt,
+        begin: DateTime(2026, 8, 10),
+      );
 
       final alle = await repo.phases();
       expect(alle, hasLength(1));
@@ -77,7 +81,11 @@ void main() {
     });
 
     test('eine Phase wird beendet', () async {
-      final id = await repo.startPhase(name: 'Urlaub', anchor: PhaseAnchor.bestaetigt, begin: DateTime(2026, 5, 18));
+      final id = await repo.startPhase(
+        name: 'Urlaub',
+        anchor: PhaseAnchor.bestaetigt,
+        begin: DateTime(2026, 5, 18),
+      );
       await repo.endPhase(id, at: DateTime(2026, 6, 2));
 
       final phase = (await repo.phases()).single;
@@ -85,14 +93,25 @@ void main() {
     });
 
     test('Phasen kommen neueste zuerst', () async {
-      await repo.startPhase(name: 'Alt', anchor: PhaseAnchor.bestaetigt, begin: DateTime(2026, 5, 1));
-      await repo.startPhase(name: 'Neu', anchor: PhaseAnchor.bestaetigt, begin: DateTime(2026, 8, 1));
+      await repo.startPhase(
+        name: 'Alt',
+        anchor: PhaseAnchor.bestaetigt,
+        begin: DateTime(2026, 5, 1),
+      );
+      await repo.startPhase(
+        name: 'Neu',
+        anchor: PhaseAnchor.bestaetigt,
+        begin: DateTime(2026, 8, 1),
+      );
 
       expect((await repo.phases()).map((p) => p.name), ['Neu', 'Alt']);
     });
 
     test('eine Phase wird gelöscht', () async {
-      final id = await repo.startPhase(name: 'Versuch', anchor: PhaseAnchor.jetzt);
+      final id = await repo.startPhase(
+        name: 'Versuch',
+        anchor: PhaseAnchor.jetzt,
+      );
       await repo.deletePhase(id);
 
       expect(await repo.phases(), isEmpty);
@@ -116,18 +135,23 @@ void main() {
       );
     });
 
-    test('eine unbekannte Phase zu beenden ist ein Fehler, kein Nichts',
-        () async {
-      expect(
-        () => repo.endPhase(9999, at: DateTime(2026, 9, 1)),
-        throwsStateError,
-      );
-    });
+    test(
+      'eine unbekannte Phase zu beenden ist ein Fehler, kein Nichts',
+      () async {
+        expect(
+          () => repo.endPhase(9999, at: DateTime(2026, 9, 1)),
+          throwsStateError,
+        );
+      },
+    );
 
     test('eine beendete Phase lässt sich nicht erneut beenden', () async {
       // Sonst verschöbe ein Doppeltipp eine aufgezeichnete Phasengrenze.
       final id = await repo.startPhase(
-          name: 'Urlaub', anchor: PhaseAnchor.bestaetigt, begin: DateTime(2026, 5, 18));
+        name: 'Urlaub',
+        anchor: PhaseAnchor.bestaetigt,
+        begin: DateTime(2026, 5, 18),
+      );
       await repo.endPhase(id, at: DateTime(2026, 6, 2));
 
       expect(
@@ -142,7 +166,10 @@ void main() {
       // die Herkunftsangabe stünde als Lüge dauerhaft in der Datenbank.
       expect(
         () => repo.startPhase(
-            name: 'Test', anchor: PhaseAnchor.jetzt, begin: DateTime(2020, 1, 1)),
+          name: 'Test',
+          anchor: PhaseAnchor.jetzt,
+          begin: DateTime(2020, 1, 1),
+        ),
         throwsArgumentError,
       );
     });
@@ -153,10 +180,14 @@ void main() {
       final nachher = DateTime.now();
 
       final phase = (await repo.phases()).single;
-      expect(phase.beginsAt.isBefore(vorher.subtract(const Duration(seconds: 1))),
-          isFalse);
-      expect(phase.beginsAt.isAfter(nachher.add(const Duration(seconds: 1))),
-          isFalse);
+      expect(
+        phase.beginsAt.isBefore(vorher.subtract(const Duration(seconds: 1))),
+        isFalse,
+      );
+      expect(
+        phase.beginsAt.isAfter(nachher.add(const Duration(seconds: 1))),
+        isFalse,
+      );
     });
 
     test('bei „bestätigt" ist der Beginn Pflicht', () async {

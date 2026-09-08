@@ -24,18 +24,18 @@ class _NoopSink implements HealthSink {
 }
 
 SlotRecord _rec(int seq, DateTime at) => SlotRecord(
-      userSlot: 1,
-      record: BloodPressureRecord(
-        systolic: 120,
-        diastolic: 80,
-        pulse: 70,
-        timestamp: at,
-        arrhythmiaFlag: false,
-        movementFlag: false,
-        sequence: seq,
-      ),
-      rawBytes: Uint8List(14),
-    );
+  userSlot: 1,
+  record: BloodPressureRecord(
+    systolic: 120,
+    diastolic: 80,
+    pulse: 70,
+    timestamp: at,
+    arrhythmiaFlag: false,
+    movementFlag: false,
+    sequence: seq,
+  ),
+  rawBytes: Uint8List(14),
+);
 
 void main() {
   late AppDatabase db;
@@ -52,8 +52,7 @@ void main() {
       repository: repository,
       occasionRepository: OccasionRepository(db),
       syncService: SyncService(keyStore: keyStore, repository: repository),
-      exportService:
-          ExportService(repository: repository, sink: _NoopSink()),
+      exportService: ExportService(repository: repository, sink: _NoopSink()),
       statusStream: () => const Stream.empty(),
     );
     await controller.init();
@@ -120,18 +119,20 @@ void main() {
       expect(controller.clockLooksWrong, isTrue);
     });
 
-    test('meldet nichts, wenn die zuletzt gemessene Messung plausibel ist',
-        () async {
-      final now = DateTime.now();
-      await repository.importAll([
-        // Eine echte alte Messung darf keine Warnung ausloesen.
-        _rec(100, DateTime(2023, 4, 18, 11, 2)),
-        _rec(300, now.subtract(const Duration(hours: 2))),
-      ]);
-      await controller.refreshForTest();
+    test(
+      'meldet nichts, wenn die zuletzt gemessene Messung plausibel ist',
+      () async {
+        final now = DateTime.now();
+        await repository.importAll([
+          // Eine echte alte Messung darf keine Warnung ausloesen.
+          _rec(100, DateTime(2023, 4, 18, 11, 2)),
+          _rec(300, now.subtract(const Duration(hours: 2))),
+        ]);
+        await controller.refreshForTest();
 
-      expect(controller.clockLooksWrong, isFalse);
-    });
+        expect(controller.clockLooksWrong, isFalse);
+      },
+    );
 
     test('ohne Messungen gibt es nichts zu melden', () async {
       await controller.refreshForTest();

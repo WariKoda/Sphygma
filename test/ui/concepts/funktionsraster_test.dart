@@ -73,8 +73,13 @@ SlotRecord _rec(int seq, DateTime at, {int sys = 148, int dia = 92}) =>
 /// an welchem Wochentag der Test läuft.
 final _montag = previousMonday(mondayOf(DateTime.now()));
 
-DateTime _tag(int versatz, int stunde, [int minute = 0]) =>
-    DateTime(_montag.year, _montag.month, _montag.day + versatz, stunde, minute);
+DateTime _tag(int versatz, int stunde, [int minute = 0]) => DateTime(
+  _montag.year,
+  _montag.month,
+  _montag.day + versatz,
+  stunde,
+  minute,
+);
 
 DateTime _vorTagen(int n) =>
     DateTime(_montag.year, _montag.month, _montag.day - n, 9);
@@ -94,9 +99,9 @@ final _wertMuster = RegExp(r'\d{3}/\d{2} ·');
 /// einen InkWell träfe der Test die Zusammenfassung statt der Messung — und
 /// meldete eine fehlende Funktion, die vorhanden ist.
 Finder get _messzeile => find.descendant(
-      of: find.byType(InkWell),
-      matching: find.textContaining(_wertMuster),
-    );
+  of: find.byType(InkWell),
+  matching: find.textContaining(_wertMuster),
+);
 
 /// Wie man in einem Konzept an eine Funktion herankommt.
 ///
@@ -255,16 +260,19 @@ void main() {
 
   Future<void> pump(WidgetTester tester, AppConcept k) async {
     await controller.setConcept(k);
-    await tester.pumpWidget(MaterialApp(
-      home: SphygmaThemeScope(
-        theme: themeFor(ThemeVariant.instrument),
-        child: conceptHome(
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => SphygmaThemeScope(
+          theme: themeFor(ThemeVariant.instrument),
+          child: child!,
+        ),
+        home: conceptHome(
           concept: k,
           controller: controller,
           clock: () => _jetzt,
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
   }
 
@@ -300,40 +308,63 @@ void main() {
         expect(tester.takeException(), isNull);
         // Eine Auswertung nennt mmHg oder einen Zeitraum — leer wäre sie
         // keine.
-        expect(find.textContaining(RegExp('mmHg|Woche|Anlass|Zeitraum|Tage')),
-            findsWidgets);
+        expect(
+          find.textContaining(RegExp('mmHg|Woche|Anlass|Zeitraum|Tage')),
+          findsWidgets,
+        );
       });
 
-      testWidgets('F3 und F10 — eine Messung im Detail, mit Health Connect',
-          (tester) async {
+      testWidgets('F3 und F10 — eine Messung im Detail, mit Health Connect', (
+        tester,
+      ) async {
         await boot();
         await pump(tester, k);
         await weg.zurEinzelmessung(tester);
 
-        expect(find.text('HEALTH CONNECT'), findsOneWidget,
-            reason: 'F10 sitzt im Blatt der Einzelmessung');
-        expect(find.textContaining('Messung Nr.'), findsOneWidget,
-            reason: 'F3 — die Herkunft der Messung');
+        expect(
+          find.text('HEALTH CONNECT'),
+          findsOneWidget,
+          reason: 'F10 sitzt im Blatt der Einzelmessung',
+        );
+        expect(
+          find.textContaining('Messung Nr.'),
+          findsOneWidget,
+          reason: 'F3 — die Herkunft der Messung',
+        );
       });
 
-      testWidgets('F6 bis F9 — Gerät, Abgleich und Health Connect',
-          (tester) async {
+      testWidgets('F6 bis F9 — Gerät, Abgleich und Health Connect', (
+        tester,
+      ) async {
         await boot();
         await pump(tester, k);
         await weg.zumGeraet(tester);
 
-        await _erwarte(tester, find.textContaining('Automatischer Abgleich'),
-            reason: 'F8 fehlt in ${k.name}');
-        await _erwarte(tester, find.text('Jetzt abgleichen'),
-            reason: 'F7 fehlt in ${k.name}');
-        await _erwarte(tester, find.text('Alle übertragen'),
-            reason: 'F9 fehlt in ${k.name}');
-        await _erwarte(tester, find.text('Neu koppeln'),
-            reason: 'F6 fehlt in ${k.name}');
+        await _erwarte(
+          tester,
+          find.textContaining('Automatischer Abgleich'),
+          reason: 'F8 fehlt in ${k.name}',
+        );
+        await _erwarte(
+          tester,
+          find.text('Jetzt abgleichen'),
+          reason: 'F7 fehlt in ${k.name}',
+        );
+        await _erwarte(
+          tester,
+          find.text('Alle übertragen'),
+          reason: 'F9 fehlt in ${k.name}',
+        );
+        await _erwarte(
+          tester,
+          find.text('Neu koppeln'),
+          reason: 'F6 fehlt in ${k.name}',
+        );
       });
 
-      testWidgets('F11 — eine unglaubwürdige Gerätezeit wird gemeldet',
-          (tester) async {
+      testWidgets('F11 — eine unglaubwürdige Gerätezeit wird gemeldet', (
+        tester,
+      ) async {
         await boot();
         // Höchste Nummer, Datum von 2023: Die Uhr des Geräts stand falsch.
         await repository.importAll([_rec(99, DateTime(2023, 4, 18, 11))]);
@@ -350,7 +381,6 @@ void main() {
         );
       });
 
-
       testWidgets('der Einstieg steht auf Flächen', (tester) async {
         await boot();
         await pump(tester, k);
@@ -358,32 +388,39 @@ void main() {
         // Jeder Bildschirm wickelt seine Abschnitte in SurfacePanel, statt
         // eigene Container zu bauen. Sonst zöge eine Änderung an der
         // Gestaltung an dreißig Stellen nach.
-        expect(find.byType(SurfacePanel), findsWidgets,
-            reason: '${k.name} baut seine Abschnitte ohne Fläche');
+        expect(
+          find.byType(SurfacePanel),
+          findsWidgets,
+          reason: '${k.name} baut seine Abschnitte ohne Fläche',
+        );
       });
 
-
-      testWidgets('alle Flächen tragen den Radius der Gestaltung',
-          (tester) async {
+      testWidgets('alle Flächen tragen den Radius der Gestaltung', (
+        tester,
+      ) async {
         // Die Prüfung, die eine halbherzige Gestaltung entlarvt: Baut ein
         // Bildschirm seine eigene Karte mit eigenem Radius, sieht sie in
         // einer Handschrift zufällig richtig aus und in den anderen falsch.
         // Jede Fläche nimmt ihr Maß aus dem Theme.
         await boot();
-        for (final v in [ThemeVariant.instrument, ThemeVariant.diary,
-                         ThemeVariant.pegel]) {
+        for (final v in [
+          ThemeVariant.instrument,
+          ThemeVariant.diary,
+          ThemeVariant.pegel,
+        ]) {
           final t = themeFor(v);
           await controller.setConcept(k);
-          await tester.pumpWidget(MaterialApp(
-            home: SphygmaThemeScope(
-              theme: t,
-              child: conceptHome(
+          await tester.pumpWidget(
+            MaterialApp(
+              builder: (context, child) =>
+                  SphygmaThemeScope(theme: t, child: child!),
+              home: conceptHome(
                 concept: k,
                 controller: controller,
                 clock: () => _jetzt,
               ),
             ),
-          ));
+          );
           await tester.pumpAndSettle();
 
           final radien = tester
@@ -405,20 +442,25 @@ void main() {
             expect(
               erlaubt.contains(r),
               isTrue,
-              reason: '${k.name} in ${v.name}: $r gehört zu keinem Maß der '
+              reason:
+                  '${k.name} in ${v.name}: $r gehört zu keinem Maß der '
                   'Gestaltung (${t.radius} / ${t.chipRadius})',
             );
           }
         }
       });
 
-      testWidgets('F12 — ohne Kopplung sagt das Konzept, wo man koppelt',
-          (tester) async {
+      testWidgets('F12 — ohne Kopplung sagt das Konzept, wo man koppelt', (
+        tester,
+      ) async {
         await boot(paired: false);
         await pump(tester, k);
 
-        await _erwarte(tester, find.textContaining('Nicht gekoppelt'),
-            reason: 'F12 fehlt in ${k.name}');
+        await _erwarte(
+          tester,
+          find.textContaining('Nicht gekoppelt'),
+          reason: 'F12 fehlt in ${k.name}',
+        );
       });
     });
   }

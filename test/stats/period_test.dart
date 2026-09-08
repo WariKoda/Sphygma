@@ -5,19 +5,19 @@ import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/stats/period.dart';
 
 Measurement _m(DateTime at) => Measurement(
-      id: at.millisecondsSinceEpoch,
-      userSlot: 1,
-      deviceSequence: at.millisecondsSinceEpoch ~/ 1000,
-      systolic: 120,
-      diastolic: 80,
-      pulse: 70,
-      measuredAt: at,
-      movement: false,
-      arrhythmia: false,
-      rawBytes: Uint8List(14),
-      importedAt: at,
-      exportedAt: null,
-    );
+  id: at.millisecondsSinceEpoch,
+  userSlot: 1,
+  deviceSequence: at.millisecondsSinceEpoch ~/ 1000,
+  systolic: 120,
+  diastolic: 80,
+  pulse: 70,
+  measuredAt: at,
+  movement: false,
+  arrhythmia: false,
+  rawBytes: Uint8List(14),
+  importedAt: at,
+  exportedAt: null,
+);
 
 void main() {
   final now = DateTime(2026, 9, 5, 12);

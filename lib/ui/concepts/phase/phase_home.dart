@@ -58,9 +58,9 @@ class _PhaseHomeState extends State<PhaseHome> {
           ),
           body: switch (_index) {
             0 => CurrentPhaseScreen(
-                controller: widget.controller,
-                onAssign: () => setState(() => _index = 2),
-              ),
+              controller: widget.controller,
+              onAssign: () => setState(() => _index = 2),
+            ),
             1 => PhaseListScreen(controller: widget.controller),
             2 => PhaseAssignScreen(controller: widget.controller),
             _ => DeviceScreen(controller: widget.controller),

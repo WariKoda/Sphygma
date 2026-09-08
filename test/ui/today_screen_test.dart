@@ -26,18 +26,18 @@ class _NoopSink implements HealthSink {
 }
 
 SlotRecord _rec(int seq, DateTime at, {int systolic = 128}) => SlotRecord(
-      userSlot: 1,
-      record: BloodPressureRecord(
-        systolic: systolic,
-        diastolic: 87,
-        pulse: 82,
-        timestamp: at,
-        arrhythmiaFlag: false,
-        movementFlag: false,
-        sequence: seq,
-      ),
-      rawBytes: Uint8List(14),
-    );
+  userSlot: 1,
+  record: BloodPressureRecord(
+    systolic: systolic,
+    diastolic: 87,
+    pulse: 82,
+    timestamp: at,
+    arrhythmiaFlag: false,
+    movementFlag: false,
+    sequence: seq,
+  ),
+  rawBytes: Uint8List(14),
+);
 
 void main() {
   late AppDatabase db;
@@ -62,12 +62,13 @@ void main() {
   }
 
   Future<void> pumpWith(WidgetTester tester, ThemeVariant v) =>
-      tester.pumpWidget(MaterialApp(
-        home: SphygmaThemeScope(
-          theme: themeFor(v),
-          child: Scaffold(body: TodayScreen(controller: controller)),
+      tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) =>
+              SphygmaThemeScope(theme: themeFor(v), child: child!),
+          home: Scaffold(body: TodayScreen(controller: controller)),
         ),
-      ));
+      );
 
   setUp(() {
     db = AppDatabase(NativeDatabase.memory());
@@ -95,8 +96,9 @@ void main() {
     }
   });
 
-  testWidgets('ohne Messungen fordert er zum Messen auf, statt leer zu sein',
-      (tester) async {
+  testWidgets('ohne Messungen fordert er zum Messen auf, statt leer zu sein', (
+    tester,
+  ) async {
     controller = await boot();
 
     await pumpWith(tester, ThemeVariant.instrument);
@@ -112,8 +114,9 @@ void main() {
     expect(find.textContaining('Nicht gekoppelt'), findsOneWidget);
   });
 
-  testWidgets('bei falscher Uhr steht der Hinweis samt Anleitung da',
-      (tester) async {
+  testWidgets('bei falscher Uhr steht der Hinweis samt Anleitung da', (
+    tester,
+  ) async {
     controller = await boot();
     // Ein Datum weit in der Vergangenheit loest die Pruefung aus.
     await repository.importAll([_rec(1, DateTime(2023, 4, 18))]);

@@ -12,11 +12,7 @@ import 'package:flutter/material.dart';
 import '../theme/sphygma_theme.dart';
 
 class SurfaceSliver extends StatelessWidget {
-  const SurfaceSliver({
-    super.key,
-    required this.sliver,
-    this.tone = 0,
-  });
+  const SurfaceSliver({super.key, required this.sliver, this.tone = 0});
 
   /// Ein Sliver — typischerweise eine [SliverList].
   final Widget sliver;
@@ -32,8 +28,9 @@ class SurfaceSliver extends StatelessWidget {
       decoration: BoxDecoration(
         color: t.panel(tone),
         borderRadius: BorderRadius.circular(t.radius),
-        border:
-            t.panelBorder == null ? null : Border.all(color: t.panelBorder!),
+        border: t.panelBorder == null
+            ? null
+            : Border.all(color: t.panelBorder!),
         boxShadow: t.panelShadow,
       ),
       sliver: SliverPadding(

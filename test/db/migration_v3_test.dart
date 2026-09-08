@@ -15,11 +15,12 @@ import 'package:sphygma/db/occasion_repository.dart';
 
 void main() {
   test('das aktuelle Schema legt alle Tabellen an und lässt Messungen '
-      'unberührt',
-      () async {
+      'unberührt', () async {
     final db = AppDatabase(NativeDatabase.memory());
 
-    await db.into(db.measurements).insert(
+    await db
+        .into(db.measurements)
+        .insert(
           MeasurementsCompanion.insert(
             userSlot: 1,
             deviceSequence: 542,
@@ -42,7 +43,9 @@ void main() {
       anchor: PhaseAnchor.bestaetigt,
     );
 
-    await db.into(db.phaseAssignments).insert(
+    await db
+        .into(db.phaseAssignments)
+        .insert(
           PhaseAssignmentsCompanion.insert(
             userSlot: 1,
             deviceSequence: 542,

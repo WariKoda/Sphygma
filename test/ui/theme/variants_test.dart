@@ -9,7 +9,11 @@ void main() {
       expect(t.name, isNotEmpty, reason: '$v ohne Namen');
       expect(t.headlineSize, greaterThan(0));
       for (final c in EscCategory.values) {
-        expect(t.categoryColors[c], isNotNull, reason: '$v: Farbe fehlt für $c');
+        expect(
+          t.categoryColors[c],
+          isNotNull,
+          reason: '$v: Farbe fehlt für $c',
+        );
       }
     }
   });

@@ -43,10 +43,7 @@ class EarlierWeeksScreen extends StatelessWidget {
                   icon: const Icon(Icons.calculate_outlined),
                   onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                      builder: (_) => SphygmaThemeScope(
-                        theme: t,
-                        child: WeekRangeScreen(controller: controller),
-                      ),
+                      builder: (_) => WeekRangeScreen(controller: controller),
                     ),
                   ),
                 ),
@@ -101,9 +98,9 @@ class _WochenZeile extends StatelessWidget {
     return InkWell(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => SphygmaThemeScope(
-            theme: t,
-            child: WeekDetailScreen(controller: controller, weekStart: week.beginsAt),
+          builder: (_) => WeekDetailScreen(
+            controller: controller,
+            weekStart: week.beginsAt,
           ),
         ),
       ),

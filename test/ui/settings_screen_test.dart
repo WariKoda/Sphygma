@@ -48,10 +48,9 @@ void main() {
   Future<void> pumpWith(WidgetTester tester, ThemeVariant v) =>
       tester.pumpWidget(
         MaterialApp(
-          home: SphygmaThemeScope(
-            theme: themeFor(v),
-            child: SettingsScreen(controller: controller),
-          ),
+          builder: (context, child) =>
+              SphygmaThemeScope(theme: themeFor(v), child: child!),
+          home: SettingsScreen(controller: controller),
         ),
       );
 
@@ -113,15 +112,17 @@ void main() {
     expect(controller.themeVariant, ThemeVariant.diary);
   });
 
-  testWidgets('sagt, dass ein Konzeptwechsel keine Messung anfasst',
-      (tester) async {
+  testWidgets('sagt, dass ein Konzeptwechsel keine Messung anfasst', (
+    tester,
+  ) async {
     await boot();
 
     await pumpWith(tester, ThemeVariant.instrument);
 
     // Der Wechsel darf sich nicht anfühlen wie ein Datenverlust.
-    expect(find.textContaining('Keine Messung wird dabei kopiert'),
-        findsOneWidget);
+    expect(
+      find.textContaining('Keine Messung wird dabei kopiert'),
+      findsOneWidget,
+    );
   });
-
 }

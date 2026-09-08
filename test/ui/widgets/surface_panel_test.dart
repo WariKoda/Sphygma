@@ -14,13 +14,15 @@ import 'package:sphygma/ui/widgets/surface_panel.dart';
 void main() {
   group('Die Fläche nimmt ihre Maße aus der Gestaltung', () {
     for (final v in allVariants) {
-      testWidgets('${v.name}: Radius und Polster stammen aus dem Theme',
-          (tester) async {
+      testWidgets('${v.name}: Radius und Polster stammen aus dem Theme', (
+        tester,
+      ) async {
         final t = themeFor(v);
-        await tester.pumpWidget(MaterialApp(
-          home: SphygmaThemeScope(
-            theme: t,
-            child: const Scaffold(
+        await tester.pumpWidget(
+          MaterialApp(
+            builder: (context, child) =>
+                SphygmaThemeScope(theme: t, child: child!),
+            home: const Scaffold(
               body: Column(
                 children: [
                   SurfacePanel(child: Text('Erste')),
@@ -29,13 +31,15 @@ void main() {
               ),
             ),
           ),
-        ));
+        );
 
         final container = tester
-            .widgetList<Container>(find.descendant(
-              of: find.byType(SurfacePanel),
-              matching: find.byType(Container),
-            ))
+            .widgetList<Container>(
+              find.descendant(
+                of: find.byType(SurfacePanel),
+                matching: find.byType(Container),
+              ),
+            )
             .toList();
         expect(container, hasLength(2));
 
@@ -69,44 +73,61 @@ void main() {
 
   group('Hervorhebung', () {
     testWidgets('eine offene Frage bekommt eine Kante', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        home: SphygmaThemeScope(
-          theme: themeFor(ThemeVariant.diary),
-          child: const Scaffold(
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => SphygmaThemeScope(
+            theme: themeFor(ThemeVariant.diary),
+            child: child!,
+          ),
+          home: const Scaffold(
             body: SurfacePanel(highlighted: true, child: Text('Offen')),
           ),
         ),
-      ));
+      );
 
-      final d = tester
-          .widget<Container>(find
-              .descendant(
-                of: find.byType(SurfacePanel),
-                matching: find.byType(Container),
-              )
-              .first)
-          .decoration! as BoxDecoration;
-      expect(d.border, isNotNull,
-          reason: 'eine ausstehende Entscheidung muss auffallen');
+      final d =
+          tester
+                  .widget<Container>(
+                    find
+                        .descendant(
+                          of: find.byType(SurfacePanel),
+                          matching: find.byType(Container),
+                        )
+                        .first,
+                  )
+                  .decoration!
+              as BoxDecoration;
+      expect(
+        d.border,
+        isNotNull,
+        reason: 'eine ausstehende Entscheidung muss auffallen',
+      );
     });
 
     testWidgets('gewöhnlicher Inhalt folgt der Handschrift', (tester) async {
       // „Tagebuch" zeichnet keine Kante; ohne Hervorhebung bleibt das so.
-      await tester.pumpWidget(MaterialApp(
-        home: SphygmaThemeScope(
-          theme: themeFor(ThemeVariant.diary),
-          child: const Scaffold(body: SurfacePanel(child: Text('Normal'))),
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => SphygmaThemeScope(
+            theme: themeFor(ThemeVariant.diary),
+            child: child!,
+          ),
+          home: const Scaffold(body: SurfacePanel(child: Text('Normal'))),
         ),
-      ));
+      );
 
-      final d = tester
-          .widget<Container>(find
-              .descendant(
-                of: find.byType(SurfacePanel),
-                matching: find.byType(Container),
-              )
-              .first)
-          .decoration! as BoxDecoration;
+      final d =
+          tester
+                  .widget<Container>(
+                    find
+                        .descendant(
+                          of: find.byType(SurfacePanel),
+                          matching: find.byType(Container),
+                        )
+                        .first,
+                  )
+                  .decoration!
+              as BoxDecoration;
       expect(d.border, isNull);
     });
   });

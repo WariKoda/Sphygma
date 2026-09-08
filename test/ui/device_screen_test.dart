@@ -69,10 +69,9 @@ void main() {
   Future<void> pumpWith(WidgetTester tester, ThemeVariant v) =>
       tester.pumpWidget(
         MaterialApp(
-          home: SphygmaThemeScope(
-            theme: themeFor(v),
-            child: Scaffold(body: DeviceScreen(controller: controller)),
-          ),
+          builder: (context, child) =>
+              SphygmaThemeScope(theme: themeFor(v), child: child!),
+          home: Scaffold(body: DeviceScreen(controller: controller)),
         ),
       );
 
@@ -185,8 +184,9 @@ void main() {
     expect(find.text('Koppeln'), findsOneWidget);
   });
 
-  testWidgets('ohne Speicherplatz ist "Übertragene entfernen" abgeschaltet',
-      (tester) async {
+  testWidgets('ohne Speicherplatz ist "Übertragene entfernen" abgeschaltet', (
+    tester,
+  ) async {
     await boot(withSlot: false);
 
     await pumpWith(tester, ThemeVariant.instrument);
@@ -199,6 +199,4 @@ void main() {
     );
     expect(button.onPressed, isNull);
   });
-
-
 }

@@ -104,8 +104,8 @@ class DayProfileScreen extends StatelessWidget {
   }
 
   /// Der Abschnitt mit dem höchsten systolischen Mittel.
-  static Average _hoechster(Map<TimeBand, Average> mittel) => mittel.values
-      .reduce((a, b) => a.systolic >= b.systolic ? a : b);
+  static Average _hoechster(Map<TimeBand, Average> mittel) =>
+      mittel.values.reduce((a, b) => a.systolic >= b.systolic ? a : b);
 
   static const List<TimeBand> _tagesfolge = [
     TimeBand.morgens,
@@ -120,21 +120,27 @@ class DayProfileScreen extends StatelessWidget {
     final hinweise = <Widget>[];
 
     if (!controller.paired) {
-      hinweise.add(const NoticeCard(
-        title: 'Nicht gekoppelt',
-        message: 'Ohne Kopplung kann Sphygma keine Messungen holen. '
-            'Unter "Gerät" einrichten.',
-      ));
+      hinweise.add(
+        const NoticeCard(
+          title: 'Nicht gekoppelt',
+          message:
+              'Ohne Kopplung kann Sphygma keine Messungen holen. '
+              'Unter "Gerät" einrichten.',
+        ),
+      );
     }
 
     if (controller.clockLooksWrong) {
-      hinweise.add(const NoticeCard(
-        title: 'Geräteuhr geht falsch',
-        message: 'Dieses Konzept ordnet nach Uhrzeit — geht die Uhr des '
-            'Geräts falsch, liegen die Messungen an der falschen Stelle des '
-            'Tages. Sphygma verschiebt nichts; stellen lässt sich die Uhr nur '
-            'am Gerät.',
-      ));
+      hinweise.add(
+        const NoticeCard(
+          title: 'Geräteuhr geht falsch',
+          message:
+              'Dieses Konzept ordnet nach Uhrzeit — geht die Uhr des '
+              'Geräts falsch, liegen die Messungen an der falschen Stelle des '
+              'Tages. Sphygma verschiebt nichts; stellen lässt sich die Uhr nur '
+              'am Gerät.',
+        ),
+      );
     }
 
     return [
@@ -158,16 +164,15 @@ class _BandRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
-    final zone = TargetRange.heim
-        .classify(systolic: average.systolic, diastolic: average.diastolic);
+    final zone = TargetRange.heim.classify(
+      systolic: average.systolic,
+      diastolic: average.diastolic,
+    );
 
     return InkWell(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => SphygmaThemeScope(
-            theme: t,
-            child: BandDetailScreen(controller: controller, band: band),
-          ),
+          builder: (_) => BandDetailScreen(controller: controller, band: band),
         ),
       ),
       child: Container(
@@ -219,8 +224,9 @@ class _Unterschied extends StatelessWidget {
     final werte = mittel.values.map((a) => a.systolic).toList()..sort();
     final spanne = werte.last - werte.first;
 
-    final hoechster = mittel.entries
-        .reduce((a, b) => a.value.systolic >= b.value.systolic ? a : b);
+    final hoechster = mittel.entries.reduce(
+      (a, b) => a.value.systolic >= b.value.systolic ? a : b,
+    );
 
     return Text(
       'Am höchsten liegt der Druck ${hoechster.key.label.toLowerCase()}: '
@@ -253,8 +259,8 @@ class _Leer extends StatelessWidget {
           Text(
             paired
                 ? 'Miss am Gerät — Sphygma holt die Messung von selbst. Das '
-                    'Tagesmuster entsteht, sobald zu verschiedenen Uhrzeiten '
-                    'gemessen wurde.'
+                      'Tagesmuster entsteht, sobald zu verschiedenen Uhrzeiten '
+                      'gemessen wurde.'
                 : 'Zuerst unter "Gerät" koppeln.',
             style: TextStyle(fontSize: 13, color: t.muted, height: 1.5),
           ),

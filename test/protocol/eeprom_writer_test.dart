@@ -15,20 +15,26 @@ Uint8List _frame(List<int> withoutCrc) =>
 
 /// Bestaetigung eines Schreibvorgangs: Typ 0x81c0 mit derselben Adresse.
 Uint8List _writeAck(int address) => _frame([
-      0x08, 0x81, 0xc0,
-      (address >> 8) & 0xff, address & 0xff,
-      0x00, 0x00,
-    ]);
+  0x08,
+  0x81,
+  0xc0,
+  (address >> 8) & 0xff,
+  address & 0xff,
+  0x00,
+  0x00,
+]);
 
 /// Antwort auf das Ruecklesen, das [writeRecordArea] zur Pruefung fährt.
 Uint8List _readResponse(int address, List<int> data) => _frame([
-      8 + data.length,
-      0x81, 0x00,
-      (address >> 8) & 0xff, address & 0xff,
-      data.length,
-      ...data,
-      0x00,
-    ]);
+  8 + data.length,
+  0x81,
+  0x00,
+  (address >> 8) & 0xff,
+  address & 0xff,
+  data.length,
+  ...data,
+  0x00,
+]);
 
 class _ScriptedTransport implements BleTransport {
   _ScriptedTransport(this.responses);
@@ -74,57 +80,63 @@ void main() {
       );
     });
 
-    test('wirft, wenn ein Bereich die Luecke zwischen den Slots ueberspannt',
-        () {
-      final slot1Last = slot1 + (Hem6232tDevice.recordsPerUser - 1) * size;
-      // Slot 1 endet genau dort, wo Slot 2 beginnt; ein Bereich darf
-      // trotzdem nicht ueber die Slot-Grenze hinweggehen.
-      expect(
-        () => assertInsideRecordArea(slot1Last, size * 2),
-        throwsA(isA<ProtocolException>()),
-      );
-    });
+    test(
+      'wirft, wenn ein Bereich die Luecke zwischen den Slots ueberspannt',
+      () {
+        final slot1Last = slot1 + (Hem6232tDevice.recordsPerUser - 1) * size;
+        // Slot 1 endet genau dort, wo Slot 2 beginnt; ein Bereich darf
+        // trotzdem nicht ueber die Slot-Grenze hinweggehen.
+        expect(
+          () => assertInsideRecordArea(slot1Last, size * 2),
+          throwsA(isA<ProtocolException>()),
+        );
+      },
+    );
   });
 
   group('EepromWriter.writeRecordArea', () {
-    test('schreibt einen 14-Byte-Record in einem Befehl und prueft nach',
-        () async {
-      // 14 Nutzbytes passen in einen Rahmen (22 Bytes), seit die
-      // Hoechstmenge bei 16 liegt. Danach liest die Methode zurueck.
-      final written = List.filled(size, 0xff);
-      final transport = _ScriptedTransport([
-        _writeAck(slot2Last),
-        _readResponse(slot2Last, written),
-      ]);
+    test(
+      'schreibt einen 14-Byte-Record in einem Befehl und prueft nach',
+      () async {
+        // 14 Nutzbytes passen in einen Rahmen (22 Bytes), seit die
+        // Hoechstmenge bei 16 liegt. Danach liest die Methode zurueck.
+        final written = List.filled(size, 0xff);
+        final transport = _ScriptedTransport([
+          _writeAck(slot2Last),
+          _readResponse(slot2Last, written),
+        ]);
 
-      await EepromWriter(transport).writeRecordArea(
-        startAddress: slot2Last,
-        data: Uint8List.fromList(written),
-      );
-
-      // Ein Schreibbefehl plus ein Lesebefehl zur Kontrolle.
-      expect(transport.sent.length, 2);
-      expect(transport.sent[0][5], size);
-      expect(transport.responses, isEmpty);
-    });
-
-    test('wirft, wenn das Geraet quittiert aber nichts geschrieben hat',
-        () async {
-      // Genau der Fall am echten Geraet: 81c0 kommt, der Speicher bleibt
-      // unveraendert. Ohne Rueckleseprüfung waere das ein falscher Erfolg.
-      final transport = _ScriptedTransport([
-        _writeAck(slot2Last),
-        _readResponse(slot2Last, List.filled(size, 0x00)),
-      ]);
-
-      await expectLater(
-        EepromWriter(transport).writeRecordArea(
+        await EepromWriter(transport).writeRecordArea(
           startAddress: slot2Last,
-          data: Uint8List.fromList(List.filled(size, 0xff)),
-        ),
-        throwsA(isA<ProtocolException>()),
-      );
-    });
+          data: Uint8List.fromList(written),
+        );
+
+        // Ein Schreibbefehl plus ein Lesebefehl zur Kontrolle.
+        expect(transport.sent.length, 2);
+        expect(transport.sent[0][5], size);
+        expect(transport.responses, isEmpty);
+      },
+    );
+
+    test(
+      'wirft, wenn das Geraet quittiert aber nichts geschrieben hat',
+      () async {
+        // Genau der Fall am echten Geraet: 81c0 kommt, der Speicher bleibt
+        // unveraendert. Ohne Rueckleseprüfung waere das ein falscher Erfolg.
+        final transport = _ScriptedTransport([
+          _writeAck(slot2Last),
+          _readResponse(slot2Last, List.filled(size, 0x00)),
+        ]);
+
+        await expectLater(
+          EepromWriter(transport).writeRecordArea(
+            startAddress: slot2Last,
+            data: Uint8List.fromList(List.filled(size, 0xff)),
+          ),
+          throwsA(isA<ProtocolException>()),
+        );
+      },
+    );
 
     test('zerlegt einen laengeren Bereich in Bloecke zu 16 Bytes', () async {
       final written = List.filled(size * 2, 0xff);
@@ -134,30 +146,31 @@ void main() {
         _readResponse(slot2, written),
       ]);
 
-      await EepromWriter(transport).writeRecordArea(
-        startAddress: slot2,
-        data: Uint8List.fromList(written),
-      );
+      await EepromWriter(
+        transport,
+      ).writeRecordArea(startAddress: slot2, data: Uint8List.fromList(written));
 
       expect(transport.sent.length, 3);
       expect(transport.sent[0][5], maxWriteDataLength);
       expect(transport.sent[1][5], size * 2 - maxWriteDataLength);
     });
 
-    test('wirft bei einem Antworttyp, der keine Schreibbestaetigung ist',
-        () async {
-      final transport = _ScriptedTransport([
-        _frame([0x08, 0x81, 0x00, 0x08, 0x60, 0x00, 0x00]),
-      ]);
+    test(
+      'wirft bei einem Antworttyp, der keine Schreibbestaetigung ist',
+      () async {
+        final transport = _ScriptedTransport([
+          _frame([0x08, 0x81, 0x00, 0x08, 0x60, 0x00, 0x00]),
+        ]);
 
-      await expectLater(
-        EepromWriter(transport).writeRecordArea(
-          startAddress: slot2,
-          data: Uint8List.fromList([0xff]),
-        ),
-        throwsA(isA<ProtocolException>()),
-      );
-    });
+        await expectLater(
+          EepromWriter(transport).writeRecordArea(
+            startAddress: slot2,
+            data: Uint8List.fromList([0xff]),
+          ),
+          throwsA(isA<ProtocolException>()),
+        );
+      },
+    );
 
     test('wirft, wenn das Geraet eine andere Adresse bestaetigt', () async {
       final transport = _ScriptedTransport([_writeAck(slot2 + 2)]);

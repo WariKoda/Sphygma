@@ -88,10 +88,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final context = tester.element(find.byType(TodayScreen));
-    expect(
-      SphygmaTheme.of(context).name,
-      themeFor(ThemeVariant.diary).name,
-    );
+    expect(SphygmaTheme.of(context).name, themeFor(ThemeVariant.diary).name);
   });
 
   testWidgets('ein Gestaltungswechsel schlägt sofort durch', (tester) async {
@@ -102,10 +99,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final context = tester.element(find.byType(TodayScreen));
-    expect(
-      SphygmaTheme.of(context).name,
-      themeFor(ThemeVariant.material).name,
-    );
+    expect(SphygmaTheme.of(context).name, themeFor(ThemeVariant.material).name);
   });
 
   testWidgets('das Konzept bestimmt den ersten Bildschirm', (tester) async {
@@ -131,8 +125,9 @@ void main() {
     expect(find.text('Heute'), findsNothing);
   });
 
-  testWidgets('der Gerätebereich bleibt in jedem Konzept erreichbar',
-      (tester) async {
+  testWidgets('der Gerätebereich bleibt in jedem Konzept erreichbar', (
+    tester,
+  ) async {
     // Dort wird das Konzept gewechselt — wäre er in einem Konzept
     // unerreichbar, käme man nicht mehr heraus.
     await controller.setConcept(AppConcept.tagesprofil);
@@ -157,8 +152,9 @@ void main() {
     expect(find.byType(SnackBar), findsOneWidget);
   });
 
-  testWidgets('jedes Konzept trägt den Zugang zur Wahl an derselben Stelle',
-      (tester) async {
+  testWidgets('jedes Konzept trägt den Zugang zur Wahl an derselben Stelle', (
+    tester,
+  ) async {
     // Die fünf Konzepte schließen einander aus — ein Zahnrad je Hülle sind
     // deshalb nicht fünf Zugänge, sondern einer. Fehlte er in einem, käme
     // man aus diesem Konzept nicht mehr heraus, ohne den Gerätebereich zu
@@ -178,5 +174,46 @@ void main() {
       await tester.pageBack();
       await tester.pumpAndSettle();
     }
+  });
+
+  testWidgets('ein Gestaltungswechsel wirkt sofort, auch im offenen Blatt',
+      (tester) async {
+    // Bis zum 07.09.2026 nahm jede geschobene Route die Gestaltung beim
+    // Öffnen mit und hielt sie fest. Wer im Einstellungsblatt die Gestaltung
+    // wechselte, sah die Änderung erst nach dem Zurückgehen — ausgerechnet
+    // dort, wo man sie beurteilen will.
+    await tester.pumpWidget(SphygmaApp(controller: controller));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.tune));
+    await tester.pumpAndSettle();
+    expect(find.text('KONZEPT'), findsOneWidget);
+
+    double radiusImBlatt() => tester
+        .widgetList<Container>(find.byType(Container))
+        .map((c) => c.decoration)
+        .whereType<BoxDecoration>()
+        .map((d) => d.borderRadius)
+        .whereType<BorderRadius>()
+        .map((r) => r.topLeft.x)
+        .reduce((a, b) => a > b ? a : b);
+
+    expect(radiusImBlatt(), themeFor(ThemeVariant.instrument).radius);
+
+    // „Tagebuch" steht unter der Konzeptliste — ohne Scrollen ist es nicht
+    // gebaut und der Tipp ginge ins Leere.
+    await tester.scrollUntilVisible(find.text('Tagebuch'), 200);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tagebuch'));
+    await tester.pumpAndSettle();
+    expect(controller.themeVariant, ThemeVariant.diary,
+        reason: 'der Wechsel selbst muss ankommen');
+
+    // Ohne Zurückgehen: Das Blatt trägt jetzt die Maße der neuen Handschrift.
+    expect(
+      radiusImBlatt(),
+      themeFor(ThemeVariant.diary).radius,
+      reason: 'die neue Gestaltung greift erst nach dem Verlassen',
+    );
   });
 }

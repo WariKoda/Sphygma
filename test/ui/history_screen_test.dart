@@ -30,18 +30,18 @@ class _NoopSink implements HealthSink {
 }
 
 SlotRecord _rec(int seq, DateTime at, {int systolic = 128}) => SlotRecord(
-      userSlot: 1,
-      record: BloodPressureRecord(
-        systolic: systolic,
-        diastolic: 87,
-        pulse: 82,
-        timestamp: at,
-        arrhythmiaFlag: false,
-        movementFlag: false,
-        sequence: seq,
-      ),
-      rawBytes: Uint8List(14),
-    );
+  userSlot: 1,
+  record: BloodPressureRecord(
+    systolic: systolic,
+    diastolic: 87,
+    pulse: 82,
+    timestamp: at,
+    arrhythmiaFlag: false,
+    movementFlag: false,
+    sequence: seq,
+  ),
+  rawBytes: Uint8List(14),
+);
 
 void main() {
   late AppDatabase db;
@@ -66,12 +66,13 @@ void main() {
   }
 
   Future<void> pumpWith(WidgetTester tester, ThemeVariant v) =>
-      tester.pumpWidget(MaterialApp(
-        home: SphygmaThemeScope(
-          theme: themeFor(v),
-          child: Scaffold(body: HistoryScreen(controller: controller)),
+      tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) =>
+              SphygmaThemeScope(theme: themeFor(v), child: child!),
+          home: Scaffold(body: HistoryScreen(controller: controller)),
         ),
-      ));
+      );
 
   setUp(() {
     db = AppDatabase(NativeDatabase.memory());
@@ -86,8 +87,9 @@ void main() {
 
   group('in jeder Gestaltung', () {
     for (final v in allVariants) {
-      testWidgets('zeigt Zeitraum, Kurve und Mittelwerte (${v.name})',
-          (tester) async {
+      testWidgets('zeigt Zeitraum, Kurve und Mittelwerte (${v.name})', (
+        tester,
+      ) async {
         controller = await boot();
         final now = DateTime.now();
         await repository.importAll([
@@ -106,8 +108,9 @@ void main() {
     }
   });
 
-  testWidgets('der Zeitraumwechsel wirkt auf den Steuerungsteil',
-      (tester) async {
+  testWidgets('der Zeitraumwechsel wirkt auf den Steuerungsteil', (
+    tester,
+  ) async {
     controller = await boot();
     await pumpWith(tester, ThemeVariant.instrument);
 
@@ -152,8 +155,9 @@ void main() {
     expect(find.byType(MeasurementSheet), findsOneWidget);
   });
 
-  testWidgets('ohne Messungen im Zeitraum steht dort ein Satz, keine Leere',
-      (tester) async {
+  testWidgets('ohne Messungen im Zeitraum steht dort ein Satz, keine Leere', (
+    tester,
+  ) async {
     controller = await boot();
 
     await pumpWith(tester, ThemeVariant.instrument);
@@ -170,9 +174,6 @@ void main() {
 
     await pumpWith(tester, ThemeVariant.instrument);
 
-    expect(
-      find.byKey(const ValueKey('exported-dot')),
-      findsOneWidget,
-    );
+    expect(find.byKey(const ValueKey('exported-dot')), findsOneWidget);
   });
 }

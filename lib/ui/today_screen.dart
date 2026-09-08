@@ -93,26 +93,29 @@ class TodayScreen extends StatelessWidget {
 
   /// Hinweise erscheinen nur, wenn es etwas zu sagen gibt.
   List<Widget> _notices() => [
-        if (!controller.paired)
-          const NoticeCard(
-            title: 'Nicht gekoppelt',
-            message: 'Ohne Kopplung kann Sphygma keine Messungen holen. '
-                'Unter "Gerät" einrichten.',
-          ),
-        if (controller.clockLooksWrong)
-          const NoticeCard(
-            title: 'Geräteuhr geht falsch',
-            message: 'Die neueste Messung trägt ein unplausibles Datum. '
-                'Sphygma kann die Uhr nicht stellen, das geht nur am Gerät.',
-            details: clockInstructions,
-          ),
-        if (controller.paired && !controller.autoSyncActive)
-          const NoticeCard(
-            title: 'Kein automatischer Abgleich',
-            message: 'Neue Messungen werden nicht von selbst geholt. '
-                'Unter "Gerät" lässt sich der Abgleich von Hand auslösen.',
-          ),
-      ];
+    if (!controller.paired)
+      const NoticeCard(
+        title: 'Nicht gekoppelt',
+        message:
+            'Ohne Kopplung kann Sphygma keine Messungen holen. '
+            'Unter "Gerät" einrichten.',
+      ),
+    if (controller.clockLooksWrong)
+      const NoticeCard(
+        title: 'Geräteuhr geht falsch',
+        message:
+            'Die neueste Messung trägt ein unplausibles Datum. '
+            'Sphygma kann die Uhr nicht stellen, das geht nur am Gerät.',
+        details: clockInstructions,
+      ),
+    if (controller.paired && !controller.autoSyncActive)
+      const NoticeCard(
+        title: 'Kein automatischer Abgleich',
+        message:
+            'Neue Messungen werden nicht von selbst geholt. '
+            'Unter "Gerät" lässt sich der Abgleich von Hand auslösen.',
+      ),
+  ];
 }
 
 class _EmptyState extends StatelessWidget {

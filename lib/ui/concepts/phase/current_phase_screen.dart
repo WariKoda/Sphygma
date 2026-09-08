@@ -214,13 +214,10 @@ class _Laufende extends StatelessWidget {
             child: TextButton(
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => SphygmaThemeScope(
-                    theme: t,
-                    child: PhaseCompareScreen(
-                      controller: controller,
-                      initialA: d.phase.id,
-                      initialB: laufend.phase.id,
-                    ),
+                  builder: (_) => PhaseCompareScreen(
+                    controller: controller,
+                    initialA: d.phase.id,
+                    initialB: laufend.phase.id,
                   ),
                 ),
               ),

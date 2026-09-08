@@ -23,8 +23,7 @@ class _RecordingHealth extends Health {
   Future<bool?> hasPermissions(
     List<HealthDataType> types, {
     List<HealthDataAccess>? permissions,
-  }) async =>
-      true;
+  }) async => true;
 
   @override
   Future<bool> writeBloodPressure({
@@ -85,25 +84,33 @@ void main() {
     arrhythmia: false,
   );
 
-  test('Blutdruck und Puls werden mit clientRecordId UND Version geschrieben',
-      () async {
-    final health = _RecordingHealth();
-    final sink = HealthConnectSink(health: health);
+  test(
+    'Blutdruck und Puls werden mit clientRecordId UND Version geschrieben',
+    () async {
+      final health = _RecordingHealth();
+      final sink = HealthConnectSink(health: health);
 
-    await sink.writeBloodPressure(write);
+      await sink.writeBloodPressure(write);
 
-    expect(health.writes, hasLength(2));
-    final bp = health.writes[0];
-    final hr = health.writes[1];
-    expect(bp['type'], 'bp');
-    expect(bp['clientRecordId'], 'sphygma-slot1-seq533');
-    expect(bp['clientRecordVersion'], isNotNull,
-        reason: 'ohne Version verwirft das Plugin die clientRecordId');
-    expect(hr['type'], HealthDataType.HEART_RATE.name);
-    expect(hr['clientRecordId'], 'sphygma-slot1-seq533-hr');
-    expect(hr['clientRecordVersion'], isNotNull,
-        reason: 'ohne Version verwirft das Plugin die clientRecordId');
-  });
+      expect(health.writes, hasLength(2));
+      final bp = health.writes[0];
+      final hr = health.writes[1];
+      expect(bp['type'], 'bp');
+      expect(bp['clientRecordId'], 'sphygma-slot1-seq533');
+      expect(
+        bp['clientRecordVersion'],
+        isNotNull,
+        reason: 'ohne Version verwirft das Plugin die clientRecordId',
+      );
+      expect(hr['type'], HealthDataType.HEART_RATE.name);
+      expect(hr['clientRecordId'], 'sphygma-slot1-seq533-hr');
+      expect(
+        hr['clientRecordVersion'],
+        isNotNull,
+        reason: 'ohne Version verwirft das Plugin die clientRecordId',
+      );
+    },
+  );
 
   test('Loeschen nutzt dieselben clientRecordIds wie das Schreiben', () async {
     final health = _RecordingHealth();

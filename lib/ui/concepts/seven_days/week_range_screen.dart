@@ -70,10 +70,11 @@ class _WeekRangeScreenState extends State<WeekRangeScreen> {
               ),
         ]);
 
-        final spanne =
-            weekSpan(wochen[von].beginsAt, wochen[bis].beginsAt);
-        final belegt =
-            gewaehlt.fold<int>(0, (summe, w) => summe + w.filledFields);
+        final spanne = weekSpan(wochen[von].beginsAt, wochen[bis].beginsAt);
+        final belegt = gewaehlt.fold<int>(
+          0,
+          (summe, w) => summe + w.filledFields,
+        );
         final aelteste = wochen[von].average;
         final juengste = wochen[bis].average;
 
@@ -91,18 +92,14 @@ class _WeekRangeScreenState extends State<WeekRangeScreen> {
                 label: 'Erste Woche',
                 value: von,
                 // Die erste Woche kann nicht jünger als die letzte sein.
-                options: [
-                  for (var i = bis; i < wochen.length; i++) i,
-                ],
+                options: [for (var i = bis; i < wochen.length; i++) i],
                 wochen: wochen,
                 onChanged: (i) => setState(() => _vonIndex = i),
               ),
               _Wahl(
                 label: 'Letzte Woche',
                 value: bis,
-                options: [
-                  for (var i = 0; i <= von; i++) i,
-                ],
+                options: [for (var i = 0; i <= von; i++) i],
                 wochen: wochen,
                 onChanged: (i) => setState(() => _bisIndex = i),
               ),
@@ -112,7 +109,11 @@ class _WeekRangeScreenState extends State<WeekRangeScreen> {
                   'In diesem Bereich bleibt nach dem Auslassen der ersten '
                   'Tage keine Messung übrig, aus der ein Wert gebildet '
                   'werden könnte.',
-                  style: TextStyle(fontSize: 13, color: t.onSurface, height: 1.5),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: t.onSurface,
+                    height: 1.5,
+                  ),
                 )
               else ...[
                 Text(
@@ -178,12 +179,9 @@ class _WeekRangeScreenState extends State<WeekRangeScreen> {
                 InkWell(
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                      builder: (_) => SphygmaThemeScope(
-                        theme: t,
-                        child: WeekDetailScreen(
-                          controller: widget.controller,
-                          weekStart: w.beginsAt,
-                        ),
+                      builder: (_) => WeekDetailScreen(
+                        controller: widget.controller,
+                        weekStart: w.beginsAt,
                       ),
                     ),
                   ),
@@ -195,8 +193,7 @@ class _WeekRangeScreenState extends State<WeekRangeScreen> {
                         Expanded(
                           child: Text(
                             formatWeekRange(w.beginsAt),
-                            style:
-                                TextStyle(fontSize: 13, color: t.onSurface),
+                            style: TextStyle(fontSize: 13, color: t.onSurface),
                           ),
                         ),
                         Text(
@@ -276,10 +273,7 @@ class _Wahl extends StatelessWidget {
         children: [
           SizedBox(
             width: 108,
-            child: Text(
-              label,
-              style: TextStyle(fontSize: 12, color: t.muted),
-            ),
+            child: Text(label, style: TextStyle(fontSize: 12, color: t.muted)),
           ),
           Expanded(
             child: DropdownButton<int>(
@@ -331,13 +325,9 @@ class _TrendZeile extends StatelessWidget {
         children: [
           SizedBox(
             width: 108,
-            child:
-                Text(label, style: TextStyle(fontSize: 12, color: t.muted)),
+            child: Text(label, style: TextStyle(fontSize: 12, color: t.muted)),
           ),
-          Text(
-            text,
-            style: TextStyle(fontSize: 14, color: t.onSurface),
-          ),
+          Text(text, style: TextStyle(fontSize: 14, color: t.onSurface)),
           SizedBox(width: t.gapSmall),
           Text(
             'von $von auf $bis',

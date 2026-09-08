@@ -54,7 +54,9 @@ class SurfacePanel extends StatelessWidget {
         borderRadius: BorderRadius.circular(t.radius),
         border: highlighted
             ? Border.all(color: t.onSurface.withValues(alpha: 0.35))
-            : (t.panelBorder == null ? null : Border.all(color: t.panelBorder!)),
+            : (t.panelBorder == null
+                  ? null
+                  : Border.all(color: t.panelBorder!)),
         boxShadow: t.panelShadow,
       ),
       child: inhalt,

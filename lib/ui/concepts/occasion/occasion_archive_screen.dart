@@ -60,11 +60,8 @@ class OccasionArchiveScreen extends StatelessWidget {
                             child: TextButton(
                               onPressed: () => Navigator.of(context).push(
                                 MaterialPageRoute<void>(
-                                  builder: (_) => SphygmaThemeScope(
-                                    theme: t,
-                                    child: OccasionRangeScreen(
-                                      controller: controller,
-                                    ),
+                                  builder: (_) => OccasionRangeScreen(
+                                    controller: controller,
                                   ),
                                 ),
                               ),
@@ -115,12 +112,9 @@ class _AnlassZeile extends StatelessWidget {
     return InkWell(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => SphygmaThemeScope(
-            theme: t,
-            child: OccasionDetailScreen(
-              controller: controller,
-              sequence: o.sequence,
-            ),
+          builder: (_) => OccasionDetailScreen(
+            controller: controller,
+            sequence: o.sequence,
           ),
         ),
       ),
