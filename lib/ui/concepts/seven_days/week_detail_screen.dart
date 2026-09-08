@@ -18,7 +18,7 @@ import '../../theme/sphygma_theme.dart';
 import '../../widgets/classification_scale.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/surface_panel.dart';
-import 'week_grid.dart';
+import '../../widgets/week_grid.dart';
 
 class WeekDetailScreen extends StatelessWidget {
   const WeekDetailScreen({

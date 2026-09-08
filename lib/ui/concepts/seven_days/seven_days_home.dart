@@ -17,7 +17,6 @@ import '../../../app/feature_flags.dart';
 import '../../../stats/measurement_week.dart';
 import '../../../stats/esc_classification.dart';
 import '../../../stats/target_range.dart';
-import '../../../stats/time_of_day_band.dart';
 import '../../device_screen.dart';
 import '../../format.dart';
 import '../../measurement_sheet.dart';
@@ -28,7 +27,8 @@ import '../../widgets/notice_card.dart';
 import '../../widgets/surface_panel.dart';
 import 'earlier_weeks_screen.dart';
 import 'week_detail_screen.dart';
-import 'week_grid.dart';
+import '../../widgets/this_week_panel.dart';
+import '../../widgets/week_grid.dart';
 
 class SevenDaysHome extends StatefulWidget {
   const SevenDaysHome({
@@ -325,7 +325,7 @@ class _LaufendeWoche extends StatelessWidget {
           },
         ),
         Text(
-          _heuteOffen(week, jetzt),
+          ThisWeekPanel.openToday(week, jetzt),
           style: TextStyle(fontSize: 12, color: t.muted, height: 1.5),
         ),
         SizedBox(height: t.gapSmall),
@@ -347,24 +347,6 @@ class _LaufendeWoche extends StatelessWidget {
       ],
     );
   }
-}
-
-/// Der nächste Schritt, sachlich benannt — der Entwurf belohnt regelmäßiges
-/// Messen und macht das Gegenteil sichtbar, soll dabei aber nicht mahnen.
-String _heuteOffen(MeasurementWeek week, DateTime jetzt) {
-  final morgens = week
-      .fieldAt(weekday: jetzt.weekday, band: TimeBand.morgens)
-      .isFilled;
-  final abends = week
-      .fieldAt(weekday: jetzt.weekday, band: TimeBand.abends)
-      .isFilled;
-
-  return switch ((morgens, abends)) {
-    (true, true) => 'Heute ist morgens und abends gemessen.',
-    (true, false) => 'Heute fehlt noch die Abendmessung.',
-    (false, true) => 'Heute fehlt noch die Morgenmessung.',
-    (false, false) => 'Heute fehlen noch beide Messungen.',
-  };
 }
 
 class _ZuletztZeile extends StatelessWidget {

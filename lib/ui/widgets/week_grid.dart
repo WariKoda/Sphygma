@@ -1,15 +1,18 @@
 // Das Wochenraster: sieben Spalten, zwei Zeilen, vierzehn Felder.
 //
-// Es ist die Hauptsache des Konzepts „Sieben Tage". Man sieht in einem Blick,
+// Es ist die Hauptsache des Konzepts „Sieben Tage" — und liegt trotzdem hier
+// bei den allgemeinen Bausteinen: „Messung und Filter" zeigt es auf „Heute",
+// um die Frage zu beantworten, die der Verlauf nicht stellt — was fehlt noch.
+// Zwei Kopien liefen auseinander, sobald eine angefasst wird. Man sieht in einem Blick,
 // was gemessen wurde, was fehlt und wo die Werte liegen. Leere Felder bleiben
 // stehen — „hier wurde nicht gemessen" ist die halbe Aussage der Woche.
 import 'package:flutter/material.dart';
 
-import '../../../stats/measurement_week.dart';
-import '../../../stats/target_range.dart';
-import '../../../stats/time_of_day_band.dart';
-import '../../theme/sphygma_theme.dart';
-import '../../theme/zone_color.dart';
+import '../../stats/measurement_week.dart';
+import '../../stats/target_range.dart';
+import '../../stats/time_of_day_band.dart';
+import '../theme/sphygma_theme.dart';
+import '../theme/zone_color.dart';
 
 const List<String> _wochentage = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 

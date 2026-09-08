@@ -16,9 +16,17 @@ import '../today_screen.dart';
 import 'day_profile/day_profile_screen.dart';
 
 class TabbedHome extends StatefulWidget {
-  const TabbedHome({super.key, required this.controller});
+  const TabbedHome({
+    super.key,
+    required this.controller,
+    this.clock = DateTime.now,
+  });
 
   final AppController controller;
+
+  /// Wird an „Heute" weitergereicht: Dort steht die laufende Woche, und die
+  /// wechselt am Montag.
+  final DateTime Function() clock;
 
   @override
   State<TabbedHome> createState() => _TabbedHomeState();
@@ -61,7 +69,10 @@ class _TabbedHomeState extends State<TabbedHome> {
           (AppConcept.tagesprofil, 0) => DayProfileScreen(
             controller: widget.controller,
           ),
-          (_, 0) => TodayScreen(controller: widget.controller),
+          (_, 0) => TodayScreen(
+            controller: widget.controller,
+            clock: widget.clock,
+          ),
           (_, 1) => HistoryScreen(controller: widget.controller),
           _ => DeviceScreen(controller: widget.controller),
         },

@@ -16,6 +16,7 @@ import 'package:sphygma/sync/health_sink.dart';
 import 'package:sphygma/sync/sync_service.dart';
 import 'package:sphygma/ui/theme/sphygma_theme.dart';
 import 'package:sphygma/ui/theme/variants.dart';
+import 'package:sphygma/stats/measurement_week.dart';
 import 'package:sphygma/ui/today_screen.dart';
 
 class _NoopSink implements HealthSink {
@@ -145,5 +146,43 @@ void main() {
 
     // Die aelteste (120) darf nicht mehr dabei sein.
     expect(find.textContaining('/87').evaluate().length, lessThanOrEqualTo(6));
+  });
+
+  testWidgets('zeigt die laufende Woche mit dem, was heute noch fehlt', (
+    tester,
+  ) async {
+    // Das Wochenraster beantwortet die Frage, die der Verlauf nicht stellt:
+    // nicht wie es war, sondern was noch aussteht. Deshalb steht es hier und
+    // nicht bei den Kurven.
+    final montag = previousMonday(mondayOf(DateTime.now()));
+    DateTime tag(int versatz, int stunde) =>
+        DateTime(montag.year, montag.month, montag.day + versatz, stunde);
+    final jetzt = tag(4, 18);
+
+    controller = await boot();
+    await repository.importAll([
+      _rec(1, tag(0, 7), systolic: 128),
+      _rec(2, tag(0, 20), systolic: 124),
+      _rec(3, tag(4, 7), systolic: 126),
+    ]);
+    await controller.refreshForTest();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => SphygmaThemeScope(
+          theme: themeFor(ThemeVariant.instrument),
+          child: child!,
+        ),
+        home: Scaffold(
+          body: TodayScreen(controller: controller, clock: () => jetzt),
+        ),
+      ),
+    );
+
+    expect(find.text('DIESE WOCHE'), findsOneWidget);
+    expect(find.text('Mo'), findsOneWidget);
+    expect(find.text('So'), findsOneWidget);
+    // Freitag morgens gemessen, abends noch nicht.
+    expect(find.text('Heute fehlt noch die Abendmessung.'), findsOneWidget);
   });
 }
