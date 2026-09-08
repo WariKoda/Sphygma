@@ -166,25 +166,65 @@ td.diag::after{content:"";position:absolute;top:-6px;right:-6px;width:9px;
 .c-band .chip{display:none}
 .c-band .kopf{color:var(--text);opacity:.62;font-weight:600}
 
+/* — Die Einordnungsskala. Sie gehört in JEDE Charakteristik: Der Chip nennt
+     die Stufe, die Skala sagt, wo in ihr der Wert liegt. Nur die Form
+     unterscheidet sich. — */
+.probe .skala{position:relative;margin-top:8px;height:11px}
+.probe .skala .segmente{display:flex;position:absolute;left:0;right:0;top:4px;
+  height:3px;overflow:hidden;border-radius:calc(var(--radius)/4)}
+.probe .skala .segmente i{flex:1;display:block}
+.probe .skala .zeiger{position:absolute;top:0;left:58.33%;width:2px;height:11px;
+  margin-left:-1px;background:var(--akzent)}
+
+.c-instrument .skala{height:13px;margin-top:9px}
+.c-instrument .skala .segmente{height:5px;top:4px;border-radius:0}
+.c-instrument .skala .zeiger{height:13px;background:var(--text)}
+
+.c-tagebuch .skala .segmente{height:4px;top:4px;border-radius:99px}
+.c-tagebuch .skala .zeiger{width:7px;height:7px;top:2px;margin-left:-3.5px;
+  border-radius:50%;background:var(--akzent);
+  box-shadow:0 0 0 2px var(--flaeche)}
+
+.c-material .skala .segmente{gap:2px;overflow:visible;border-radius:0}
+.c-material .skala .segmente i{border-radius:2px}
+.c-material .skala .zeiger{height:11px;width:2px;border-radius:1px}
+
+.c-luft .skala{margin-top:11px}
+.c-luft .skala .segmente{height:2px;top:5px;opacity:.85}
+.c-luft .skala .zeiger{width:5px;height:5px;top:3.5px;margin-left:-2.5px;
+  border-radius:50%}
+
+.c-raster .skala{height:14px;margin-top:9px}
+.c-raster .skala .segmente{height:6px;top:4px;border-radius:0;gap:1px}
+.c-raster .skala .zeiger{height:14px;width:1px;background:var(--text)}
+.c-raster .skala .marke{position:absolute;top:0;left:58.33%;margin-left:-3px;
+  width:0;height:0;border-left:3px solid transparent;
+  border-right:3px solid transparent;border-top:4px solid var(--text)}
+
+.c-band .kopfband .skala{margin-top:9px;height:9px}
+.c-band .kopfband .skala .segmente{top:3px;height:3px;border-radius:0;
+  opacity:.55;mix-blend-mode:multiply}
+.c-band .kopfband .skala .zeiger{height:9px;background:var(--text);width:2px}
+
 /* — Paletten — */
 .p-papier{--grund:#faf9f7;--flaeche:#fff;--text:#1b1b1a;--muted-c:#6f6d68;
-  --linie:#e4e1db;--akzent:#1b1b1a;--kat:#b05f42;--kat-flaeche:#eddcd3;
-  --kante:#e4e1db}
+  --linie:#e4e1db;--akzent:#1b1b1a;--kat:#c07d5a;--kat-flaeche:#efdcd2;
+  --kante:#e4e1db;--sk0:#7ea77e;--sk1:#7ea77e;--sk2:#c9b45e;--sk3:#c07d5a;--sk4:#b05f42;--sk5:#a84c3a}
 .p-himmel{--grund:#f2f5fb;--flaeche:#fff;--text:#182034;--muted-c:#6b7590;
-  --linie:#e2e8f3;--akzent:#4f7fd8;--kat:#d9553c;--kat-flaeche:#f3d9d3;
-  --kante:#e2e8f3}
+  --linie:#e2e8f3;--akzent:#4f7fd8;--kat:#e07a3b;--kat-flaeche:#f8e2d1;
+  --kante:#e2e8f3;--sk0:#3fa35f;--sk1:#3fa35f;--sk2:#e0a93b;--sk3:#e07a3b;--sk4:#d9553c;--sk5:#c33a2e}
 .p-flieder{--grund:#fef7ff;--flaeche:#fff;--flaeche2:#e8def8;--text:#1d1b20;
-  --muted-c:#49454f;--linie:#e7e0ec;--akzent:#6750a4;--kat:#d9553c;
-  --kat-flaeche:#f2dbd6;--kante:#e7e0ec}
+  --muted-c:#49454f;--linie:#e7e0ec;--akzent:#6750a4;--kat:#e07a3b;
+  --kat-flaeche:#f8e0d2;--kante:#e7e0ec;--sk0:#3fa35f;--sk1:#3fa35f;--sk2:#e0a93b;--sk3:#e07a3b;--sk4:#d9553c;--sk5:#c33a2e}
 .p-nacht{--grund:#14181f;--flaeche:rgba(255,255,255,.043);--text:#e8ecf2;
   --muted-c:#94a0b0;--linie:rgba(255,255,255,.071);--akzent:#6c5ce7;
-  --kat:#c9705e;--kat-flaeche:#3a2a26;--kante:rgba(255,255,255,.071)}
+  --kat:#d98c7a;--kat-flaeche:#3d2c27;--kante:rgba(255,255,255,.071);--sk0:#8fb89a;--sk1:#8fb89a;--sk2:#e2c08a;--sk3:#d98c7a;--sk4:#c9705e;--sk5:#b85b4c}
 .p-petrol{--grund:#f5f6f4;--flaeche:#fff;--text:#171a1c;--muted-c:#6c7377;
-  --linie:#dee0dc;--akzent:#087f78;--kat:#b05f42;--kat-flaeche:#ecd9d1;
-  --kante:#dee0dc}
+  --linie:#dee0dc;--akzent:#087f78;--kat:#c07d5a;--kat-flaeche:#eeddd3;
+  --kante:#dee0dc;--sk0:#7ea77e;--sk1:#7ea77e;--sk2:#c9b45e;--sk3:#c07d5a;--sk4:#b05f42;--sk5:#a84c3a}
 .p-salbei{--grund:#eceeeb;--flaeche:#fff;--text:#16211f;--muted-c:#6b7671;
-  --linie:#e3e6e3;--akzent:#0e5c4c;--kat:#c08a5e;--kat-flaeche:#e8c9a8;
-  --kante:#e3e6e3}
+  --linie:#e3e6e3;--akzent:#0e5c4c;--kat:#f3e4cb;--kat-flaeche:#f3e4cb;
+  --kante:#e3e6e3;--sk0:#d9e5e0;--sk1:#d9e5e0;--sk2:#efe1c9;--sk3:#f3e4cb;--sk4:#e8c9a8;--sk5:#dcb08a}
 
 /* — Schriften — */
 .s-system{--schrift:system-ui,-apple-system,"Segoe UI",sans-serif}
@@ -540,8 +580,19 @@ const PALETTEN = ["p-papier","p-himmel","p-flieder","p-nacht","p-petrol","p-salb
 const SCHRIFTEN = ["s-system","s-grotesk","s-serif","s-technisch"];
 
 // Eine echte Messung aus dem Beispieldatensatz.
-const M = {sys:144, dia:92, puls:89, zeit:"07:13", kat:"Hypertonie Grad 1"};
+const M = {sys:144, dia:92, puls:89, zeit:"07:13", kat:"Bluthochdruck Grad 1"};
 const ZEILEN = [["140/91","07:15"],["129/86","gestern"]];
+
+// Die Skala: sechs Stufen, Zeiger in der Mitte der getroffenen — genau wie
+// ClassificationScale es rechnet, (index + 0.5) / 6. Für „Bluthochdruck
+// Grad 1" ist das Feld 3 von 6, also 58,33 %.
+function skala(mitMarke){
+  const seg = [0,1,2,3,4,5].map(i =>
+    `<i style="background:var(--sk${i})"></i>`).join("");
+  return `<div class="skala"><div class="segmente">${seg}</div>` +
+    (mitMarke ? `<div class="marke"></div>` : ``) +
+    `<div class="zeiger"></div></div>`;
+}
 
 function inhalt(charKlasse){
   const liste = ZEILEN.map(z =>
@@ -554,6 +605,7 @@ function inhalt(charKlasse){
         <div><b>${M.dia}</b><span>DIA</span></div>
       </div>
       <div class="chip">${M.kat}</div>
+      ${skala(true)}
       <div class="spaltenkopf"><span>WERT</span><span>ZEIT</span></div>
       <div class="liste">${liste}</div></div>`;
   }
@@ -564,6 +616,7 @@ function inhalt(charKlasse){
         <div class="kopf">${M.kat}</div>
         <div class="zahl">${M.sys}<span class="dia">/${M.dia}</span></div>
         <div class="puls">Puls ${M.puls} · Bewegung</div>
+        ${skala(false)}
       </div>
       <div class="rest"><div class="liste">${liste}</div></div></div>`;
   }
@@ -582,6 +635,7 @@ function inhalt(charKlasse){
       <div class="puls">Puls ${M.puls} · Bewegung</div>
       ${kennzahlen}
       <div class="chip">${M.kat}</div>
+      ${skala(false)}
       ${fab}
       <div class="liste">${liste}</div>
     </div></div>`;

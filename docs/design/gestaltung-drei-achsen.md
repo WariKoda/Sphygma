@@ -91,9 +91,9 @@ Die Regel dahinter, und sie trägt den ganzen Entwurf:
 > **Die Charakteristik entscheidet, ob und wie stark. Die Palette entscheidet,
 > welcher Ton. Die Schrift entscheidet, in welcher Familie.**
 
-## Die vier Kopplungen, die aufzulösen sind
+## Vier Kopplungen und eine Regel
 
-Ohne diese vier bricht die Trennung leise — die Kombination baut sich, sieht
+Ohne die ersten vier bricht die Trennung leise — die Kombination baut sich, sieht
 aber falsch aus. Alle vier sind an den heutigen Werten nachgemessen.
 
 ### 1. Aura definiert seine Flächen relativ, alle anderen absolut
@@ -144,7 +144,36 @@ darauf muss Text lesbar bleiben. Ein Chip von 60 Pixeln verträgt einen Ton, der
 Die Charakteristik greift die Rolle, die ihre Form braucht. Damit ist Pegel
 nicht mehr an seine eigene Palette gefesselt.
 
-### 4. Nicht jede Schrift trägt jedes Gewicht
+### 4. Die Einordnungsskala gehört in jede Charakteristik
+
+Kein Bruch der Trennung, sondern eine Regel darüber — und die wichtigste, weil
+sie sich sonst still verliert.
+
+`ClassificationScale` zeigt sechs Stufen als farbige Segmente mit einem Zeiger
+in der Akzentfarbe. Sie steht heute an sieben Stellen im Code, in allen drei
+Konzepten, und `f4_einordnung_test.dart` prüft sie je Konzept in beiden
+Flag-Zuständen. **Sie ist keine Zierde:** Der Chip nennt die Stufe
+(„Bluthochdruck Grad 1"), die Skala sagt, *wo in dieser Stufe* der Wert liegt —
+am unteren Rand oder kurz vor der nächsten. Diese Aussage macht kein Chip.
+
+Die Entwurfstafel gibt jeder Handschrift eine eigene Darstellung: Band bei
+Messinstrument, Pille bei Tagebuch, umrandeter Chip bei Material 3, Chip mit
+Punkt bei Aura. Pegel sagt sogar ausdrücklich, die Einordnung färbe die
+Kopffläche selbst — *„nicht einen Chip, eine Pille oder ein Band darunter"*.
+
+**Daraus folgt keine Ausnahme, sondern eine Formulierung:** Die *Aussage* — auf
+welcher Stufe steht der Wert und wo in ihr — ist Pflicht in jeder
+Charakteristik. Die *Form* darf sich unterscheiden. Bei Band sitzt die Skala im
+Kopffeld selbst statt darunter; bei Raster bekommt sie eine Marke wie eine
+Achse; bei Messinstrument ist sie monochrom bis auf die Segmente, weil das
+Einordnungsband dort die einzige Farbe ist.
+
+Was **nicht** zulässig ist: sie in einer Charakteristik wegzulassen, weil sie
+dort schlecht passt. Das wäre dieselbe Art Verlust, die schon einmal passiert
+ist — am 06.09. fehlte F4 in vier von fünf Konzepten, ohne dass ein Test rot
+wurde.
+
+### 5. Nicht jede Schrift trägt jedes Gewicht
 
 Diese Kopplung entsteht **erst durch die dritte Achse** — bei zwei Achsen gab
 es sie nicht.
@@ -272,6 +301,9 @@ Gestaltungen; bei über hundert Kombinationen wäre das nicht durchzuhalten.
   * Band mit **jeder** Palette: Text auf der eingefärbten Kopffläche lesbar
   * Eine Charakteristik mit Rolle „sehr leicht" auf einer Schrift ohne
     ExtraLight: Die Abbildung muss greifen, nicht der stille Rückfall
+* **Je Charakteristik: trägt sie die Einordnungsskala?** Der Test aus
+  `f4_einordnung_test.dart` wandert mit — heute prüft er je Konzept, künftig
+  zusätzlich je Charakteristik.
 
 Der bestehende Radius-Test (`alle Flächen tragen den Radius der Gestaltung`)
 wandert zur Charakteristik, wo er hingehört — er prüft Form, nicht Farbe.
