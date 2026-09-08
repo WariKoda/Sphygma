@@ -11,13 +11,8 @@ import '../app/app_controller.dart';
 import '../app/concept.dart';
 import 'theme/sphygma_theme.dart';
 import 'widgets/surface_panel.dart';
-import 'theme/surface_style.dart';
 import 'theme/variants.dart';
 import 'widgets/section_header.dart';
-
-/// Marke für „keine eigene Wahl" — die Vorgabe der Gestaltung gilt. Ein
-/// eigener Wert statt null, weil RadioGroup einen braucht.
-const String _vorgabe = '__vorgabe__';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key, required this.controller});
@@ -65,58 +60,6 @@ class SettingsScreen extends StatelessWidget {
                           ),
                           subtitle: Text(
                             '${k.unit} · ${k.description}',
-                            style: TextStyle(fontSize: 11, color: t.muted),
-                          ),
-                          contentPadding: EdgeInsets.zero,
-                          dense: true,
-                        ),
-                    ],
-                  ),
-                ),
-                const SectionHeader(title: 'Flächen'),
-                _Erklaerung(
-                  text:
-                      'Worauf der Inhalt steht. Jede Gestaltung bringt eine '
-                      'Vorgabe mit; wer eine Form wählt, behält sie über einen '
-                      'Gestaltungswechsel hinweg.',
-                ),
-                RadioGroup<String>(
-                  groupValue: controller.surfaceStyle?.name ?? _vorgabe,
-                  onChanged: (chosen) {
-                    if (chosen == null) return;
-                    controller.setSurfaceStyle(
-                      chosen == _vorgabe
-                          ? null
-                          : allSurfaceStyles.firstWhere(
-                              (f) => f.name == chosen,
-                            ),
-                    );
-                  },
-                  child: Column(
-                    children: [
-                      RadioListTile<String>(
-                        value: _vorgabe,
-                        title: Text(
-                          'Wie die Gestaltung es vorsieht',
-                          style: TextStyle(fontSize: 14, color: t.onSurface),
-                        ),
-                        subtitle: Text(
-                          'Zurzeit: '
-                          '${defaultSurfaceFor(controller.themeVariant).label}',
-                          style: TextStyle(fontSize: 11, color: t.muted),
-                        ),
-                        contentPadding: EdgeInsets.zero,
-                        dense: true,
-                      ),
-                      for (final f in allSurfaceStyles)
-                        RadioListTile<String>(
-                          value: f.name,
-                          title: Text(
-                            f.label,
-                            style: TextStyle(fontSize: 14, color: t.onSurface),
-                          ),
-                          subtitle: Text(
-                            f.description,
                             style: TextStyle(fontSize: 11, color: t.muted),
                           ),
                           contentPadding: EdgeInsets.zero,

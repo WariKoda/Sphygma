@@ -3,7 +3,6 @@
 import 'package:flutter/widgets.dart';
 
 import '../../stats/esc_classification.dart';
-import 'surface_style.dart';
 import 'sphygma_theme.dart';
 
 enum ThemeVariant { instrument, diary, material, aura, pulseGrid, pegel }
@@ -57,7 +56,7 @@ const Map<EscCategory, Color> _vividScale = {
   EscCategory.grade3: Color(0xFFC33A2E),
 };
 
-SphygmaTheme themeFor(ThemeVariant variant, {SurfaceStyle? surface}) => switch (variant) {
+SphygmaTheme themeFor(ThemeVariant variant) => switch (variant) {
       ThemeVariant.instrument => SphygmaTheme(
           name: 'Messinstrument',
           surface: Color(0xFFFAF9F7),
@@ -72,9 +71,7 @@ SphygmaTheme themeFor(ThemeVariant variant, {SurfaceStyle? surface}) => switch (
           headlineSize: 58,
           // Entwurf: 58px/300
           headlineWeight: FontWeight.w300,
-          useRoundedCards: false,
           showDividers: true,
-          surfaceStyle: surface ?? defaultSurfaceFor(variant),
           panelBase: Color(0xFFFFFFFF),
           panelRaised: Color(0xFFFAF9F7),
           panelBorder: Color(0xFFE4E1DB),
@@ -94,9 +91,7 @@ SphygmaTheme themeFor(ThemeVariant variant, {SurfaceStyle? surface}) => switch (
           headlineSize: 48,
           // Entwurf: 48px/700 auf der Verlaufskarte
           headlineWeight: FontWeight.w700,
-          useRoundedCards: true,
           showDividers: true,
-          surfaceStyle: surface ?? defaultSurfaceFor(variant),
           panelBase: Color(0xFFFFFFFF),
           // Der blaugraue Grund der Handschrift: Als Band braucht die zweite
           // Tonstufe einen sichtbaren Unterschied, sonst verschmelzen zwei
@@ -119,9 +114,7 @@ SphygmaTheme themeFor(ThemeVariant variant, {SurfaceStyle? surface}) => switch (
           headlineSize: 42,
           // Entwurf: 42px/400
           headlineWeight: FontWeight.w400,
-          useRoundedCards: true,
           showDividers: true,
-          surfaceStyle: surface ?? defaultSurfaceFor(variant),
           panelBase: Color(0xFFE8DEF8),
           panelRaised: Color(0xFFFEF7FF),
           panelBorder: null,
@@ -148,10 +141,8 @@ SphygmaTheme themeFor(ThemeVariant variant, {SurfaceStyle? surface}) => switch (
           headlineSize: 58,
           // Entwurf: 58px/200, ExtraLight
           headlineWeight: FontWeight.w200,
-          useRoundedCards: true,
           // „Zeilen ohne Trennstrich; Luft gliedert, nicht der Strich."
           showDividers: false,
-          surfaceStyle: surface ?? defaultSurfaceFor(variant),
           panelBase: Color(0x0BFFFFFF),
           panelRaised: Color(0x06FFFFFF),
           panelBorder: Color(0x12FFFFFF),
@@ -172,9 +163,7 @@ SphygmaTheme themeFor(ThemeVariant variant, {SurfaceStyle? surface}) => switch (
           headlineSize: 52,
           // Datentabelle — normal, nicht dünn
           headlineWeight: FontWeight.w400,
-          useRoundedCards: false,
           showDividers: true,
-          surfaceStyle: surface ?? defaultSurfaceFor(variant),
           panelBase: Color(0xFFFFFFFF),
           panelRaised: Color(0xFFF5F6F4),
           panelBorder: Color(0xFFDEE0DC),
@@ -195,10 +184,8 @@ SphygmaTheme themeFor(ThemeVariant variant, {SurfaceStyle? surface}) => switch (
           headlineSize: 50,
           // Bänder tragen kräftigere Ziffern
           headlineWeight: FontWeight.w500,
-          useRoundedCards: false,
           // „Ein Abschnitt endet, wo die Fläche ihren Ton wechselt."
           showDividers: false,
-          surfaceStyle: surface ?? defaultSurfaceFor(variant),
           panelBase: Color(0xFFFFFFFF),
           panelRaised: Color(0xFFECEEEB),
           panelBorder: null,

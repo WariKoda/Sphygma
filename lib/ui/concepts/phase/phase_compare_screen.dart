@@ -96,12 +96,8 @@ class _PhaseCompareScreenState extends State<PhaseCompareScreen> {
                   style: TextStyle(fontSize: 11, color: t.muted, height: 1.5),
                 ),
                 SizedBox(height: t.gapLarge),
-                Container(
-                  padding: EdgeInsets.all(t.gapSmall),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: t.line),
-                    borderRadius: BorderRadius.circular(t.radius),
-                  ),
+                SurfacePanel(
+                  highlighted: true,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

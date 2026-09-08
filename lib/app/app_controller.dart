@@ -19,7 +19,6 @@ import '../stats/phase_grouping.dart';
 import '../stats/period.dart';
 import '../sync/export_service.dart';
 import '../sync/sync_service.dart';
-import '../ui/theme/surface_style.dart';
 import '../ui/theme/variants.dart';
 
 class AppController extends ChangeNotifier {
@@ -79,9 +78,6 @@ class AppController extends ChangeNotifier {
   /// kombinierbar — jedes Konzept trägt denselben Funktionsumfang.
   AppConcept concept = AppConcept.klassisch;
 
-  /// Die dritte Achse: die Form der Flächen. Null heißt „nicht gewählt" —
-  /// dann gilt die Vorgabe der gewählten Handschrift.
-  SurfaceStyle? surfaceStyle;
 
   /// Die Messanlässe des gewählten Speicherplatzes: Rohmessungen, die kurz
   /// nacheinander entstanden sind, gehören zu einem Messen. Abgeleitet, nicht
@@ -115,11 +111,6 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setSurfaceStyle(SurfaceStyle? value) async {
-    surfaceStyle = value;
-    await settings.setSurfaceStyle(value);
-    notifyListeners();
-  }
 
   Future<void> setConcept(AppConcept value) async {
     await settings.setConcept(value);
@@ -146,7 +137,6 @@ class AppController extends ChangeNotifier {
     paired = await keyStore.load() != null;
     themeVariant = await settings.themeVariant();
     concept = await settings.concept();
-    surfaceStyle = await settings.surfaceStyle();
     await _refresh();
     _startWatching();
   }

@@ -3,7 +3,6 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 
 import '../app/concept.dart';
-import '../ui/theme/surface_style.dart';
 import '../ui/theme/variants.dart';
 import 'app_database.dart';
 
@@ -87,32 +86,6 @@ class SettingsRepository {
   Future<void> setConcept(AppConcept concept) =>
       setRawSetting(_conceptKey, concept.name);
 
-  static const String _surfaceStyleKey = 'surface_style';
-
-  /// Die dritte Achse: die Form der Flächen. Null heißt „nicht gewählt" —
-  /// dann gilt die Vorgabe der Handschrift, und das ist eine Aussage, kein
-  /// fehlender Wert. Wer sie einmal gesetzt hat, behält sie über einen
-  /// Gestaltungswechsel hinweg.
-  Future<SurfaceStyle?> surfaceStyle() async {
-    final row = await (_db.select(_db.appSettings)
-          ..where((s) => s.key.equals(_surfaceStyleKey)))
-        .getSingleOrNull();
-    if (row == null) return null;
-    for (final f in allSurfaceStyles) {
-      if (f.name == row.value) return f;
-    }
-    debugPrint(
-      '[Sphygma] Unbekannte Flächenform "${row.value}" gespeichert, '
-      'nutze die Vorgabe der Gestaltung.',
-    );
-    return null;
-  }
-
-  Future<void> setSurfaceStyle(SurfaceStyle? style) => style == null
-      ? (_db.delete(_db.appSettings)
-            ..where((s) => s.key.equals(_surfaceStyleKey)))
-          .go()
-      : setRawSetting(_surfaceStyleKey, style.name);
 
   /// Schreibt einen Einstellungswert unmittelbar. Oeffentlich, weil Tests
   /// ungueltige Zustaende herstellen koennen muessen.

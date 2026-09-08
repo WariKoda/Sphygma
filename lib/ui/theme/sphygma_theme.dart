@@ -4,7 +4,6 @@
 import 'package:flutter/widgets.dart';
 
 import '../../stats/esc_classification.dart';
-import 'surface_style.dart';
 
 @immutable
 class SphygmaTheme {
@@ -21,9 +20,7 @@ class SphygmaTheme {
     required this.gapLarge,
     required this.headlineSize,
     required this.headlineWeight,
-    required this.useRoundedCards,
     required this.showDividers,
-    required this.surfaceStyle,
     required this.panelBase,
     required this.panelRaised,
     required this.panelBorder,
@@ -60,7 +57,6 @@ class SphygmaTheme {
   /// Bildschirmen fest `FontWeight.w300`: Die Handschriften unterschieden
   /// sich damit in der Größe der Zahl, nie in ihrem Gewicht.
   final FontWeight headlineWeight;
-  final bool useRoundedCards;
 
   /// Ob Listenzeilen durch eine Haarlinie getrennt werden.
   ///
@@ -70,12 +66,6 @@ class SphygmaTheme {
   /// die beiden Handschriften nur andere Farben auf derselben Zeichnung.
   final bool showDividers;
 
-  /// Die dritte Achse: Karte, Band oder gar keine Fläche.
-  ///
-  /// Sie steht hier und nicht in [ThemeVariant], weil sie frei wählbar ist —
-  /// jede Handschrift lässt sich in jeder Form zeigen. Die Vorgabe liefert
-  /// [defaultSurfaceFor].
-  final SurfaceStyle surfaceStyle;
 
   /// Die Grundfläche, auf der Inhalt steht.
   final Color panelBase;
@@ -91,14 +81,24 @@ class SphygmaTheme {
   /// Schatten einer Fläche, oder null. Nur „Tagebuch" wirft einen.
   final List<BoxShadow>? panelShadow;
 
-  /// Das Randpolster einer Liste.
+  /// Das Randpolster einer Liste — außen um die Flächen herum.
+  EdgeInsets get listPadding => EdgeInsets.all(gapLarge);
+
+  /// Der Radius kleiner Elemente: Rasterzellen, Chips, Marken.
   ///
-  /// Bänder laufen bis an den Rand — dort polstert die Fläche selbst, sonst
-  /// entstünde ein Streifen Grund neben dem Band, und die Zäsur durch den
-  /// Tonwechsel ginge verloren.
-  EdgeInsets get listPadding => surfaceStyle == SurfaceStyle.band
-      ? EdgeInsets.symmetric(vertical: gapSmall)
-      : EdgeInsets.all(gapLarge);
+  /// Eigenes Maß statt `radius / 2` im Bildschirm: Eine Zelle von 34 Pixeln
+  /// verträgt nicht denselben Radius wie eine Karte, und die Rechnung dafür
+  /// gehört in die Gestaltung. Sonst rechnet jeder Bildschirm anders, und
+  /// eine Handschrift sieht an einer Stelle richtig aus und an der nächsten
+  /// nicht.
+  double get chipRadius => radius / 2;
+
+  /// Das Polster **innerhalb** einer Fläche.
+  ///
+  /// Eigenes Maß statt einer Rechnung an jeder Fläche: Sonst polstert eine
+  /// Karte anders als die daneben, sobald jemand die Rechnung an einer Stelle
+  /// anpasst.
+  double get panelPadding => gapLarge * 0.7;
 
   /// Die Fläche einer Tonstufe. Zwei Stufen genügen; ein Index kann deshalb
   /// nicht danebengreifen.

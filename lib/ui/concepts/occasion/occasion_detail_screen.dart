@@ -80,12 +80,8 @@ class OccasionDetailScreen extends StatelessWidget {
           QualityChips(occasion: o),
           if (o.measurements.length > o.usedMeasurements.length) ...[
             SizedBox(height: t.gapLarge),
-            Container(
-              padding: EdgeInsets.all(t.gapSmall),
-              decoration: BoxDecoration(
-                border: Border.all(color: t.line),
-                borderRadius: BorderRadius.circular(t.radius),
-              ),
+            SurfacePanel(
+              highlighted: true,
               child: Text(
                 'Güte eingeschränkt: Das Gerät erkannte bei mindestens einer '
                 'Messung Bewegung. Das Ergebnis nutzt deshalb nur die '

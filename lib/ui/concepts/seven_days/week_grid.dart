@@ -87,7 +87,7 @@ class _Zelle extends StatelessWidget {
           margin: const EdgeInsets.all(1),
           decoration: BoxDecoration(
             border: Border.all(color: t.line),
-            borderRadius: BorderRadius.circular(t.radius / 2),
+            borderRadius: BorderRadius.circular(t.chipRadius),
           ),
         ),
       );
@@ -112,7 +112,7 @@ class _Zelle extends StatelessWidget {
             // Bildschirm Farbe sieht, sieht einen Messwert.
             color: grund.withValues(alpha: 0.22),
             border: Border.all(color: grund),
-            borderRadius: BorderRadius.circular(t.radius / 2),
+            borderRadius: BorderRadius.circular(t.chipRadius),
           ),
           child: Text(
             '${mittel.systolic}',

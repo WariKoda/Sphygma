@@ -44,7 +44,6 @@ import 'package:sphygma/sync/health_sink.dart';
 import 'package:sphygma/sync/sync_service.dart';
 import 'package:sphygma/ui/concepts/concept_home.dart';
 import 'package:sphygma/ui/theme/sphygma_theme.dart';
-import 'package:sphygma/ui/theme/surface_style.dart';
 import 'package:sphygma/ui/theme/variants.dart';
 import 'package:sphygma/ui/widgets/surface_panel.dart';
 
@@ -254,15 +253,11 @@ void main() {
     await controller.refreshForTest();
   }
 
-  Future<void> pump(
-    WidgetTester tester,
-    AppConcept k, {
-    SurfaceStyle? form,
-  }) async {
+  Future<void> pump(WidgetTester tester, AppConcept k) async {
     await controller.setConcept(k);
     await tester.pumpWidget(MaterialApp(
       home: SphygmaThemeScope(
-        theme: themeFor(ThemeVariant.instrument, surface: form),
+        theme: themeFor(ThemeVariant.instrument),
         child: conceptHome(
           concept: k,
           controller: controller,
@@ -356,25 +351,65 @@ void main() {
       });
 
 
-      testWidgets('die Flächenform wirkt auch in diesem Konzept',
-          (tester) async {
+      testWidgets('der Einstieg steht auf Flächen', (tester) async {
         await boot();
+        await pump(tester, k);
 
-        // Erst ohne Flächen: Der Einstieg baut Panels, sie zeichnen aber
-        // nichts.
-        await pump(tester, k, form: SurfaceStyle.linie);
+        // Jeder Bildschirm wickelt seine Abschnitte in SurfacePanel, statt
+        // eigene Container zu bauen. Sonst zöge eine Änderung an der
+        // Gestaltung an dreißig Stellen nach.
         expect(find.byType(SurfacePanel), findsWidgets,
-            reason: '${k.name} wickelt seine Abschnitte nicht in Flächen — '
-                'die dritte Achse bliebe dort wirkungslos');
+            reason: '${k.name} baut seine Abschnitte ohne Fläche');
+      });
 
-        // Dann als Karte: Jetzt muss mindestens eine Fläche wirklich
-        // gezeichnet sein.
-        await pump(tester, k, form: SurfaceStyle.karte);
-        final flaechen = find.descendant(
-          of: find.byType(SurfacePanel),
-          matching: find.byType(Container),
-        );
-        expect(flaechen, findsWidgets, reason: '${k.name} zeigt keine Karten');
+
+      testWidgets('alle Flächen tragen den Radius der Gestaltung',
+          (tester) async {
+        // Die Prüfung, die eine halbherzige Gestaltung entlarvt: Baut ein
+        // Bildschirm seine eigene Karte mit eigenem Radius, sieht sie in
+        // einer Handschrift zufällig richtig aus und in den anderen falsch.
+        // Jede Fläche nimmt ihr Maß aus dem Theme.
+        await boot();
+        for (final v in [ThemeVariant.instrument, ThemeVariant.diary,
+                         ThemeVariant.pegel]) {
+          final t = themeFor(v);
+          await controller.setConcept(k);
+          await tester.pumpWidget(MaterialApp(
+            home: SphygmaThemeScope(
+              theme: t,
+              child: conceptHome(
+                concept: k,
+                controller: controller,
+                clock: () => _jetzt,
+              ),
+            ),
+          ));
+          await tester.pumpAndSettle();
+
+          final radien = tester
+              .widgetList<Container>(find.byType(Container))
+              .map((c) => c.decoration)
+              .whereType<BoxDecoration>()
+              .map((d) => d.borderRadius)
+              .whereType<BorderRadius>()
+              .toSet();
+
+          // Zulässig sind genau die beiden Maße der Gestaltung: das der
+          // Flächen und das kleiner Elemente. Alles andere ist eine eigene
+          // Rechnung im Bildschirm.
+          final erlaubt = {
+            BorderRadius.circular(t.radius),
+            BorderRadius.circular(t.chipRadius),
+          };
+          for (final r in radien) {
+            expect(
+              erlaubt.contains(r),
+              isTrue,
+              reason: '${k.name} in ${v.name}: $r gehört zu keinem Maß der '
+                  'Gestaltung (${t.radius} / ${t.chipRadius})',
+            );
+          }
+        }
       });
 
       testWidgets('F12 — ohne Kopplung sagt das Konzept, wo man koppelt',

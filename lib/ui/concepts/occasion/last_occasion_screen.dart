@@ -49,8 +49,8 @@ class LastOccasionScreen extends StatelessWidget {
                 Text(
                   controller.paired
                       ? 'Miss am Gerät — Sphygma holt die Messung von selbst. '
-                          'Wer zweimal hintereinander misst, bekommt einen '
-                          'Anlass mit einem Ergebnis, nicht zwei Einträge.'
+                            'Wer zweimal hintereinander misst, bekommt einen '
+                            'Anlass mit einem Ergebnis, nicht zwei Einträge.'
                       : 'Zuerst unter "Gerät" koppeln.',
                   style: TextStyle(fontSize: 13, color: t.muted, height: 1.5),
                 ),
@@ -102,7 +102,8 @@ class LastOccasionScreen extends StatelessWidget {
               SizedBox(height: t.gapLarge),
               const NoticeCard(
                 title: 'Nicht gekoppelt',
-                message: 'Ohne Kopplung kann Sphygma keine Messungen holen. '
+                message:
+                    'Ohne Kopplung kann Sphygma keine Messungen holen. '
                     'Unter "Gerät" einrichten.',
               ),
             ],
@@ -110,7 +111,8 @@ class LastOccasionScreen extends StatelessWidget {
               SizedBox(height: t.gapLarge),
               const NoticeCard(
                 title: 'Geräteuhr geht falsch',
-                message: 'Zeitliche Nähe ist ein Teil der Gruppierung. Geht '
+                message:
+                    'Zeitliche Nähe ist ein Teil der Gruppierung. Geht '
                     'die Uhr falsch, wird deshalb zusätzlich die '
                     'Messungsnummer geprüft. Sphygma verschiebt keine Zeiten; '
                     'stellen lässt sich die Uhr nur am Gerät.',
@@ -118,12 +120,8 @@ class LastOccasionScreen extends StatelessWidget {
             ],
             if (offen > 0) ...[
               SizedBox(height: t.gapLarge),
-              Container(
-                padding: EdgeInsets.all(t.gapSmall),
-                decoration: BoxDecoration(
-                  border: Border.all(color: t.line),
-                  borderRadius: BorderRadius.circular(t.radius),
-                ),
+              SurfacePanel(
+                highlighted: true,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

@@ -129,6 +129,12 @@ void main() {
 
     await pumpWith(tester, ThemeVariant.instrument);
 
+    // Die Liste ist virtualisiert: Was nicht ins Fenster passt, ist noch
+    // nicht gebaut. Ohne Scrollen prüfte der Test, was zufällig sichtbar ist
+    // — und das ist bei einem größeren Bestand beliebig wenig.
+    await tester.scrollUntilVisible(find.byType(MeasurementRow).last, 200);
+    await tester.pumpAndSettle();
+
     // Zwei Tagesüberschriften, drei Zeilen.
     expect(find.byType(DayHeading), findsNWidgets(2));
     expect(find.byType(MeasurementRow), findsNWidgets(3));

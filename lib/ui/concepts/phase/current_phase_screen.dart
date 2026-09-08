@@ -54,12 +54,8 @@ class CurrentPhaseScreen extends StatelessWidget {
             ),
             if (gruppen != null && gruppen.unclear.isNotEmpty) ...[
               SizedBox(height: t.gapLarge),
-              Container(
-                padding: EdgeInsets.all(t.gapSmall),
-                decoration: BoxDecoration(
-                  border: Border.all(color: t.line),
-                  borderRadius: BorderRadius.circular(t.radius),
-                ),
+              SurfacePanel(
+                highlighted: true,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -86,7 +82,8 @@ class CurrentPhaseScreen extends StatelessWidget {
               SizedBox(height: t.gapLarge),
               const NoticeCard(
                 title: 'Nicht gekoppelt',
-                message: 'Ohne Kopplung kann Sphygma keine Messungen holen. '
+                message:
+                    'Ohne Kopplung kann Sphygma keine Messungen holen. '
                     'Unter "Gerät" einrichten.',
               ),
             ],
@@ -143,7 +140,9 @@ class _Laufende extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          tage == 1 ? 'Laufende Phase seit einem Tag' : 'Laufende Phase seit $tage Tagen',
+          tage == 1
+              ? 'Laufende Phase seit einem Tag'
+              : 'Laufende Phase seit $tage Tagen',
           style: TextStyle(fontSize: 11, color: t.muted),
         ),
         Text(
@@ -233,10 +232,8 @@ class _Laufende extends StatelessWidget {
         Align(
           alignment: Alignment.centerLeft,
           child: TextButton(
-            onPressed: () => controller.endPhase(
-              laufend.phase.id,
-              at: DateTime.now(),
-            ),
+            onPressed: () =>
+                controller.endPhase(laufend.phase.id, at: DateTime.now()),
             child: const Text('Phase beenden'),
           ),
         ),
