@@ -5,19 +5,19 @@ import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/stats/time_plausibility.dart';
 
 Measurement _m(int seq, DateTime at, {DateTime? importiert}) => Measurement(
-      id: seq,
-      userSlot: 1,
-      deviceSequence: seq,
-      systolic: 128,
-      diastolic: 87,
-      pulse: 82,
-      measuredAt: at,
-      movement: false,
-      arrhythmia: false,
-      rawBytes: Uint8List(14),
-      importedAt: importiert ?? DateTime(2026, 9, 5, 23, 58),
-      exportedAt: null,
-    );
+  id: seq,
+  userSlot: 1,
+  deviceSequence: seq,
+  systolic: 128,
+  diastolic: 87,
+  pulse: 82,
+  measuredAt: at,
+  movement: false,
+  arrhythmia: false,
+  rawBytes: Uint8List(14),
+  importedAt: importiert ?? DateTime(2026, 9, 5, 23, 58),
+  exportedAt: null,
+);
 
 final _jetzt = DateTime(2026, 9, 5, 23, 59);
 
@@ -123,18 +123,20 @@ void main() {
   });
 
   group('Geht die Geräteuhr falsch?', () {
-    test('gemessen an der zuletzt gemessenen Messung, nicht am spätesten Datum',
-        () {
-      // Die höchste Nummer trägt ein Datum von 2023 — die Uhr geht falsch,
-      // obwohl eine ältere Messung ein plausibles Datum hat.
-      final falsch = deviceClockLooksWrong([
-        _m(100, DateTime(2026, 9, 1, 7)),
-        _m(101, DateTime(2026, 9, 3, 7)),
-        _m(102, DateTime(2023, 4, 18, 11)),
-      ], now: _jetzt);
+    test(
+      'gemessen an der zuletzt gemessenen Messung, nicht am spätesten Datum',
+      () {
+        // Die höchste Nummer trägt ein Datum von 2023 — die Uhr geht falsch,
+        // obwohl eine ältere Messung ein plausibles Datum hat.
+        final falsch = deviceClockLooksWrong([
+          _m(100, DateTime(2026, 9, 1, 7)),
+          _m(101, DateTime(2026, 9, 3, 7)),
+          _m(102, DateTime(2023, 4, 18, 11)),
+        ], now: _jetzt);
 
-      expect(falsch, isTrue);
-    });
+        expect(falsch, isTrue);
+      },
+    );
 
     test('eine echte alte Messung mit niedriger Nummer stört nicht', () {
       final falsch = deviceClockLooksWrong([

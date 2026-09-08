@@ -9,6 +9,7 @@ import '../../../app/app_controller.dart';
 import '../../measurement_sheet.dart';
 import '../../theme/sphygma_theme.dart';
 import '../../widgets/notice_card.dart';
+import '../../widgets/surface_panel.dart';
 import '../../widgets/section_header.dart';
 import 'occasion_widgets.dart';
 
@@ -48,9 +49,9 @@ class LastOccasionScreen extends StatelessWidget {
                 Text(
                   controller.paired
                       ? 'Miss am Gerät — Sphygma holt die Messung von selbst. '
-                          'Wer zweimal hintereinander misst, bekommt einen '
-                          'Anlass mit einem Ergebnis, nicht zwei Einträge.'
-                      : 'Zuerst unter "Gerät" koppeln.',
+                            'Wer zweimal hintereinander misst, bekommt einen '
+                            'Anlass mit einem Ergebnis, nicht zwei Einträge.'
+                      : 'Zuerst koppeln — oben rechts über das Zahnrad.',
                   style: TextStyle(fontSize: 13, color: t.muted, height: 1.5),
                 ),
               ],
@@ -63,38 +64,55 @@ class LastOccasionScreen extends StatelessWidget {
         final offen = controller.openOccasions.length;
 
         return ListView(
-          padding: EdgeInsets.all(t.gapLarge),
+          padding: t.listPadding,
           children: [
-            Text(
-              occasionWhen(letzter),
-              style: TextStyle(fontSize: 12, color: t.muted),
+            SurfacePanel(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    occasionWhen(letzter),
+                    style: TextStyle(fontSize: 12, color: t.muted),
+                  ),
+                  SizedBox(height: t.gapSmall),
+                  OccasionResult(occasion: letzter),
+                  SizedBox(height: t.gapLarge),
+                  QualityChips(occasion: letzter),
+                ],
+              ),
             ),
-            SizedBox(height: t.gapSmall),
-            OccasionResult(occasion: letzter),
-            SizedBox(height: t.gapLarge),
-            QualityChips(occasion: letzter),
-            const SectionHeader(title: 'Rohwerte'),
-            RawMeasurementList(
-              occasion: letzter,
-              onTap: (m) => showMeasurementSheet(
-                context,
-                controller: controller,
-                measurementId: m.id,
+            SurfacePanel(
+              tone: 1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SectionHeader(title: 'Rohwerte'),
+                  RawMeasurementList(
+                    occasion: letzter,
+                    onTap: (m) => showMeasurementSheet(
+                      context,
+                      controller: controller,
+                      measurementId: m.id,
+                    ),
+                  ),
+                ],
               ),
             ),
             if (!controller.paired) ...[
               SizedBox(height: t.gapLarge),
               const NoticeCard(
                 title: 'Nicht gekoppelt',
-                message: 'Ohne Kopplung kann Sphygma keine Messungen holen. '
-                    'Unter "Gerät" einrichten.',
+                message:
+                    'Ohne Kopplung kann Sphygma keine Messungen holen. '
+                    'Oben rechts über das Zahnrad einrichten.',
               ),
             ],
             if (controller.clockLooksWrong) ...[
               SizedBox(height: t.gapLarge),
               const NoticeCard(
                 title: 'Geräteuhr geht falsch',
-                message: 'Zeitliche Nähe ist ein Teil der Gruppierung. Geht '
+                message:
+                    'Zeitliche Nähe ist ein Teil der Gruppierung. Geht '
                     'die Uhr falsch, wird deshalb zusätzlich die '
                     'Messungsnummer geprüft. Sphygma verschiebt keine Zeiten; '
                     'stellen lässt sich die Uhr nur am Gerät.',
@@ -102,12 +120,8 @@ class LastOccasionScreen extends StatelessWidget {
             ],
             if (offen > 0) ...[
               SizedBox(height: t.gapLarge),
-              Container(
-                padding: EdgeInsets.all(t.gapSmall),
-                decoration: BoxDecoration(
-                  border: Border.all(color: t.line),
-                  borderRadius: BorderRadius.circular(t.radius),
-                ),
+              SurfacePanel(
+                highlighted: true,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

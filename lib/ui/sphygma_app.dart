@@ -27,10 +27,23 @@ class SphygmaApp extends StatelessWidget {
             scaffoldBackgroundColor: theme.surface,
             useMaterial3: true,
           ),
-          home: SphygmaThemeScope(
-            theme: theme,
-            child: _Shell(controller: controller),
-          ),
+          // Der Scope liegt über dem Navigator, nicht in `home`.
+          //
+          // Unter `home` wäre er nur ein Geschwister der geschobenen Routen:
+          // Ein Detailblatt müsste die Gestaltung beim Öffnen mitnehmen und
+          // hielte sie dann fest. Wer die Gestaltung ändert, während ein
+          // solches Blatt offen ist, sähe die Änderung erst nach dem
+          // Zurückgehen — genau das war der Fall im Einstellungsblatt selbst.
+          builder: (context, child) {
+            if (child == null) {
+              throw StateError(
+                'MaterialApp.builder ohne Kind — ohne Navigator gäbe es '
+                'nichts, worüber der Scope liegen könnte.',
+              );
+            }
+            return SphygmaThemeScope(theme: theme, child: child);
+          },
+          home: _Shell(controller: controller),
         );
       },
     );
@@ -75,10 +88,10 @@ class _ShellState extends State<_Shell> {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-        listenable: widget.controller,
-        builder: (context, _) => conceptHome(
-          concept: widget.controller.concept,
-          controller: widget.controller,
-        ),
-      );
+    listenable: widget.controller,
+    builder: (context, _) => conceptHome(
+      concept: widget.controller.concept,
+      controller: widget.controller,
+    ),
+  );
 }

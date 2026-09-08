@@ -14,6 +14,7 @@ import '../../format.dart';
 import '../../theme/sphygma_theme.dart';
 import '../../widgets/classification_scale.dart';
 import '../../widgets/notice_card.dart';
+import '../../widgets/surface_panel.dart';
 import 'new_phase_sheet.dart';
 import 'phase_compare_screen.dart';
 
@@ -40,24 +41,21 @@ class CurrentPhaseScreen extends StatelessWidget {
         final laufend = _laufende(gruppen);
 
         return ListView(
-          padding: EdgeInsets.all(t.gapLarge),
+          padding: t.listPadding,
           children: [
-            if (laufend == null)
-              _KeineLaufende(controller: controller)
-            else
-              _Laufende(
-                controller: controller,
-                laufend: laufend,
-                davor: _davor(gruppen!, laufend),
-              ),
+            SurfacePanel(
+              child: laufend == null
+                  ? _KeineLaufende(controller: controller)
+                  : _Laufende(
+                      controller: controller,
+                      laufend: laufend,
+                      davor: _davor(gruppen!, laufend),
+                    ),
+            ),
             if (gruppen != null && gruppen.unclear.isNotEmpty) ...[
               SizedBox(height: t.gapLarge),
-              Container(
-                padding: EdgeInsets.all(t.gapSmall),
-                decoration: BoxDecoration(
-                  border: Border.all(color: t.line),
-                  borderRadius: BorderRadius.circular(t.radius),
-                ),
+              SurfacePanel(
+                highlighted: true,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -84,8 +82,9 @@ class CurrentPhaseScreen extends StatelessWidget {
               SizedBox(height: t.gapLarge),
               const NoticeCard(
                 title: 'Nicht gekoppelt',
-                message: 'Ohne Kopplung kann Sphygma keine Messungen holen. '
-                    'Unter "Gerät" einrichten.',
+                message:
+                    'Ohne Kopplung kann Sphygma keine Messungen holen. '
+                    'Oben rechts über das Zahnrad einrichten.',
               ),
             ],
           ],
@@ -141,7 +140,9 @@ class _Laufende extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          tage == 1 ? 'Laufende Phase seit einem Tag' : 'Laufende Phase seit $tage Tagen',
+          tage == 1
+              ? 'Laufende Phase seit einem Tag'
+              : 'Laufende Phase seit $tage Tagen',
           style: TextStyle(fontSize: 11, color: t.muted),
         ),
         Text(
@@ -213,13 +214,10 @@ class _Laufende extends StatelessWidget {
             child: TextButton(
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => SphygmaThemeScope(
-                    theme: t,
-                    child: PhaseCompareScreen(
-                      controller: controller,
-                      initialA: d.phase.id,
-                      initialB: laufend.phase.id,
-                    ),
+                  builder: (_) => PhaseCompareScreen(
+                    controller: controller,
+                    initialA: d.phase.id,
+                    initialB: laufend.phase.id,
                   ),
                 ),
               ),
@@ -231,10 +229,8 @@ class _Laufende extends StatelessWidget {
         Align(
           alignment: Alignment.centerLeft,
           child: TextButton(
-            onPressed: () => controller.endPhase(
-              laufend.phase.id,
-              at: DateTime.now(),
-            ),
+            onPressed: () =>
+                controller.endPhase(laufend.phase.id, at: DateTime.now()),
             child: const Text('Phase beenden'),
           ),
         ),

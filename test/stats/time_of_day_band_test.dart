@@ -117,8 +117,11 @@ void main() {
 
       expect(gruppen[TimeBand.morgens]!.length, 2);
       expect(gruppen[TimeBand.abends]!.length, 1);
-      expect(gruppen[TimeBand.nachts], isNull,
-          reason: 'leere Abschnitte tauchen nicht auf');
+      expect(
+        gruppen[TimeBand.nachts],
+        isNull,
+        reason: 'leere Abschnitte tauchen nicht auf',
+      );
     });
 
     test('Mittelwerte je Abschnitt', () {

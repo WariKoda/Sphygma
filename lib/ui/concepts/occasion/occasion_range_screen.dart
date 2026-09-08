@@ -15,6 +15,7 @@ import '../../../stats/trend_stats.dart';
 import '../../theme/sphygma_theme.dart';
 import '../../widgets/classification_scale.dart';
 import '../../widgets/section_header.dart';
+import '../../widgets/surface_panel.dart';
 import 'occasion_detail_screen.dart';
 import 'occasion_widgets.dart';
 
@@ -149,12 +150,9 @@ class _OccasionRangeScreenState extends State<OccasionRangeScreen> {
                 InkWell(
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                      builder: (_) => SphygmaThemeScope(
-                        theme: t,
-                        child: OccasionDetailScreen(
-                          controller: widget.controller,
-                          sequence: o.sequence,
-                        ),
+                      builder: (_) => OccasionDetailScreen(
+                        controller: widget.controller,
+                        sequence: o.sequence,
                       ),
                     ),
                   ),
@@ -199,8 +197,11 @@ class _OccasionRangeScreenState extends State<OccasionRangeScreen> {
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(t.gapLarge),
-        child: child,
+        padding: t.listPadding,
+        // Eine Fläche für die ganze Auswertung: Sie ist eine Aussage, keine
+        // Folge von Abschnitten. Mehrere Flächen müssten hier den Ton
+        // wechseln, ohne dass der Wechsel etwas bedeutete.
+        child: SurfacePanel(child: child),
       ),
     );
   }
@@ -246,20 +247,24 @@ class _Veraenderung extends StatelessWidget {
         ),
         SizedBox(height: t.gapSmall / 2),
         _Zeile(label: 'Systolisch', von: frueh.systolic, bis: spaet.systolic),
-        _Zeile(label: 'Diastolisch', von: frueh.diastolic, bis: spaet.diastolic),
+        _Zeile(
+          label: 'Diastolisch',
+          von: frueh.diastolic,
+          bis: spaet.diastolic,
+        ),
       ],
     );
   }
 
   static Average? _mittel(List<MeasurementOccasion> teil) => Average.of([
-        for (final o in teil)
-          Reading(
-            measuredAt: o.measurements.first.measuredAt,
-            systolic: o.result.systolic,
-            diastolic: o.result.diastolic,
-            pulse: o.result.pulse,
-          ),
-      ]);
+    for (final o in teil)
+      Reading(
+        measuredAt: o.measurements.first.measuredAt,
+        systolic: o.result.systolic,
+        diastolic: o.result.diastolic,
+        pulse: o.result.pulse,
+      ),
+  ]);
 }
 
 class _Zeile extends StatelessWidget {
@@ -287,10 +292,7 @@ class _Zeile extends StatelessWidget {
           ),
           Text(text, style: TextStyle(fontSize: 14, color: t.onSurface)),
           SizedBox(width: t.gapSmall),
-          Text(
-            '$von → $bis',
-            style: TextStyle(fontSize: 11, color: t.muted),
-          ),
+          Text('$von → $bis', style: TextStyle(fontSize: 11, color: t.muted)),
         ],
       ),
     );

@@ -16,6 +16,7 @@ import 'package:sphygma/sync/health_sink.dart';
 import 'package:sphygma/sync/sync_service.dart';
 import 'package:sphygma/ui/theme/sphygma_theme.dart';
 import 'package:sphygma/ui/theme/variants.dart';
+import 'package:sphygma/stats/measurement_week.dart';
 import 'package:sphygma/ui/today_screen.dart';
 
 class _NoopSink implements HealthSink {
@@ -26,18 +27,18 @@ class _NoopSink implements HealthSink {
 }
 
 SlotRecord _rec(int seq, DateTime at, {int systolic = 128}) => SlotRecord(
-      userSlot: 1,
-      record: BloodPressureRecord(
-        systolic: systolic,
-        diastolic: 87,
-        pulse: 82,
-        timestamp: at,
-        arrhythmiaFlag: false,
-        movementFlag: false,
-        sequence: seq,
-      ),
-      rawBytes: Uint8List(14),
-    );
+  userSlot: 1,
+  record: BloodPressureRecord(
+    systolic: systolic,
+    diastolic: 87,
+    pulse: 82,
+    timestamp: at,
+    arrhythmiaFlag: false,
+    movementFlag: false,
+    sequence: seq,
+  ),
+  rawBytes: Uint8List(14),
+);
 
 void main() {
   late AppDatabase db;
@@ -62,12 +63,18 @@ void main() {
   }
 
   Future<void> pumpWith(WidgetTester tester, ThemeVariant v) =>
-      tester.pumpWidget(MaterialApp(
-        home: SphygmaThemeScope(
-          theme: themeFor(v),
-          child: Scaffold(body: TodayScreen(controller: controller)),
+      tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) =>
+              SphygmaThemeScope(theme: themeFor(v), child: child!),
+          home: Scaffold(
+            body: ListenableBuilder(
+              listenable: controller,
+              builder: (context, _) => TodayScreen(controller: controller),
+            ),
+          ),
         ),
-      ));
+      );
 
   setUp(() {
     db = AppDatabase(NativeDatabase.memory());
@@ -95,8 +102,9 @@ void main() {
     }
   });
 
-  testWidgets('ohne Messungen fordert er zum Messen auf, statt leer zu sein',
-      (tester) async {
+  testWidgets('ohne Messungen fordert er zum Messen auf, statt leer zu sein', (
+    tester,
+  ) async {
     controller = await boot();
 
     await pumpWith(tester, ThemeVariant.instrument);
@@ -112,8 +120,9 @@ void main() {
     expect(find.textContaining('Nicht gekoppelt'), findsOneWidget);
   });
 
-  testWidgets('bei falscher Uhr steht der Hinweis samt Anleitung da',
-      (tester) async {
+  testWidgets('bei falscher Uhr steht der Hinweis samt Anleitung da', (
+    tester,
+  ) async {
     controller = await boot();
     // Ein Datum weit in der Vergangenheit loest die Pruefung aus.
     await repository.importAll([_rec(1, DateTime(2023, 4, 18))]);
@@ -142,5 +151,117 @@ void main() {
 
     // Die aelteste (120) darf nicht mehr dabei sein.
     expect(find.textContaining('/87').evaluate().length, lessThanOrEqualTo(6));
+  });
+
+  testWidgets('zeigt die laufende Woche mit dem, was heute noch fehlt', (
+    tester,
+  ) async {
+    // Das Wochenraster beantwortet die Frage, die der Verlauf nicht stellt:
+    // nicht wie es war, sondern was noch aussteht. Deshalb steht es hier und
+    // nicht bei den Kurven.
+    final montag = previousMonday(mondayOf(DateTime.now()));
+    DateTime tag(int versatz, int stunde) =>
+        DateTime(montag.year, montag.month, montag.day + versatz, stunde);
+    final jetzt = tag(4, 18);
+
+    controller = await boot();
+    await repository.importAll([
+      _rec(1, tag(0, 7), systolic: 128),
+      _rec(2, tag(0, 20), systolic: 124),
+      _rec(3, tag(4, 7), systolic: 126),
+    ]);
+    await controller.refreshForTest();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => SphygmaThemeScope(
+          theme: themeFor(ThemeVariant.instrument),
+          child: child!,
+        ),
+        home: Scaffold(
+          body: TodayScreen(controller: controller, clock: () => jetzt),
+        ),
+      ),
+    );
+
+    expect(find.text('DIESE WOCHE'), findsOneWidget);
+    expect(find.text('Mo'), findsOneWidget);
+    expect(find.text('So'), findsOneWidget);
+    // Freitag morgens gemessen, abends noch nicht.
+    expect(find.text('Heute fehlt noch die Abendmessung.'), findsOneWidget);
+  });
+
+  testWidgets('abgeschaltet verschwindet das Wochenraster, sonst nichts', (
+    tester,
+  ) async {
+    // Wer nicht nach Wochenplan misst, sieht im Raster vor allem leere
+    // Felder. Abschalten darf aber nur das Raster kosten — keine Messung
+    // und keinen anderen Abschnitt.
+    final montag = previousMonday(mondayOf(DateTime.now()));
+    DateTime tag(int versatz, int stunde) =>
+        DateTime(montag.year, montag.month, montag.day + versatz, stunde);
+
+    controller = await boot();
+    await repository.importAll([
+      _rec(1, tag(0, 7), systolic: 128),
+      _rec(2, tag(0, 20), systolic: 124),
+    ]);
+    await controller.refreshForTest();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+    expect(find.text('DIESE WOCHE'), findsOneWidget);
+
+    await controller.setWeekPanelVisible(false);
+    await tester.pumpAndSettle();
+
+    expect(find.text('DIESE WOCHE'), findsNothing);
+    expect(find.text('Mo'), findsNothing);
+    // Der letzte Wert und die letzten Tage bleiben.
+    expect(find.textContaining('124'), findsWidgets);
+    expect(find.text('LETZTE TAGE'), findsOneWidget);
+  });
+
+  testWidgets('über Mitternacht wandert die Wochenansicht mit', (tester) async {
+    // Der Steuerungsteil meldet nichts, wenn nur das Datum wechselt. Ohne
+    // eigenen Wecker bliebe „Heute fehlt noch…" beim gestrigen Tag stehen.
+    final montag = previousMonday(mondayOf(DateTime.now()));
+    DateTime tag(int versatz, int stunde, [int minute = 0]) => DateTime(
+      montag.year,
+      montag.month,
+      montag.day + versatz,
+      stunde,
+      minute,
+    );
+
+    controller = await boot();
+    await repository.importAll([
+      _rec(1, tag(0, 7), systolic: 128),
+      _rec(2, tag(0, 20), systolic: 124),
+      _rec(3, tag(3, 7), systolic: 126),
+      _rec(4, tag(3, 20), systolic: 122),
+    ]);
+    await controller.refreshForTest();
+
+    // Donnerstag 23:59:30 — morgens und abends gemessen.
+    var jetzt = tag(3, 23, 59);
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => SphygmaThemeScope(
+          theme: themeFor(ThemeVariant.instrument),
+          child: child!,
+        ),
+        home: Scaffold(
+          body: TodayScreen(controller: controller, clock: () => jetzt),
+        ),
+      ),
+    );
+    expect(find.text('Heute ist morgens und abends gemessen.'), findsOneWidget);
+
+    // Freitag 00:00:30 — der neue Tag ist noch leer.
+    jetzt = tag(4, 0, 0);
+    await tester.pump(const Duration(minutes: 1));
+    await tester.pump();
+
+    expect(find.text('Heute fehlen noch beide Messungen.'), findsOneWidget);
   });
 }

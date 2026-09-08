@@ -10,6 +10,7 @@ import '../../../stats/target_range.dart';
 import '../../format.dart';
 import '../../theme/sphygma_theme.dart';
 import '../../theme/zone_color.dart';
+import '../../widgets/surface_panel.dart';
 import 'new_phase_sheet.dart';
 import 'phase_measurements_screen.dart';
 
@@ -29,28 +30,37 @@ class PhaseListScreen extends StatelessWidget {
         final phasen = gruppen?.memberships ?? const <PhaseMembership>[];
 
         return ListView(
-          padding: EdgeInsets.all(t.gapLarge),
+          padding: t.listPadding,
           children: [
-            Text(
-              '${controller.measurements.length} Messungen in '
-              '${phasen.length} ${phasen.length == 1 ? "Phase" : "Phasen"}',
-              style: TextStyle(fontSize: 12, color: t.muted),
+            SurfacePanel(
+              child: Text(
+                '${controller.measurements.length} Messungen in '
+                '${phasen.length} ${phasen.length == 1 ? "Phase" : "Phasen"}',
+                style: TextStyle(fontSize: 12, color: t.muted),
+              ),
             ),
-            SizedBox(height: t.gapLarge),
-            for (final m in phasen)
-              _PhasenZeile(controller: controller, membership: m),
-            if (gruppen != null && gruppen.unassigned.isNotEmpty)
-              _Restzeile(
-                label: 'Nicht zugeordnet',
-                hint: 'außerhalb jeder Phase',
-                count: gruppen.unassigned.length,
+            SurfacePanel(
+              tone: 1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final m in phasen)
+                    _PhasenZeile(controller: controller, membership: m),
+                  if (gruppen != null && gruppen.unassigned.isNotEmpty)
+                    _Restzeile(
+                      label: 'Nicht zugeordnet',
+                      hint: 'außerhalb jeder Phase',
+                      count: gruppen.unassigned.length,
+                    ),
+                  if (gruppen != null && gruppen.unclear.isNotEmpty)
+                    _Restzeile(
+                      label: 'Zeitlich ungeklärt',
+                      hint: 'nimmt an keinem Vergleich teil',
+                      count: gruppen.unclear.length,
+                    ),
+                ],
               ),
-            if (gruppen != null && gruppen.unclear.isNotEmpty)
-              _Restzeile(
-                label: 'Zeitlich ungeklärt',
-                hint: 'nimmt an keinem Vergleich teil',
-                count: gruppen.unclear.length,
-              ),
+            ),
             SizedBox(height: t.gapLarge),
             FilledButton(
               onPressed: () =>
@@ -82,13 +92,8 @@ class _PhasenZeile extends StatelessWidget {
     return InkWell(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => SphygmaThemeScope(
-            theme: t,
-            child: PhaseMeasurementsScreen(
-              controller: controller,
-              phaseId: p.id,
-            ),
-          ),
+          builder: (_) =>
+              PhaseMeasurementsScreen(controller: controller, phaseId: p.id),
         ),
       ),
       child: Container(

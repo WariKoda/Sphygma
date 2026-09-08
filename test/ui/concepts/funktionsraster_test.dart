@@ -45,6 +45,7 @@ import 'package:sphygma/sync/sync_service.dart';
 import 'package:sphygma/ui/concepts/concept_home.dart';
 import 'package:sphygma/ui/theme/sphygma_theme.dart';
 import 'package:sphygma/ui/theme/variants.dart';
+import 'package:sphygma/ui/widgets/surface_panel.dart';
 
 class _NoopSink implements HealthSink {
   @override
@@ -72,8 +73,13 @@ SlotRecord _rec(int seq, DateTime at, {int sys = 148, int dia = 92}) =>
 /// an welchem Wochentag der Test läuft.
 final _montag = previousMonday(mondayOf(DateTime.now()));
 
-DateTime _tag(int versatz, int stunde, [int minute = 0]) =>
-    DateTime(_montag.year, _montag.month, _montag.day + versatz, stunde, minute);
+DateTime _tag(int versatz, int stunde, [int minute = 0]) => DateTime(
+  _montag.year,
+  _montag.month,
+  _montag.day + versatz,
+  stunde,
+  minute,
+);
 
 DateTime _vorTagen(int n) =>
     DateTime(_montag.year, _montag.month, _montag.day - n, 9);
@@ -93,9 +99,9 @@ final _wertMuster = RegExp(r'\d{3}/\d{2} ·');
 /// einen InkWell träfe der Test die Zusammenfassung statt der Messung — und
 /// meldete eine fehlende Funktion, die vorhanden ist.
 Finder get _messzeile => find.descendant(
-      of: find.byType(InkWell),
-      matching: find.textContaining(_wertMuster),
-    );
+  of: find.byType(InkWell),
+  matching: find.textContaining(_wertMuster),
+);
 
 /// Wie man in einem Konzept an eine Funktion herankommt.
 ///
@@ -103,15 +109,17 @@ Finder get _messzeile => find.descendant(
 /// das ist der Punkt des Rasters: dieselbe Funktion, ein anderer Weg — aber
 /// keiner darf fehlen.
 class _Weg {
-  const _Weg({
-    required this.zumGeraet,
-    required this.zurAuswertung,
-    required this.zurEinzelmessung,
-  });
+  const _Weg({required this.zurAuswertung, required this.zurEinzelmessung});
 
-  final Future<void> Function(WidgetTester) zumGeraet;
   final Future<void> Function(WidgetTester) zurAuswertung;
   final Future<void> Function(WidgetTester) zurEinzelmessung;
+
+  /// Der Weg zur Technik ist in **jedem** Konzept derselbe: oben rechts das
+  /// Zahnrad. Seit dem 08.09.2026 gibt es keinen Reiter „Gerät" mehr — sein
+  /// Inhalt war durchweg Einstellung. Deshalb steht dieser Weg nicht mehr je
+  /// Konzept, sondern einmal hier.
+  static Future<void> zurTechnik(WidgetTester t) =>
+      _tippe(t, find.byIcon(Icons.settings));
 }
 
 /// Prüft, dass etwas da ist — notfalls, nachdem danach gescrollt wurde.
@@ -125,21 +133,42 @@ Future<void> _erwarte(
   Finder f, {
   required String reason,
 }) async {
-  if (f.evaluate().isEmpty && find.byType(Scrollable).evaluate().isNotEmpty) {
-    await tester.scrollUntilVisible(f, 240, maxScrolls: 40);
-    await tester.pumpAndSettle();
-  }
+  await _suchen(tester, f);
   expect(f, findsWidgets, reason: reason);
+}
+
+/// Scrollt, bis [f] gebaut ist — durch jedes Scrollable, das der Baum hat.
+///
+/// Welches das richtige ist, hängt vom Bildschirm ab: mal die Hauptliste, mal
+/// eine innere. Statt zu raten, werden sie der Reihe nach versucht. Findet
+/// keines etwas, bleibt der Finder leer und die Erwartung schlägt fehl — mit
+/// ihrer eigenen Begründung statt einer Ausnahme aus dem Scrollcode.
+Future<void> _suchen(WidgetTester tester, Finder f) async {
+  if (f.evaluate().isNotEmpty) return;
+  final anzahl = find.byType(Scrollable).evaluate().length;
+  for (var i = 0; i < anzahl; i++) {
+    try {
+      await tester.scrollUntilVisible(
+        // dragUntilVisible ruft am Ende element() mit .single — ein Finder
+        // mit mehreren Treffern wäre dort mehrdeutig.
+        f.first,
+        240,
+        maxScrolls: 40,
+        scrollable: find.byType(Scrollable).at(i),
+      );
+      await tester.pumpAndSettle();
+      if (f.evaluate().isNotEmpty) return;
+    } catch (_) {
+      // Dieses Scrollable war es nicht — das nächste versuchen.
+    }
+  }
 }
 
 Future<void> _tippe(WidgetTester tester, Finder f) async {
   // Wie bei _erwarte: Was nicht ins Fenster passt, ist noch nicht gebaut und
   // wird erst durch Scrollen auffindbar. „Nicht sichtbar" ist kein „nicht
   // vorhanden".
-  if (f.evaluate().isEmpty && find.byType(Scrollable).evaluate().isNotEmpty) {
-    await tester.scrollUntilVisible(f, 240, maxScrolls: 40);
-    await tester.pumpAndSettle();
-  }
+  await _suchen(tester, f);
   await tester.ensureVisible(f.first);
   await tester.pumpAndSettle();
   await tester.tap(f.first);
@@ -148,38 +177,14 @@ Future<void> _tippe(WidgetTester tester, Finder f) async {
 
 final Map<AppConcept, _Weg> _wege = {
   AppConcept.klassisch: _Weg(
-    zumGeraet: (t) => _tippe(t, find.text('Gerät')),
     zurAuswertung: (t) => _tippe(t, find.text('Verlauf')),
     zurEinzelmessung: (t) async {
-      await _tippe(t, find.text('Verlauf'));
-      // „Woche" misst ab der echten Uhr, der Testbestand liegt in der
-      // Vorwoche — über „Alles" ist er unabhängig davon erreichbar.
-      await _tippe(t, find.text('Alles'));
-      await _tippe(t, _messzeile);
-    },
-  ),
-  AppConcept.tagesprofil: _Weg(
-    zumGeraet: (t) => _tippe(t, find.text('Gerät')),
-    zurAuswertung: (t) => _tippe(t, find.text('Verlauf')),
-    zurEinzelmessung: (t) async {
-      // Über den Tagesabschnitt, nicht über den Kalender.
-      await _tippe(t, find.text('Morgens'));
-      await _tippe(t, _messzeile);
-    },
-  ),
-  AppConcept.siebenTage: _Weg(
-    zumGeraet: (t) => _tippe(t, find.text('Gerät und Übertragung')),
-    zurAuswertung: (t) async {
-      await _tippe(t, find.text('Frühere Wochen'));
-      await _tippe(t, find.byIcon(Icons.calculate_outlined));
-    },
-    zurEinzelmessung: (t) async {
-      // Über das Feld im Wochenraster.
+      // Seit „Heute" die laufende Woche zeigt, führt der kürzeste Weg über
+      // ein Rasterfeld — wie im aufgelösten Konzept „Sieben Tage".
       await _tippe(t, find.text('148'));
     },
   ),
   AppConcept.messanlass: _Weg(
-    zumGeraet: (t) => _tippe(t, find.text('Gerät')),
     zurAuswertung: (t) async {
       await _tippe(t, find.text('Archiv'));
       await _tippe(t, find.text('Anlässe auswerten'));
@@ -191,7 +196,6 @@ final Map<AppConcept, _Weg> _wege = {
     },
   ),
   AppConcept.phase: _Weg(
-    zumGeraet: (t) => _tippe(t, find.text('Gerät')),
     zurAuswertung: (t) => _tippe(t, find.text('Vergleich ansehen')),
     zurEinzelmessung: (t) async {
       await _tippe(t, find.text('Phasen'));
@@ -253,17 +257,28 @@ void main() {
   }
 
   Future<void> pump(WidgetTester tester, AppConcept k) async {
+    // Ein hohes Testfenster: Die Konzeptbildschirme sind lang, mit
+    // eingeschalteter Einordnung noch länger. Auf der Standardhöhe von 600
+    // Pixeln ist der halbe Bildschirm nicht gebaut, und jede Prüfung hinge am
+    // Scrollen statt an der Sache.
+    tester.view.physicalSize = const Size(1080, 4200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
     await controller.setConcept(k);
-    await tester.pumpWidget(MaterialApp(
-      home: SphygmaThemeScope(
-        theme: themeFor(ThemeVariant.instrument),
-        child: conceptHome(
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => SphygmaThemeScope(
+          theme: themeFor(ThemeVariant.instrument),
+          child: child!,
+        ),
+        home: conceptHome(
           concept: k,
           controller: controller,
           clock: () => _jetzt,
         ),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
   }
 
@@ -299,40 +314,76 @@ void main() {
         expect(tester.takeException(), isNull);
         // Eine Auswertung nennt mmHg oder einen Zeitraum — leer wäre sie
         // keine.
-        expect(find.textContaining(RegExp('mmHg|Woche|Anlass|Zeitraum|Tage')),
-            findsWidgets);
+        expect(
+          find.textContaining(RegExp('mmHg|Woche|Anlass|Zeitraum|Tage')),
+          findsWidgets,
+        );
       });
 
-      testWidgets('F3 und F10 — eine Messung im Detail, mit Health Connect',
-          (tester) async {
+      testWidgets('F3 und F10 — eine Messung im Detail, mit Health Connect', (
+        tester,
+      ) async {
         await boot();
         await pump(tester, k);
         await weg.zurEinzelmessung(tester);
 
-        expect(find.text('HEALTH CONNECT'), findsOneWidget,
-            reason: 'F10 sitzt im Blatt der Einzelmessung');
-        expect(find.textContaining('Messung Nr.'), findsOneWidget,
-            reason: 'F3 — die Herkunft der Messung');
+        expect(
+          find.text('HEALTH CONNECT'),
+          findsOneWidget,
+          reason: 'F10 sitzt im Blatt der Einzelmessung',
+        );
+        expect(
+          find.textContaining('Messung Nr.'),
+          findsOneWidget,
+          reason: 'F3 — die Herkunft der Messung',
+        );
       });
 
-      testWidgets('F6 bis F9 — Gerät, Abgleich und Health Connect',
-          (tester) async {
+      testWidgets('F7 bis F9 — Abgleich und Health Connect', (tester) async {
         await boot();
         await pump(tester, k);
-        await weg.zumGeraet(tester);
+        await _Weg.zurTechnik(tester);
 
-        await _erwarte(tester, find.textContaining('Automatischer Abgleich'),
-            reason: 'F8 fehlt in ${k.name}');
-        await _erwarte(tester, find.text('Jetzt abgleichen'),
-            reason: 'F7 fehlt in ${k.name}');
-        await _erwarte(tester, find.text('Alle übertragen'),
-            reason: 'F9 fehlt in ${k.name}');
-        await _erwarte(tester, find.text('Neu koppeln'),
-            reason: 'F6 fehlt in ${k.name}');
+        await _erwarte(
+          tester,
+          find.textContaining('Automatischer Abgleich'),
+          reason: 'F8 fehlt in ${k.name}',
+        );
+        await _erwarte(
+          tester,
+          find.text('Jetzt abgleichen'),
+          reason: 'F7 fehlt in ${k.name}',
+        );
+        await _erwarte(
+          tester,
+          find.text('Alle übertragen'),
+          reason: 'F9 fehlt in ${k.name}',
+        );
       });
 
-      testWidgets('F11 — eine unglaubwürdige Gerätezeit wird gemeldet',
-          (tester) async {
+      testWidgets('F6 — koppeln steht bei den Einstellungen', (tester) async {
+        await boot();
+        await pump(tester, k);
+
+        // Seit dem 08.09.2026 steht die gesamte Technik hinter dem Zahnrad —
+        // Kopplung, Speicherplatz, Abgleich und Übertragung. Der Reiter
+        // „Gerät" ist entfallen.
+        await _Weg.zurTechnik(tester);
+        await _erwarte(
+          tester,
+          find.text('Neu koppeln'),
+          reason: 'F6 fehlt in ${k.name}',
+        );
+        await _erwarte(
+          tester,
+          find.textContaining('Speicherplatz'),
+          reason: 'die Speicherplatzwahl gehört dazu',
+        );
+      });
+
+      testWidgets('F11 — eine unglaubwürdige Gerätezeit wird gemeldet', (
+        tester,
+      ) async {
         await boot();
         // Höchste Nummer, Datum von 2023: Die Uhr des Geräts stand falsch.
         await repository.importAll([_rec(99, DateTime(2023, 4, 18, 11))]);
@@ -349,13 +400,86 @@ void main() {
         );
       });
 
-      testWidgets('F12 — ohne Kopplung sagt das Konzept, wo man koppelt',
-          (tester) async {
+      testWidgets('der Einstieg steht auf Flächen', (tester) async {
+        await boot();
+        await pump(tester, k);
+
+        // Jeder Bildschirm wickelt seine Abschnitte in SurfacePanel, statt
+        // eigene Container zu bauen. Sonst zöge eine Änderung an der
+        // Gestaltung an dreißig Stellen nach.
+        expect(
+          find.byType(SurfacePanel),
+          findsWidgets,
+          reason: '${k.name} baut seine Abschnitte ohne Fläche',
+        );
+      });
+
+      testWidgets('alle Flächen tragen den Radius der Gestaltung', (
+        tester,
+      ) async {
+        // Die Prüfung, die eine halbherzige Gestaltung entlarvt: Baut ein
+        // Bildschirm seine eigene Karte mit eigenem Radius, sieht sie in
+        // einer Handschrift zufällig richtig aus und in den anderen falsch.
+        // Jede Fläche nimmt ihr Maß aus dem Theme.
+        await boot();
+        for (final v in [
+          ThemeVariant.instrument,
+          ThemeVariant.diary,
+          ThemeVariant.pegel,
+        ]) {
+          final t = themeFor(v);
+          await controller.setConcept(k);
+          await tester.pumpWidget(
+            MaterialApp(
+              builder: (context, child) =>
+                  SphygmaThemeScope(theme: t, child: child!),
+              home: conceptHome(
+                concept: k,
+                controller: controller,
+                clock: () => _jetzt,
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          final radien = tester
+              .widgetList<Container>(find.byType(Container))
+              .map((c) => c.decoration)
+              .whereType<BoxDecoration>()
+              .map((d) => d.borderRadius)
+              .whereType<BorderRadius>()
+              .toSet();
+
+          // Zulässig sind genau die beiden Maße der Gestaltung: das der
+          // Flächen und das kleiner Elemente. Alles andere ist eine eigene
+          // Rechnung im Bildschirm.
+          final erlaubt = {
+            BorderRadius.circular(t.radius),
+            BorderRadius.circular(t.chipRadius),
+          };
+          for (final r in radien) {
+            expect(
+              erlaubt.contains(r),
+              isTrue,
+              reason:
+                  '${k.name} in ${v.name}: $r gehört zu keinem Maß der '
+                  'Gestaltung (${t.radius} / ${t.chipRadius})',
+            );
+          }
+        }
+      });
+
+      testWidgets('F12 — ohne Kopplung sagt das Konzept, wo man koppelt', (
+        tester,
+      ) async {
         await boot(paired: false);
         await pump(tester, k);
 
-        await _erwarte(tester, find.textContaining('Nicht gekoppelt'),
-            reason: 'F12 fehlt in ${k.name}');
+        await _erwarte(
+          tester,
+          find.textContaining('Nicht gekoppelt'),
+          reason: 'F12 fehlt in ${k.name}',
+        );
       });
     });
   }

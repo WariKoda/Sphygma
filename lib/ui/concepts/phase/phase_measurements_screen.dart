@@ -10,6 +10,7 @@ import '../../measurement_sheet.dart';
 import '../../theme/sphygma_theme.dart';
 import '../../widgets/classification_scale.dart';
 import '../../widgets/section_header.dart';
+import '../../widgets/surface_panel.dart';
 
 class PhaseMeasurementsScreen extends StatelessWidget {
   const PhaseMeasurementsScreen({
@@ -29,8 +30,9 @@ class PhaseMeasurementsScreen extends StatelessWidget {
       listenable: controller,
       builder: (context, _) {
         PhaseMembership? treffer;
-        for (final m in controller.phaseGrouping?.memberships ??
-            const <PhaseMembership>[]) {
+        for (final m
+            in controller.phaseGrouping?.memberships ??
+                const <PhaseMembership>[]) {
           if (m.phase.id == phaseId) treffer = m;
         }
 
@@ -73,7 +75,7 @@ class PhaseMeasurementsScreen extends StatelessWidget {
             ],
           ),
           body: ListView(
-            padding: EdgeInsets.all(t.gapLarge),
+            padding: t.listPadding,
             children: [
               Text(
                 p.endsAt == null
@@ -111,39 +113,47 @@ class PhaseMeasurementsScreen extends StatelessWidget {
                   'Dieser Phase ist keine Messung zugeordnet.',
                   style: TextStyle(fontSize: 13, color: t.onSurface),
                 ),
-              const SectionHeader(title: 'Zugeordnete Messungen'),
-              for (final m in treffer.measurements.reversed)
-                InkWell(
-                  onTap: () => showMeasurementSheet(
-                    context,
-                    controller: controller,
-                    measurementId: m.id,
-                  ),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(vertical: t.rowGap),
-                    decoration: t.rowDivider,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '${m.systolic}/${m.diastolic} · ${m.pulse}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: t.onSurface,
-                              fontFeatures: const [
-                                FontFeature.tabularFigures()
-                              ],
-                            ),
+              SurfacePanel(
+                tone: 1,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionHeader(title: 'Zugeordnete Messungen'),
+                    for (final m in treffer.measurements.reversed)
+                      InkWell(
+                        onTap: () => showMeasurementSheet(
+                          context,
+                          controller: controller,
+                          measurementId: m.id,
+                        ),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: t.rowGap),
+                          decoration: t.rowDivider,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '${m.systolic}/${m.diastolic} · ${m.pulse}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: t.onSurface,
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures(),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                formatDayAndTime(m.measuredAt),
+                                style: TextStyle(fontSize: 12, color: t.muted),
+                              ),
+                            ],
                           ),
                         ),
-                        Text(
-                          formatDayAndTime(m.measuredAt),
-                          style: TextStyle(fontSize: 12, color: t.muted),
-                        ),
-                      ],
-                    ),
-                  ),
+                      ),
+                  ],
                 ),
+              ),
             ],
           ),
         );

@@ -10,6 +10,7 @@ import '../../../stats/phase_grouping.dart';
 import '../../format.dart';
 import '../../theme/sphygma_theme.dart';
 import '../../widgets/section_header.dart';
+import '../../widgets/surface_panel.dart';
 
 class PhaseCompareScreen extends StatefulWidget {
   const PhaseCompareScreen({
@@ -95,12 +96,8 @@ class _PhaseCompareScreenState extends State<PhaseCompareScreen> {
                   style: TextStyle(fontSize: 11, color: t.muted, height: 1.5),
                 ),
                 SizedBox(height: t.gapLarge),
-                Container(
-                  padding: EdgeInsets.all(t.gapSmall),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: t.line),
-                    borderRadius: BorderRadius.circular(t.radius),
-                  ),
+                SurfacePanel(
+                  highlighted: true,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -148,8 +145,11 @@ class _PhaseCompareScreenState extends State<PhaseCompareScreen> {
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(t.gapLarge),
-        child: child,
+        padding: t.listPadding,
+        // Eine Fläche für die ganze Auswertung: Sie ist eine Aussage, keine
+        // Folge von Abschnitten. Mehrere Flächen müssten hier den Ton
+        // wechseln, ohne dass der Wechsel etwas bedeutete.
+        child: SurfacePanel(child: child),
       ),
     );
   }

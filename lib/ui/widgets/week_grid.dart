@@ -1,15 +1,20 @@
 // Das Wochenraster: sieben Spalten, zwei Zeilen, vierzehn Felder.
 //
-// Es ist die Hauptsache des Konzepts „Sieben Tage". Man sieht in einem Blick,
-// was gemessen wurde, was fehlt und wo die Werte liegen. Leere Felder bleiben
-// stehen — „hier wurde nicht gemessen" ist die halbe Aussage der Woche.
+// Man sieht in einem Blick, was gemessen wurde, was fehlt und wo die Werte
+// liegen. Leere Felder bleiben stehen — „hier wurde nicht gemessen" ist die
+// halbe Aussage der Woche.
+//
+// Es war die Hauptsache des aufgelösten Konzepts „Sieben Tage" und steht
+// heute auf „Heute", wo es die Frage beantwortet, die der Verlauf nicht
+// stellt: was noch fehlt. Abschaltbar, für den, der nicht nach Wochenplan
+// misst.
 import 'package:flutter/material.dart';
 
-import '../../../stats/measurement_week.dart';
-import '../../../stats/target_range.dart';
-import '../../../stats/time_of_day_band.dart';
-import '../../theme/sphygma_theme.dart';
-import '../../theme/zone_color.dart';
+import '../../stats/measurement_week.dart';
+import '../../stats/target_range.dart';
+import '../../stats/time_of_day_band.dart';
+import '../theme/sphygma_theme.dart';
+import '../theme/zone_color.dart';
 
 const List<String> _wochentage = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
@@ -44,10 +49,7 @@ class WeekGrid extends StatelessWidget {
         ),
         SizedBox(height: t.gapSmall),
         for (final band in const [TimeBand.morgens, TimeBand.abends]) ...[
-          Text(
-            band.label,
-            style: TextStyle(fontSize: 11, color: t.muted),
-          ),
+          Text(band.label, style: TextStyle(fontSize: 11, color: t.muted)),
           SizedBox(height: t.gapSmall / 2),
           Row(
             children: [
@@ -80,25 +82,29 @@ class _Zelle extends StatelessWidget {
 
     if (mittel == null) {
       return Semantics(
-        label: '${_tagName(field.weekday)} ${field.band.label}: '
+        label:
+            '${_tagName(field.weekday)} ${field.band.label}: '
             'nicht gemessen',
         child: Container(
           height: 34,
           margin: const EdgeInsets.all(1),
           decoration: BoxDecoration(
             border: Border.all(color: t.line),
-            borderRadius: BorderRadius.circular(t.radius / 2),
+            borderRadius: BorderRadius.circular(t.chipRadius),
           ),
         ),
       );
     }
 
-    final zone = TargetRange.heim
-        .classify(systolic: mittel.systolic, diastolic: mittel.diastolic);
+    final zone = TargetRange.heim.classify(
+      systolic: mittel.systolic,
+      diastolic: mittel.diastolic,
+    );
     final grund = zoneColor(t, zone);
 
     return Semantics(
-      label: '${_tagName(field.weekday)} ${field.band.label}: '
+      label:
+          '${_tagName(field.weekday)} ${field.band.label}: '
           '${mittel.systolic} zu ${mittel.diastolic}, ${zone.label}',
       button: onTap != null,
       child: InkWell(
@@ -112,7 +118,7 @@ class _Zelle extends StatelessWidget {
             // Bildschirm Farbe sieht, sieht einen Messwert.
             color: grund.withValues(alpha: 0.22),
             border: Border.all(color: grund),
-            borderRadius: BorderRadius.circular(t.radius / 2),
+            borderRadius: BorderRadius.circular(t.chipRadius),
           ),
           child: Text(
             '${mittel.systolic}',
@@ -129,11 +135,11 @@ class _Zelle extends StatelessWidget {
 }
 
 String _tagName(int weekday) => const {
-      DateTime.monday: 'Montag',
-      DateTime.tuesday: 'Dienstag',
-      DateTime.wednesday: 'Mittwoch',
-      DateTime.thursday: 'Donnerstag',
-      DateTime.friday: 'Freitag',
-      DateTime.saturday: 'Samstag',
-      DateTime.sunday: 'Sonntag',
-    }[weekday]!;
+  DateTime.monday: 'Montag',
+  DateTime.tuesday: 'Dienstag',
+  DateTime.wednesday: 'Mittwoch',
+  DateTime.thursday: 'Donnerstag',
+  DateTime.friday: 'Freitag',
+  DateTime.saturday: 'Samstag',
+  DateTime.sunday: 'Sonntag',
+}[weekday]!;

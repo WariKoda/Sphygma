@@ -41,11 +41,21 @@ void main() {
 
     test('null, wenn kein Omron-Eintrag vorhanden ist', () {
       expect(parseOmronStatus(const {}), isNull);
-      expect(parseOmronStatus(const {0x004c: [1, 2, 3]}), isNull);
+      expect(
+        parseOmronStatus(const {
+          0x004c: [1, 2, 3],
+        }),
+        isNull,
+      );
     });
 
     test('null bei zu kurzem Eintrag - lieber nichts als geraten', () {
-      expect(parseOmronStatus({_omron: const [0x01, 0x01, 0x1b]}), isNull);
+      expect(
+        parseOmronStatus({
+          _omron: const [0x01, 0x01, 0x1b],
+        }),
+        isNull,
+      );
     });
 
     test('deutet auch Slot 2 mit gesetztem Oberbyte richtig', () {
@@ -64,11 +74,15 @@ void main() {
 
     test('genau 8 Bytes reichen, 7 reichen nicht', () {
       expect(
-        parseOmronStatus({_omron: const [1, 1, 1, 0, 0, 1, 0, 0]}),
+        parseOmronStatus({
+          _omron: const [1, 1, 1, 0, 0, 1, 0, 0],
+        }),
         isNotNull,
       );
       expect(
-        parseOmronStatus({_omron: const [1, 1, 1, 0, 0, 1, 0]}),
+        parseOmronStatus({
+          _omron: const [1, 1, 1, 0, 0, 1, 0],
+        }),
         isNull,
       );
     });
@@ -94,8 +108,14 @@ void main() {
     test('erkennt neue Messungen gegenueber dem eigenen Stand', () {
       final status = parseOmronStatus({_omron: _after})!;
 
-      expect(status.hasNewMeasurements(userSlot: 1, knownSequence: 539), isTrue);
-      expect(status.hasNewMeasurements(userSlot: 1, knownSequence: 541), isFalse);
+      expect(
+        status.hasNewMeasurements(userSlot: 1, knownSequence: 539),
+        isTrue,
+      );
+      expect(
+        status.hasNewMeasurements(userSlot: 1, knownSequence: 541),
+        isFalse,
+      );
     });
 
     test('ein hoeherer eigener Stand meldet nichts Neues', () {
@@ -103,13 +123,19 @@ void main() {
       // Zurueckhaltung richtig: nicht ungefragt synchronisieren.
       final status = parseOmronStatus({_omron: _after})!;
 
-      expect(status.hasNewMeasurements(userSlot: 1, knownSequence: 600), isFalse);
+      expect(
+        status.hasNewMeasurements(userSlot: 1, knownSequence: 600),
+        isFalse,
+      );
     });
 
     test('ohne eigenen Stand gilt jede vorhandene Messung als neu', () {
       final status = parseOmronStatus({_omron: _after})!;
 
-      expect(status.hasNewMeasurements(userSlot: 1, knownSequence: null), isTrue);
+      expect(
+        status.hasNewMeasurements(userSlot: 1, knownSequence: null),
+        isTrue,
+      );
     });
 
     test('ein leerer Slot meldet auch ohne eigenen Stand nichts Neues', () {
@@ -118,7 +144,10 @@ void main() {
         _omron: const [0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
       })!;
 
-      expect(empty.hasNewMeasurements(userSlot: 2, knownSequence: null), isFalse);
+      expect(
+        empty.hasNewMeasurements(userSlot: 2, knownSequence: null),
+        isFalse,
+      );
     });
   });
 }

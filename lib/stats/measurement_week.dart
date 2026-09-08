@@ -1,4 +1,4 @@
-// Die Messwoche als Objekt — Grundlage des Konzepts „Sieben Tage".
+// Die Messwoche als Objekt — Grundlage des Wochenrasters und des Wochenwerts.
 //
 // Ein einzelner Blutdruckwert sagt fast nichts, ein gleitender Schnitt mittelt
 // über einen zufälligen Zeitraum. Aussagekraft hat die Messwoche: sieben Tage,

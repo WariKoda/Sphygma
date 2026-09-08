@@ -9,6 +9,7 @@ import '../../../stats/occasion_grouping.dart';
 import '../../measurement_sheet.dart';
 import '../../theme/sphygma_theme.dart';
 import '../../widgets/section_header.dart';
+import '../../widgets/surface_panel.dart';
 import 'occasion_widgets.dart';
 
 class OccasionDetailScreen extends StatelessWidget {
@@ -27,14 +28,14 @@ class OccasionDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-        listenable: controller,
-        builder: (context, _) {
-          for (final o in controller.occasions) {
-            if (o.sequence == sequence) return _inhalt(context, o);
-          }
-          return _fehlt(context);
-        },
-      );
+    listenable: controller,
+    builder: (context, _) {
+      for (final o in controller.occasions) {
+        if (o.sequence == sequence) return _inhalt(context, o);
+      }
+      return _fehlt(context);
+    },
+  );
 
   Widget _geruest(BuildContext context, Widget body) {
     final t = SphygmaTheme.of(context);
@@ -70,24 +71,17 @@ class OccasionDetailScreen extends StatelessWidget {
     return _geruest(
       context,
       ListView(
-        padding: EdgeInsets.all(t.gapLarge),
+        padding: t.listPadding,
         children: [
-          Text(
-            occasionWhen(o),
-            style: TextStyle(fontSize: 12, color: t.muted),
-          ),
+          Text(occasionWhen(o), style: TextStyle(fontSize: 12, color: t.muted)),
           SizedBox(height: t.gapSmall),
           OccasionResult(occasion: o),
           SizedBox(height: t.gapLarge),
           QualityChips(occasion: o),
           if (o.measurements.length > o.usedMeasurements.length) ...[
             SizedBox(height: t.gapLarge),
-            Container(
-              padding: EdgeInsets.all(t.gapSmall),
-              decoration: BoxDecoration(
-                border: Border.all(color: t.line),
-                borderRadius: BorderRadius.circular(t.radius),
-              ),
+            SurfacePanel(
+              highlighted: true,
               child: Text(
                 'Güte eingeschränkt: Das Gerät erkannte bei mindestens einer '
                 'Messung Bewegung. Das Ergebnis nutzt deshalb nur die '
@@ -96,13 +90,21 @@ class OccasionDetailScreen extends StatelessWidget {
               ),
             ),
           ],
-          const SectionHeader(title: 'Rohwerte'),
-          RawMeasurementList(
-            occasion: o,
-            onTap: (m) => showMeasurementSheet(
-              context,
-              controller: controller,
-              measurementId: m.id,
+          SurfacePanel(
+            tone: 1,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SectionHeader(title: 'Rohwerte'),
+                RawMeasurementList(
+                  occasion: o,
+                  onTap: (m) => showMeasurementSheet(
+                    context,
+                    controller: controller,
+                    measurementId: m.id,
+                  ),
+                ),
+              ],
             ),
           ),
           const SectionHeader(title: 'Regel dieses Anlasses'),

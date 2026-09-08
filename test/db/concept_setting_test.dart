@@ -21,8 +21,8 @@ void main() {
   });
 
   test('die Wahl wird gespeichert und gelesen', () async {
-    await settings.setConcept(AppConcept.tagesprofil);
-    expect(await settings.concept(), AppConcept.tagesprofil);
+    await settings.setConcept(AppConcept.phase);
+    expect(await settings.concept(), AppConcept.phase);
   });
 
   test('jedes Konzept lässt sich wählen', () async {
@@ -32,11 +32,13 @@ void main() {
     }
   });
 
-  test('ein unbekannter gespeicherter Wert macht die App nicht unbenutzbar',
-      () async {
-    await settings.setRawSetting('app_concept', 'gibtesnichtmehr');
-    expect(await settings.concept(), AppConcept.klassisch);
-  });
+  test(
+    'ein unbekannter gespeicherter Wert macht die App nicht unbenutzbar',
+    () async {
+      await settings.setRawSetting('app_concept', 'gibtesnichtmehr');
+      expect(await settings.concept(), AppConcept.klassisch);
+    },
+  );
 
   test('Konzept und Gestaltung sind unabhängig', () async {
     await settings.setConcept(AppConcept.phase);

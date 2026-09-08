@@ -12,21 +12,20 @@ Measurement _m(
   int puls = 82,
   bool bewegung = false,
   bool arrhythmie = false,
-}) =>
-    Measurement(
-      id: seq,
-      userSlot: 1,
-      deviceSequence: seq,
-      systolic: sys,
-      diastolic: dia,
-      pulse: puls,
-      measuredAt: at,
-      movement: bewegung,
-      arrhythmia: arrhythmie,
-      rawBytes: Uint8List(14),
-      importedAt: DateTime(2026, 9, 5, 23, 58),
-      exportedAt: null,
-    );
+}) => Measurement(
+  id: seq,
+  userSlot: 1,
+  deviceSequence: seq,
+  systolic: sys,
+  diastolic: dia,
+  pulse: puls,
+  measuredAt: at,
+  movement: bewegung,
+  arrhythmia: arrhythmie,
+  rawBytes: Uint8List(14),
+  importedAt: DateTime(2026, 9, 5, 23, 58),
+  exportedAt: null,
+);
 
 final _basis = DateTime(2026, 9, 5, 20, 0);
 
@@ -118,8 +117,13 @@ void main() {
       // ein Ergebnis mit dem Hinweis, worauf es beruht.
       final anlass = proposeOccasions([
         _m(100, _basis, sys: 140, dia: 90, bewegung: true),
-        _m(101, _basis.add(const Duration(minutes: 2)), sys: 130, dia: 86,
-            bewegung: true),
+        _m(
+          101,
+          _basis.add(const Duration(minutes: 2)),
+          sys: 130,
+          dia: 86,
+          bewegung: true,
+        ),
       ]).single;
 
       expect(anlass.result.systolic, 135);
@@ -140,9 +144,8 @@ void main() {
     });
 
     test('ein Anlass mit einer Messung hat deren Wert', () {
-      final anlass = proposeOccasions([
-        _m(100, _basis, sys: 131, dia: 89),
-      ]).single;
+      final anlass = proposeOccasions([_m(100, _basis, sys: 131, dia: 89)])
+          .single;
 
       expect(anlass.result.systolic, 131);
       expect(anlass.measurements, hasLength(1));
@@ -152,23 +155,20 @@ void main() {
   group('Bestätigte Entscheidungen überstimmen den Vorschlag', () {
     test('eine bestätigte Trennung wird nicht wieder zusammengefasst', () {
       final anlaesse = proposeOccasions(
-        [
-          _m(100, _basis),
-          _m(101, _basis.add(const Duration(minutes: 2))),
-        ],
+        [_m(100, _basis), _m(101, _basis.add(const Duration(minutes: 2)))],
         confirmedSplits: {101},
       );
 
       expect(anlaesse, hasLength(2));
-      expect(anlaesse.every((a) => a.state == OccasionState.bestaetigt), isTrue);
+      expect(
+        anlaesse.every((a) => a.state == OccasionState.bestaetigt),
+        isTrue,
+      );
     });
 
     test('eine bestätigte Zusammenfassung überbrückt die Zeitschwelle', () {
       final anlaesse = proposeOccasions(
-        [
-          _m(100, _basis),
-          _m(101, _basis.add(const Duration(minutes: 25))),
-        ],
+        [_m(100, _basis), _m(101, _basis.add(const Duration(minutes: 25)))],
         confirmedJoins: {101},
       );
 
@@ -283,10 +283,7 @@ void main() {
   group('Eine Entscheidung lässt sich zurücknehmen', () {
     test('die bestätigte Trennung steht bei beiden Nachbarn', () {
       final anlaesse = proposeOccasions(
-        [
-          _m(500, _basis),
-          _m(501, _basis.add(const Duration(minutes: 11))),
-        ],
+        [_m(500, _basis), _m(501, _basis.add(const Duration(minutes: 11)))],
         confirmedSplits: {501},
       );
 
@@ -300,10 +297,7 @@ void main() {
 
     test('das bestätigte Zusammen steht beim gemeinsamen Anlass', () {
       final anlaesse = proposeOccasions(
-        [
-          _m(600, _basis),
-          _m(601, _basis.add(const Duration(minutes: 11))),
-        ],
+        [_m(600, _basis), _m(601, _basis.add(const Duration(minutes: 11)))],
         confirmedJoins: {601},
       );
 

@@ -5,19 +5,19 @@ import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/stats/period_averages.dart';
 
 Measurement _m(int sys, int dia, int pulse, DateTime at) => Measurement(
-      id: at.millisecondsSinceEpoch,
-      userSlot: 1,
-      deviceSequence: at.millisecondsSinceEpoch,
-      systolic: sys,
-      diastolic: dia,
-      pulse: pulse,
-      measuredAt: at,
-      movement: false,
-      arrhythmia: false,
-      rawBytes: Uint8List(14),
-      importedAt: at,
-      exportedAt: null,
-    );
+  id: at.millisecondsSinceEpoch,
+  userSlot: 1,
+  deviceSequence: at.millisecondsSinceEpoch,
+  systolic: sys,
+  diastolic: dia,
+  pulse: pulse,
+  measuredAt: at,
+  movement: false,
+  arrhythmia: false,
+  rawBytes: Uint8List(14),
+  importedAt: at,
+  exportedAt: null,
+);
 
 void main() {
   group('PeriodAverages', () {

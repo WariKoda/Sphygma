@@ -17,8 +17,14 @@ void main() {
     });
 
     test('hochnormal: 130-139 und/oder 85-89', () {
-      expect(classifyOffice(systolic: 139, diastolic: 70), EscCategory.highNormal);
-      expect(classifyOffice(systolic: 110, diastolic: 85), EscCategory.highNormal);
+      expect(
+        classifyOffice(systolic: 139, diastolic: 70),
+        EscCategory.highNormal,
+      );
+      expect(
+        classifyOffice(systolic: 110, diastolic: 85),
+        EscCategory.highNormal,
+      );
     });
 
     test('Grad 1: 140-159 und/oder 90-99', () {

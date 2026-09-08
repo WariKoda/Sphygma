@@ -32,16 +32,18 @@ OmronAdvertisedStatus _status(
   int pointer = 1,
   int sequence2 = 0,
   int pointer2 = 0,
-}) =>
-    parseOmronStatus({
-      _omron: [
-        0x01, 0x01,
-        sequence & 0xff, (sequence >> 8) & 0xff,
-        pointer,
-        sequence2 & 0xff, (sequence2 >> 8) & 0xff,
-        pointer2,
-      ],
-    })!;
+}) => parseOmronStatus({
+  _omron: [
+    0x01,
+    0x01,
+    sequence & 0xff,
+    (sequence >> 8) & 0xff,
+    pointer,
+    sequence2 & 0xff,
+    (sequence2 >> 8) & 0xff,
+    pointer2,
+  ],
+})!;
 
 class _CountingSyncService implements SyncService {
   _CountingSyncService(this.keyStore, this.repository, {this.onSync});
@@ -74,18 +76,18 @@ class _NoopSink implements HealthSink {
 }
 
 SlotRecord _record(int sequence) => SlotRecord(
-      userSlot: 1,
-      record: BloodPressureRecord(
-        systolic: 120,
-        diastolic: 80,
-        pulse: 70,
-        timestamp: DateTime(2026, 9, 4, 12),
-        arrhythmiaFlag: false,
-        movementFlag: false,
-        sequence: sequence,
-      ),
-      rawBytes: Uint8List(14),
-    );
+  userSlot: 1,
+  record: BloodPressureRecord(
+    systolic: 120,
+    diastolic: 80,
+    pulse: 70,
+    timestamp: DateTime(2026, 9, 4, 12),
+    arrhythmiaFlag: false,
+    movementFlag: false,
+    sequence: sequence,
+  ),
+  rawBytes: Uint8List(14),
+);
 
 void main() {
   late AppDatabase db;
@@ -150,7 +152,10 @@ void main() {
     await repository.importAll([_record(540)]);
     final controller = await boot();
 
-    advertising..add(_status(541))..add(_status(541))..add(_status(541));
+    advertising
+      ..add(_status(541))
+      ..add(_status(541))
+      ..add(_status(541));
     await pumpEventQueue();
 
     expect(syncService.syncCount, 1);
@@ -167,41 +172,47 @@ void main() {
     controller.dispose();
   });
 
-  test('ein Fehlschlag loest für dieselbe Nummer keinen zweiten Versuch aus',
-      () async {
-    syncService = _CountingSyncService(
-      keyStore,
-      repository,
-      onSync: () async => throw StateError('Verbindung weg'),
-    );
-    await repository.importAll([_record(540)]);
-    final controller = await boot();
+  test(
+    'ein Fehlschlag loest für dieselbe Nummer keinen zweiten Versuch aus',
+    () async {
+      syncService = _CountingSyncService(
+        keyStore,
+        repository,
+        onSync: () async => throw StateError('Verbindung weg'),
+      );
+      await repository.importAll([_record(540)]);
+      final controller = await boot();
 
-    advertising..add(_status(541))..add(_status(541));
-    await pumpEventQueue();
+      advertising
+        ..add(_status(541))
+        ..add(_status(541));
+      await pumpEventQueue();
 
-    expect(syncService.syncCount, 1);
-    controller.dispose();
-  });
+      expect(syncService.syncCount, 1);
+      controller.dispose();
+    },
+  );
 
-  test('nach einem Fehlschlag wird bei einer neuen Nummer erneut versucht',
-      () async {
-    syncService = _CountingSyncService(
-      keyStore,
-      repository,
-      onSync: () async => throw StateError('Verbindung weg'),
-    );
-    await repository.importAll([_record(540)]);
-    final controller = await boot();
+  test(
+    'nach einem Fehlschlag wird bei einer neuen Nummer erneut versucht',
+    () async {
+      syncService = _CountingSyncService(
+        keyStore,
+        repository,
+        onSync: () async => throw StateError('Verbindung weg'),
+      );
+      await repository.importAll([_record(540)]);
+      final controller = await boot();
 
-    advertising.add(_status(541));
-    await pumpEventQueue();
-    advertising.add(_status(542));
-    await pumpEventQueue();
+      advertising.add(_status(541));
+      await pumpEventQueue();
+      advertising.add(_status(542));
+      await pumpEventQueue();
 
-    expect(syncService.syncCount, 2);
-    controller.dispose();
-  });
+      expect(syncService.syncCount, 2);
+      controller.dispose();
+    },
+  );
 
   test('ein Scan-Fehler wird sichtbar und beendet das Lauschen', () async {
     final controller = await boot();

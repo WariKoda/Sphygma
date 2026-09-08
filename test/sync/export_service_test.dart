@@ -59,26 +59,30 @@ void main() {
 
   tearDown(() => db.close());
 
-  test('exportiert nur den gewaehlten Slot und markiert die Datensaetze',
-      () async {
-    await repository.importAll([_rec(1, 1), _rec(1, 2), _rec(2, 3)]);
+  test(
+    'exportiert nur den gewaehlten Slot und markiert die Datensaetze',
+    () async {
+      await repository.importAll([_rec(1, 1), _rec(1, 2), _rec(2, 3)]);
 
-    final exported = await service.exportPending(userSlot: 1);
+      final exported = await service.exportPending(userSlot: 1);
 
-    expect(exported, 2);
-    expect(sink.written, hasLength(2));
-    expect(await repository.pendingExport(1), isEmpty);
-    expect(await repository.pendingExport(2), hasLength(1));
-  });
+      expect(exported, 2);
+      expect(sink.written, hasLength(2));
+      expect(await repository.pendingExport(1), isEmpty);
+      expect(await repository.pendingExport(2), hasLength(1));
+    },
+  );
 
-  test('clientRecordId ist deterministisch aus Slot und Messungsnummer',
-      () async {
-    await repository.importAll([_rec(2, 0x0214)]);
+  test(
+    'clientRecordId ist deterministisch aus Slot und Messungsnummer',
+    () async {
+      await repository.importAll([_rec(2, 0x0214)]);
 
-    await service.exportPending(userSlot: 2);
+      await service.exportPending(userSlot: 2);
 
-    expect(sink.written.single.clientRecordId, 'sphygma-slot2-seq532');
-  });
+      expect(sink.written.single.clientRecordId, 'sphygma-slot2-seq532');
+    },
+  );
 
   test('uebergibt Werte, Zeit, Puls und beide Flags', () async {
     await repository.importAll([_rec(1, 5, movement: true, ihb: true)]);
@@ -123,7 +127,10 @@ void main() {
     final retracted = await service.retractExported(userSlot: 1);
 
     expect(retracted, 2);
-    expect(sink.deleted, unorderedEquals(['sphygma-slot1-seq1', 'sphygma-slot1-seq2']));
+    expect(
+      sink.deleted,
+      unorderedEquals(['sphygma-slot1-seq1', 'sphygma-slot1-seq2']),
+    );
     expect(await repository.pendingExport(1), hasLength(2));
     expect(await repository.pendingExport(2), isEmpty);
   });

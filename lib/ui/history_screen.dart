@@ -12,6 +12,10 @@ import '../stats/trend_stats.dart';
 import 'format.dart';
 import 'measurement_sheet.dart';
 import 'theme/sphygma_theme.dart';
+import '../stats/measurement_week.dart';
+import '../stats/time_of_day_band.dart';
+import 'widgets/surface_panel.dart';
+import 'widgets/surface_sliver.dart';
 import 'widgets/trend_chart.dart';
 
 class HistoryScreen extends StatelessWidget {
@@ -29,34 +33,94 @@ class HistoryScreen extends StatelessWidget {
         final inPeriod = controller.measurementsInPeriod;
         final averages = PeriodAverages.of(inPeriod);
 
-        return ListView(
-          padding: EdgeInsets.all(t.gapLarge),
-          children: [
-            _PeriodPicker(controller: controller),
-            if (inPeriod.isEmpty)
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: t.gapLarge * 2),
-                child: Text(
-                  'Keine Messungen in diesem Zeitraum.',
-                  style: TextStyle(fontSize: 14, color: t.muted),
-                ),
-              )
-            else ...[
-              SizedBox(height: t.gapLarge),
-              TrendChart(measurements: inPeriod),
-              SizedBox(height: t.gapLarge),
-              const _Section(title: 'MITTELWERTE'),
-              _AverageRow(label: 'Gesamt', average: averages.overall),
-              _AverageRow(label: 'Morgens', average: averages.morning),
-              _AverageRow(label: 'Abends', average: averages.evening),
-              SizedBox(height: t.gapLarge),
-              const _Section(title: 'MESSUNGEN'),
-              for (final group in groupByDay(inPeriod)) ...[
-                DayHeading(day: group.day),
-                for (final m in group.measurements)
-                  MeasurementRow(controller: controller, measurement: m),
-              ],
-            ],
+        // CustomScrollView statt ListView: Die Messzeilen bleiben als
+        // SliverList virtualisiert, die Fläche liegt als Sliver dahinter.
+        // In eine Column gewickelt entstünden bei „Alles" alle Zeilen des
+        // Bestands auf einmal, von denen drei sichtbar sind.
+        final tage = groupByDay(inPeriod);
+        final zeilen = <Widget>[
+          for (final group in tage) ...[
+            DayHeading(day: group.day),
+            for (final m in group.measurements)
+              MeasurementRow(controller: controller, measurement: m),
+          ],
+        ];
+
+        return CustomScrollView(
+          slivers: [
+            SliverPadding(
+              padding: t.listPadding,
+              sliver: SliverMainAxisGroup(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: SurfacePanel(
+                      child: _PeriodPicker(controller: controller),
+                    ),
+                  ),
+                  if (inPeriod.isEmpty)
+                    SliverToBoxAdapter(
+                      child: SurfacePanel(
+                        tone: 1,
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            vertical: t.gapLarge * 2,
+                          ),
+                          child: Text(
+                            'Keine Messungen in diesem Zeitraum.',
+                            style: TextStyle(fontSize: 14, color: t.muted),
+                          ),
+                        ),
+                      ),
+                    )
+                  else ...[
+                    SliverToBoxAdapter(
+                      child: SurfacePanel(
+                        tone: 1,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TrendChart(measurements: inPeriod),
+                            SizedBox(height: t.gapLarge),
+                            const _Section(title: 'MITTELWERTE'),
+                            _AverageRow(
+                              label: 'Gesamt',
+                              average: averages.overall,
+                            ),
+                            // Der Praxiswert der Messwoche: sieben Tage,
+                            // morgens und abends, **ohne den ersten Tag** —
+                            // so verlangt es die Leitlinie für die
+                            // Selbstmessung. Nur bei Zeitraum „Woche", weil
+                            // die Zahl sonst nichts bedeutet.
+                            if (controller.period == Period.week)
+                              ..._Wochenwert.zeilen(context, inPeriod),
+                            const _Section(title: 'NACH TAGESZEIT'),
+                            // Fünf Abschnitte statt zweier: Der Tagesverlauf
+                            // ist eine eigene Aussage, die der Verlauf über
+                            // Tage nicht gibt.
+                            ..._Tageszeiten.zeilen(context, inPeriod),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SurfaceSliver(
+                      sliver: SliverMainAxisGroup(
+                        slivers: [
+                          const SliverToBoxAdapter(
+                            child: _Section(title: 'MESSUNGEN'),
+                          ),
+                          SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, i) => zeilen[i],
+                              childCount: zeilen.length,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ],
         );
       },
@@ -144,9 +208,7 @@ class _AverageRow extends StatelessWidget {
         children: [
           Text(label, style: TextStyle(fontSize: 13, color: t.muted)),
           Text(
-            a == null
-                ? '–'
-                : '${a.systolic}/${a.diastolic} · ${a.pulse}',
+            a == null ? '–' : '${a.systolic}/${a.diastolic} · ${a.pulse}',
             style: TextStyle(
               fontSize: 13,
               color: t.onSurface,
@@ -237,6 +299,115 @@ class MeasurementRow extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Der Wochenwert nach Leitlinie — und wie vollständig die Woche ist.
+class _Wochenwert {
+  static List<Widget> zeilen(
+    BuildContext context,
+    List<Measurement> messungen,
+  ) {
+    if (messungen.isEmpty) return const [];
+    final wochen = buildWeeks(messungen);
+    if (wochen.isEmpty) return const [];
+    final woche = wochen.first;
+
+    return [
+      if (woche.average case final a?)
+        _AverageRow(label: 'Ohne ersten Tag', average: a)
+      else
+        // Die Zeile bleibt stehen: Dass es den Praxiswert gibt und warum er
+        // noch fehlt, ist eine Aussage — sie wegzulassen ließe den Eindruck,
+        // es gäbe ihn nicht.
+        const _KennzahlZeile(
+          label: 'Ohne ersten Tag',
+          wert: 'erst ab dem zweiten Messtag',
+        ),
+      _KennzahlZeile(
+        label: 'Felder',
+        wert: '${woche.filledFields} von $fieldsPerWeek',
+      ),
+    ];
+  }
+}
+
+/// Die Mittelwerte je Tagesabschnitt und die Spanne dazwischen.
+class _Tageszeiten {
+  static const List<TimeBand> _folge = [
+    TimeBand.morgens,
+    TimeBand.vormittags,
+    TimeBand.nachmittags,
+    TimeBand.abends,
+    TimeBand.nachts,
+  ];
+
+  static List<Widget> zeilen(
+    BuildContext context,
+    List<Measurement> messungen,
+  ) {
+    if (messungen.isEmpty) return const [];
+    final mittel = averagesByBand(messungen, BandGrid.fein);
+    if (mittel.isEmpty) return const [];
+
+    final werte = mittel.values.map((a) => a.systolic).toList()..sort();
+    final spanne = werte.last - werte.first;
+    final hoechster = mittel.entries.reduce(
+      (a, b) => a.value.systolic >= b.value.systolic ? a : b,
+    );
+
+    return [
+      for (final band in _folge)
+        if (mittel[band] case final a?)
+          _AverageRow(label: band.label, average: a),
+      if (mittel.length > 1)
+        _Aussage(
+          text:
+              'Am höchsten liegt der Druck '
+              '${hoechster.key.label.toLowerCase()}. Über den Tag '
+              'unterscheiden sich die Abschnitte um $spanne mmHg.',
+        ),
+    ];
+  }
+}
+
+class _KennzahlZeile extends StatelessWidget {
+  const _KennzahlZeile({required this.label, required this.wert});
+
+  final String label;
+  final String wert;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: t.gapSmall / 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontSize: 13, color: t.muted)),
+          Text(wert, style: TextStyle(fontSize: 13, color: t.onSurface)),
+        ],
+      ),
+    );
+  }
+}
+
+class _Aussage extends StatelessWidget {
+  const _Aussage({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+    return Padding(
+      padding: EdgeInsets.only(top: t.gapSmall),
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 11, color: t.muted, height: 1.5),
       ),
     );
   }

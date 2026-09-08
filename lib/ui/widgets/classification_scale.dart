@@ -10,8 +10,7 @@ class ClassificationScale extends StatelessWidget {
   final EscCategory category;
 
   /// Position des Zeigers: Mitte des jeweiligen Abschnitts.
-  double get _position =>
-      (category.index + 0.5) / EscCategory.values.length;
+  double get _position => (category.index + 0.5) / EscCategory.values.length;
 
   @override
   Widget build(BuildContext context) {
@@ -61,11 +60,11 @@ class ClassificationScale extends StatelessWidget {
   }
 
   static String _label(EscCategory c) => switch (c) {
-        EscCategory.optimal => 'Optimal',
-        EscCategory.normal => 'Normal',
-        EscCategory.highNormal => 'Hochnormal',
-        EscCategory.grade1 => 'Bluthochdruck Grad 1',
-        EscCategory.grade2 => 'Bluthochdruck Grad 2',
-        EscCategory.grade3 => 'Bluthochdruck Grad 3',
-      };
+    EscCategory.optimal => 'Optimal',
+    EscCategory.normal => 'Normal',
+    EscCategory.highNormal => 'Hochnormal',
+    EscCategory.grade1 => 'Bluthochdruck Grad 1',
+    EscCategory.grade2 => 'Bluthochdruck Grad 2',
+    EscCategory.grade3 => 'Bluthochdruck Grad 3',
+  };
 }

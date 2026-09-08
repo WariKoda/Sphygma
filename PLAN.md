@@ -562,7 +562,7 @@ gerade er entscheidet oft, ob ein Ausreißer einer ist.
   denselben Schlüssel wie `OccasionDecisions` und `PhaseAssignments`.
 * **Nicht** nach Health Connect. Dorthin gehen Messwerte, nichts sonst; ein
   Freitext wäre keine Geräteaufzeichnung.
-* Jedes der fünf Konzepte braucht einen Ort dafür — die Notiz ist eine
+* Jedes Konzept braucht einen Ort dafür — die Notiz ist eine
   Funktion wie F1–F15 und darf nicht in einem Konzept fehlen.
 * Offen: Ob eine Notiz an der Rohmessung oder am Messanlass hängt. Beim
   Konzept „Messanlass" sind das verschiedene Dinge.
@@ -584,23 +584,74 @@ alles, was nur in der App existiert.
 * Offen: Format und ob der Weg über Androids eigene Sicherung sinnvoller ist
   als ein eigener Export. Beides erst prüfen, nicht annehmen.
 
-### 9.3 Erinnerungen für regelmäßige Messungen
+### 9.3 Der Messauftrag und seine Erinnerungen
 
-Passt zum Konzept „Sieben Tage": Eine Messwoche verlangt sieben Tage morgens
-und abends, und genau daran denkt man nicht.
+Umgeschrieben 2026-09-08. Der Eintrag hieß vorher „Erinnerungen für
+regelmäßige Messungen" und dachte an einen Dauerwecker: zwei Zeitpunkte am Tag,
+unbefristet. Das trifft den häufigsten Anlass nicht.
 
-* Zwei Zeitpunkte je Tag, die zur eingestellten Tagesgrenze passen sollten —
-  dieselbe, die morgens von abends trennt.
-* Klären, bevor gebaut wird: welche Laufzeitberechtigung neuere
-  Android-Versionen für Benachrichtigungen verlangen, und wie zuverlässig
-  geplante Benachrichtigungen im Energiesparmodus zünden. Beides gegen die
-  offizielle Dokumentation prüfen, nicht aus dem Gedächtnis.
-* MDR: Eine reine Terminerinnerung dürfte unkritisch sein. Sobald sie
-  begründet wird („dein Wert war gestern hoch, miss nochmal"), ist es eine
-  andere Frage — dann gehört sie hinter dasselbe Flag wie die
-  ESC-Klassifikation (§3.2).
-* Die Erinnerung darf nicht drängeln. Der Entwurf zu „Sieben Tage" nennt den
-  Ton: sachlich, immer mit dem nächsten Schritt, nie als Vorwurf.
+**Der Anlass ist meist ein Auftrag aus der Sprechstunde.** „Messen Sie zwei
+Wochen lang morgens und abends", „eine Woche lang dreimal täglich, und bringen
+Sie mir die Werte mit". Das ist kein Dauerzustand, sondern ein Vorhaben mit
+Anfang, Ende und einem Zweck — und der Zweck ist der Bericht (§9.5).
+
+Ein Messplan ist damit ein **eigenes Objekt**, keine Einstellung:
+
+* Zeiten je Tag (zwei, drei, auch vier), eine Laufzeit in Tagen oder Wochen,
+  und ein Ende, das eintritt statt zu verstreichen.
+* Er hat einen Fortschritt: wie viele der verlangten Messungen liegen vor. Das
+  Wochenraster auf „Heute" beantwortet diese Frage heute schon für die feste
+  Woche — ein Messplan wäre seine allgemeine Form.
+* Er endet mit einer Aussage, nicht mit Verstummen: „Zwei Wochen vorbei,
+  24 von 28 Messungen." Was danach kommt, ist der Bericht.
+* Nach demselben Grundsatz wie überall: **gespeichert wird nur die
+  Entscheidung** — der Plan. Ob eine Messung ihn erfüllt hat, wird aus dem
+  Bestand abgeleitet und nicht abgehakt.
+
+**Erst danach kommen die Erinnerungen.** Sie sind die Folge des Plans, nicht
+sein Zweck; ein Plan ohne Erinnerungen ist immer noch nützlich, eine Erinnerung
+ohne Plan ist ein Wecker.
+
+Was Android dabei zulässt, ist recherchiert und belegt in
+`docs/research/android-erinnerungen.md`. Die drei Punkte, die den Entwurf
+binden:
+
+* **Die bequeme Berechtigung ist uns verboten.** `USE_EXACT_ALARM` wird
+  automatisch gewährt, aber die Google-Play-Policy lässt sie nur für Wecker-,
+  Timer- und Kalender-Apps zu; eine Gesundheitserinnerung qualifiziert nicht,
+  und wer sie trotzdem deklariert, wird von der Veröffentlichung
+  ausgeschlossen. Bleibt `SCHEDULE_EXACT_ALARM` — die der Nutzer erteilen muss
+  und die bei einem Gerätewechsel verloren geht.
+* **Wir brauchen die Minutengenauigkeit aber gar nicht.**
+  `setAndAllowWhileIdle()` feuert auch im Ruhemodus, verlangt **keine**
+  Berechtigung und ist laut Quelltext auf etwa eine Viertelstunde genau. Für
+  „miss morgens" reicht das; die Tageszeit-Zuordnung einer Messung verschiebt
+  sich dadurch nicht. **Damit wird begonnen** — und ob es trägt, entscheidet
+  eine Messung am Gerät, keine Vermutung.
+* `SCHEDULE_EXACT_ALARM` hebt seit Android 14 den Standby-Bucket **nicht mehr**
+  an, löst das Standby-Problem also gerade nicht. Sie meldet ihren Entzug auch
+  nicht: Der zugehörige Rundfunk kommt nur bei der Erteilung, während beim
+  Entzug alle exakten Alarme gelöscht werden. Wer sie nutzt, muss beim
+  Zurückkehren in die App aktiv nachfragen.
+* Ausgeschlossen ist nur der Mittelweg, der Pünktlichkeit verspricht und keine
+  liefert. Eine Erinnerung, die auf eine Viertelstunde genau ist, darf man auch
+  so ankündigen.
+
+Dazu unverändert gültig:
+
+* Die Zeiten des Plans sollten zu den Tageszeit-Grenzen passen (§9.6). Solange
+  die Grenze fest bei 12:00 liegt, kann ein Plan „morgens, mittags, abends"
+  seine Mittagsmessung nicht sauber einordnen.
+* **Fehlende Berechtigung ist ein sichtbarer Zustand, kein stiller.** Wer
+  Erinnerungen eingerichtet hat und sie nicht bekommt, verlässt sich auf etwas,
+  das nicht da ist. `areNotificationsEnabled()` und `canScheduleExactAlarms()`
+  gehören abgefragt und ihr Ergebnis angezeigt — das ist Fail Hard in der
+  Oberfläche.
+* MDR: Eine reine Terminerinnerung dürfte unkritisch sein. Sobald sie begründet
+  wird („dein Wert war gestern hoch, miss nochmal"), ist es eine andere Frage —
+  dann gehört sie hinter dasselbe Flag wie die ESC-Klassifikation (§3.2).
+* Die Erinnerung darf nicht drängeln: sachlich, immer mit dem nächsten Schritt,
+  nie als Vorwurf.
 
 ### 9.4 Logo für die App
 
@@ -622,11 +673,14 @@ F-Droid-Metadaten und einen etwaigen Play-Eintrag.
 F5 aus dem Funktionsraster, bisher in **keinem** Konzept gebaut. Neu daran ist
 das „konfigurierbar": Was im Bericht steht, wählt der Nutzer.
 
-* Jedes Konzept erzeugt ihn aus seiner eigenen Auswahl — „Sieben Tage" aus
-  einer Folge von Messwochen, „Messanlass" aus einem Bereich zwischen zwei
-  Anlässen, „Phase" als Vergleich zweier Abschnitte. Der Bericht ist damit
-  kein gemeinsamer Bildschirm, sondern eine Ausgabe je Konzept auf einer
+* Jedes Konzept erzeugt ihn aus seiner eigenen Auswahl — „Messung und Filter"
+  aus einem Zeitraum, „Messanlass" aus einem Bereich zwischen zwei Anlässen,
+  „Phase" als Vergleich zweier Abschnitte. Der Bericht ist damit kein
+  gemeinsamer Bildschirm, sondern eine Ausgabe je Konzept auf einer
   gemeinsamen Grundlage.
+* Der häufigste Auslöser ist ein abgeschlossener Messauftrag (§9.3). Ein
+  Messplan, der endet, und ein Bericht, den man mitnimmt, sind zwei Hälften
+  derselben Sache.
 * Wählbar sollten mindestens sein: Zeitraum, ob Einzelmessungen als Anhang
   mitgehen, ob Gerätekennzeichen (Bewegung, unregelmäßiger Puls) erscheinen
   und ob die Zeitprovenienz ausgewiesen wird.
@@ -642,3 +696,28 @@ das „konfigurierbar": Was im Bericht steht, wählt der Nutzer.
 * Offen: Ausgabeformat. Ein Blatt zum Mitnehmen und eine Tabelle zum
   Weiterrechnen sind zwei verschiedene Anforderungen; welche zuerst kommt, ist
   nicht entschieden.
+
+### 9.6 Zielbereich und Tageszeit-Grenzen einstellbar machen
+
+Aufgenommen 2026-09-08 aus dem Abgleich in
+`docs/design/umsetzung-konzepte.md`. Beide standen im Umsetzungsplan vom 06.09.
+als „Einstellung" und sind es nie geworden: In der Rechenschicht sind sie frei,
+in der Oberfläche unerreichbar.
+
+* **Tageszeit-Grenzen** — `BandGrid` nimmt seine Schnittpunkte als Parameter,
+  aber außerhalb der Tests ruft niemand `grobMit` mit etwas anderem als 12:00.
+  Wer im Schichtdienst arbeitet, hat einen anderen Morgen als der Rest, und ein
+  Messplan mit drei Zeiten am Tag (§9.3) braucht eine Mittagsgrenze, die es
+  heute nicht gibt. **Von beiden der dringendere Punkt**, weil er die
+  Auswertung verzerrt und nicht nur die Anzeige.
+* **Zielbereich** — jede Aufrufstelle nimmt fest `TargetRange.heim` (135/85).
+  Ein Arzt gibt durchaus ein individuelles Ziel vor („unter 130/80"), das wäre
+  der echte Anwendungsfall. Aber: Ein frei nach oben verschiebbarer
+  Zielbereich beruhigt jemanden, den die Leitlinie nicht beruhigen würde. Vor
+  dem Bauen zu klären, ob ein einstellbares Ziel die App näher an eine
+  Bewertung rückt — dieselbe Frage wie bei der ESC-Klassifikation (§3.2).
+* Beides sind Nutzerentscheidungen und gehören damit in `AppSettings`, wie
+  Speicherplatz, Gestaltung, Konzept und die Sichtbarkeit des Wochenrasters.
+* Die Kommentare in `time_of_day_band.dart` behaupteten die Einstellbarkeit
+  bereits als vorhanden. Das ist am 08.09. berichtigt worden — wer sie baut,
+  zieht die Kommentare wieder mit.

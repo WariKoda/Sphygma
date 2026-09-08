@@ -23,20 +23,27 @@ const _t = SphygmaTheme(
   gapLarge: 20,
   headlineSize: 56,
   headlineWeight: FontWeight.w300,
-  useRoundedCards: false,
   showDividers: true,
+  panelBase: Color(0xFFFFFFFF),
+  panelRaised: Color(0xFFF2F2F2),
+  panelBorder: null,
+  panelShadow: null,
 );
 
 void main() {
   testWidgets('of() liefert die eingesetzte Gestaltung', (tester) async {
     late SphygmaTheme seen;
-    await tester.pumpWidget(SphygmaThemeScope(
-      theme: _t,
-      child: Builder(builder: (context) {
-        seen = SphygmaTheme.of(context);
-        return const SizedBox();
-      }),
-    ));
+    await tester.pumpWidget(
+      SphygmaThemeScope(
+        theme: _t,
+        child: Builder(
+          builder: (context) {
+            seen = SphygmaTheme.of(context);
+            return const SizedBox();
+          },
+        ),
+      ),
+    );
 
     expect(seen.name, 'Prüfmuster');
     expect(seen.headlineSize, 56);
@@ -48,12 +55,17 @@ void main() {
     }
   });
 
-  testWidgets('of() wirft ohne Scope statt still einen Default zu liefern',
-      (tester) async {
-    await tester.pumpWidget(Builder(builder: (context) {
-      expect(() => SphygmaTheme.of(context), throwsFlutterError);
-      return const SizedBox();
-    }));
+  testWidgets('of() wirft ohne Scope statt still einen Default zu liefern', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      Builder(
+        builder: (context) {
+          expect(() => SphygmaTheme.of(context), throwsFlutterError);
+          return const SizedBox();
+        },
+      ),
+    );
   });
 
   group('Die Handschrift entscheidet über die Gliederung', () {
@@ -78,8 +90,11 @@ void main() {
         gapLarge: 16,
         headlineSize: 48,
         headlineWeight: FontWeight.w300,
-        useRoundedCards: false,
         showDividers: true,
+        panelBase: Color(0xFFFFFFFF),
+        panelRaised: Color(0xFFF2F2F2),
+        panelBorder: null,
+        panelShadow: null,
       );
 
       expect(mitStrich.rowDivider.border, isNotNull);
@@ -111,8 +126,11 @@ void main() {
         gapLarge: 20,
         headlineSize: 58,
         headlineWeight: FontWeight.w300,
-        useRoundedCards: true,
         showDividers: false,
+        panelBase: Color(0xFFFFFFFF),
+        panelRaised: Color(0xFFF2F2F2),
+        panelBorder: null,
+        panelShadow: null,
       );
 
       expect(ohneStrich.rowDivider.border, isNull);

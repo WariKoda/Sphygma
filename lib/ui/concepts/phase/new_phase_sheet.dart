@@ -19,10 +19,7 @@ Future<void> showNewPhaseSheet(
     context: context,
     backgroundColor: theme.surface,
     isScrollControlled: true,
-    builder: (_) => SphygmaThemeScope(
-      theme: theme,
-      child: _NewPhaseSheet(controller: controller),
-    ),
+    builder: (_) => _NewPhaseSheet(controller: controller),
   );
 }
 
@@ -164,10 +161,7 @@ class _NewPhaseSheetState extends State<_NewPhaseSheet> {
           ),
           if (_fehler != null) ...[
             SizedBox(height: t.gapSmall),
-            Text(
-              _fehler!,
-              style: TextStyle(fontSize: 12, color: t.onSurface),
-            ),
+            Text(_fehler!, style: TextStyle(fontSize: 12, color: t.onSurface)),
           ],
           SizedBox(height: t.gapLarge),
           SizedBox(

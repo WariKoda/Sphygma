@@ -9,6 +9,10 @@ import 'theme/sphygma_theme.dart';
 import 'widgets/classification_scale.dart';
 import 'widgets/notice_card.dart';
 import 'widgets/reading_headline.dart';
+import 'measurement_sheet.dart';
+import 'widgets/at_day_change.dart';
+import 'widgets/surface_panel.dart';
+import 'widgets/this_week_panel.dart';
 
 /// Die Schritte aus dem Handbuch HEM-6232T-E. Die Uhr laesst sich nicht
 /// per Bluetooth stellen (docs/protocol/hem-6232t.md §8.7), also bleibt
@@ -24,9 +28,18 @@ const String clockInstructions =
 const int _recentCount = 5;
 
 class TodayScreen extends StatelessWidget {
-  const TodayScreen({super.key, required this.controller});
+  const TodayScreen({
+    super.key,
+    required this.controller,
+    this.clock = DateTime.now,
+  });
 
   final AppController controller;
+
+  /// Die Uhr wird bei jedem Aufbau gelesen: Die laufende Woche wechselt am
+  /// Montag, und eine über Nacht offene App zeigte sonst weiter die alte.
+  /// Einsetzbar, damit Tests nicht vom Wochentag ihres Laufs abhängen.
+  final DateTime Function() clock;
 
   @override
   Widget build(BuildContext context) {
@@ -36,41 +49,81 @@ class TodayScreen extends StatelessWidget {
     return Container(
       color: t.surface,
       child: ListView(
-        padding: EdgeInsets.all(t.gapLarge),
+        padding: t.listPadding,
         children: [
-          if (latest == null)
-            _EmptyState(paired: controller.paired)
-          else ...[
-            ReadingHeadline(
-              systolic: latest.systolic,
-              diastolic: latest.diastolic,
-              pulse: latest.pulse,
-              measuredAt: latest.measuredAt,
+          SurfacePanel(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (latest == null)
+                  _EmptyState(paired: controller.paired)
+                else ...[
+                  ReadingHeadline(
+                    systolic: latest.systolic,
+                    diastolic: latest.diastolic,
+                    pulse: latest.pulse,
+                    measuredAt: latest.measuredAt,
+                  ),
+                  if (escClassificationEnabled) ...[
+                    SizedBox(height: t.gapLarge),
+                    ClassificationScale(
+                      category: classifyOffice(
+                        systolic: latest.systolic,
+                        diastolic: latest.diastolic,
+                      ),
+                    ),
+                  ],
+                ],
+              ],
             ),
-            if (escClassificationEnabled) ...[
-              SizedBox(height: t.gapLarge),
-              ClassificationScale(
-                category: classifyOffice(
-                  systolic: latest.systolic,
-                  diastolic: latest.diastolic,
+          ),
+          ..._notices(),
+          // Abschaltbar: Wer nicht nach Wochenplan misst, sieht im Raster
+          // vor allem leere Felder. Die Einstellung steht hinter dem
+          // Zahnrad unter „Ansicht".
+          if (controller.measurements.isNotEmpty && controller.weekPanelVisible)
+            SurfacePanel(
+              tone: 1,
+              // Der Wecker gehört hierher, nicht in den Bildschirm: Ohne ihn
+              // bliebe „Heute fehlt noch…" über Mitternacht beim gestrigen
+              // Tag stehen, und am Montag stünde die Vorwoche als „diese
+              // Woche" da.
+              child: AtDayChange(
+                clock: clock,
+                builder: (context, jetzt) => ThisWeekPanel(
+                  measurements: controller.measurements,
+                  now: jetzt,
+                  onFieldTap: (feld) {
+                    if (feld.measurements.isEmpty) return;
+                    showMeasurementSheet(
+                      context,
+                      controller: controller,
+                      measurementId: feld.measurements.first.id,
+                    );
+                  },
                 ),
               ),
-            ],
-          ],
-          ..._notices(),
-          if (controller.measurements.length > 1) ...[
-            SizedBox(height: t.gapLarge),
-            Text(
-              'LETZTE TAGE',
-              style: TextStyle(
-                fontSize: 10,
-                letterSpacing: 1.6,
-                color: t.muted,
+            ),
+          if (controller.measurements.length > 1)
+            SurfacePanel(
+              tone: 1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'LETZTE TAGE',
+                    style: TextStyle(
+                      fontSize: 10,
+                      letterSpacing: 1.6,
+                      color: t.muted,
+                    ),
+                  ),
+                  for (final m
+                      in controller.measurements.skip(1).take(_recentCount))
+                    _RecentRow(measurement: m),
+                ],
               ),
             ),
-            for (final m in controller.measurements.skip(1).take(_recentCount))
-              _RecentRow(measurement: m),
-          ],
         ],
       ),
     );
@@ -78,26 +131,29 @@ class TodayScreen extends StatelessWidget {
 
   /// Hinweise erscheinen nur, wenn es etwas zu sagen gibt.
   List<Widget> _notices() => [
-        if (!controller.paired)
-          const NoticeCard(
-            title: 'Nicht gekoppelt',
-            message: 'Ohne Kopplung kann Sphygma keine Messungen holen. '
-                'Unter "Gerät" einrichten.',
-          ),
-        if (controller.clockLooksWrong)
-          const NoticeCard(
-            title: 'Geräteuhr geht falsch',
-            message: 'Die neueste Messung trägt ein unplausibles Datum. '
-                'Sphygma kann die Uhr nicht stellen, das geht nur am Gerät.',
-            details: clockInstructions,
-          ),
-        if (controller.paired && !controller.autoSyncActive)
-          const NoticeCard(
-            title: 'Kein automatischer Abgleich',
-            message: 'Neue Messungen werden nicht von selbst geholt. '
-                'Unter "Gerät" lässt sich der Abgleich von Hand auslösen.',
-          ),
-      ];
+    if (!controller.paired)
+      const NoticeCard(
+        title: 'Nicht gekoppelt',
+        message:
+            'Ohne Kopplung kann Sphygma keine Messungen holen. '
+            'Oben rechts über das Zahnrad einrichten.',
+      ),
+    if (controller.clockLooksWrong)
+      const NoticeCard(
+        title: 'Geräteuhr geht falsch',
+        message:
+            'Die neueste Messung trägt ein unplausibles Datum. '
+            'Sphygma kann die Uhr nicht stellen, das geht nur am Gerät.',
+        details: clockInstructions,
+      ),
+    if (controller.paired && !controller.autoSyncActive)
+      const NoticeCard(
+        title: 'Kein automatischer Abgleich',
+        message:
+            'Neue Messungen werden nicht von selbst geholt. '
+            'Oben rechts über das Zahnrad lässt er sich von Hand auslösen.',
+      ),
+  ];
 }
 
 class _EmptyState extends StatelessWidget {
@@ -126,7 +182,7 @@ class _EmptyState extends StatelessWidget {
           Text(
             paired
                 ? 'Miss am Gerät - Sphygma holt die Messung von selbst.'
-                : 'Zuerst unter "Gerät" koppeln.',
+                : 'Zuerst koppeln — oben rechts über das Zahnrad.',
             style: TextStyle(fontSize: 13, color: t.muted),
           ),
         ],

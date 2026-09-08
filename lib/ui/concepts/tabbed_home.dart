@@ -1,24 +1,33 @@
-// Die Reiterhülle: Heute, Verlauf, Gerät.
+// Die Reiterhülle: Heute und Verlauf.
 //
-// Sie ist die Organisation des Konzepts „Messung und Filter" — und die des
-// Tagesprofils, das dieselbe Aufteilung übernimmt und nur den ersten Reiter
-// anders füllt. Konzepte mit eigener Ordnung bringen stattdessen eine eigene
-// Hülle mit; deshalb steht diese hier und nicht mehr in `sphygma_app.dart`.
+// Sie ist die Organisation des Konzepts „Messung und Filter". Konzepte mit
+// eigener Ordnung bringen stattdessen eine eigene Hülle mit; deshalb steht
+// diese hier und nicht mehr in `sphygma_app.dart`.
+//
+// Der dritte Reiter „Gerät" ist am 08.09.2026 entfallen: Sein Inhalt war
+// durchweg Einstellung, und Einstellungen stehen hinter dem Zahnrad. Ein
+// Reiter, der nur an eine andere Stelle verweist, kostet einen Platz in der
+// Leiste und liefert nichts.
 import 'package:flutter/material.dart';
 
 import '../../app/app_controller.dart';
-import '../../app/concept.dart';
-import '../device_screen.dart';
 import '../history_screen.dart';
 import '../settings_screen.dart';
 import '../theme/sphygma_theme.dart';
 import '../today_screen.dart';
-import 'day_profile/day_profile_screen.dart';
 
 class TabbedHome extends StatefulWidget {
-  const TabbedHome({super.key, required this.controller});
+  const TabbedHome({
+    super.key,
+    required this.controller,
+    this.clock = DateTime.now,
+  });
 
   final AppController controller;
+
+  /// Wird an „Heute" weitergereicht: Dort steht die laufende Woche, und die
+  /// wechselt am Montag.
+  final DateTime Function() clock;
 
   @override
   State<TabbedHome> createState() => _TabbedHomeState();
@@ -30,11 +39,7 @@ class _TabbedHomeState extends State<TabbedHome> {
   @override
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
-    final titles = [
-      widget.controller.concept == AppConcept.tagesprofil ? 'Muster' : 'Heute',
-      'Verlauf',
-      'Gerät',
-    ];
+    const titles = ['Heute', 'Verlauf'];
 
     return ListenableBuilder(
       listenable: widget.controller,
@@ -47,42 +52,30 @@ class _TabbedHomeState extends State<TabbedHome> {
           elevation: 0,
           actions: [
             IconButton(
-              tooltip: 'Konzept und Gestaltung ändern',
-              icon: const Icon(Icons.tune),
+              tooltip: 'Einstellungen',
+              icon: const Icon(Icons.settings),
               onPressed: () =>
                   showSettings(context, controller: widget.controller),
             ),
           ],
         ),
-        // Das Konzept bestimmt, was auf dem ersten Reiter steht. Der
-        // Gerätebereich bleibt in jedem Konzept derselbe — dort geht es
-        // zur Konzeptwahl.
-        body: switch ((widget.controller.concept, _index)) {
-          (AppConcept.tagesprofil, 0) =>
-            DayProfileScreen(controller: widget.controller),
-          (_, 0) => TodayScreen(controller: widget.controller),
-          (_, 1) => HistoryScreen(controller: widget.controller),
-          _ => DeviceScreen(controller: widget.controller),
+        // Das Konzept bestimmt, was auf dem ersten Reiter steht.
+        body: switch (_index) {
+          0 => TodayScreen(controller: widget.controller, clock: widget.clock),
+          _ => HistoryScreen(controller: widget.controller),
         },
         bottomNavigationBar: NavigationBar(
           backgroundColor: t.surface,
           selectedIndex: _index,
           onDestinationSelected: (i) => setState(() => _index = i),
           destinations: [
-            NavigationDestination(
-              // Dieselbe Beschriftung wie oben in der Titelzeile: Ein Reiter,
-              // der „Heute" heißt und das Muster aller Messungen zeigt, würde
-              // einen Tagesfilter versprechen, den es dort nicht gibt.
-              icon: const Icon(Icons.favorite_outline),
-              label: titles[0],
+            const NavigationDestination(
+              icon: Icon(Icons.favorite_outline),
+              label: 'Heute',
             ),
             const NavigationDestination(
               icon: Icon(Icons.show_chart),
               label: 'Verlauf',
-            ),
-            const NavigationDestination(
-              icon: Icon(Icons.bluetooth),
-              label: 'Gerät',
             ),
           ],
         ),

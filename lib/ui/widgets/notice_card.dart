@@ -31,18 +31,15 @@ class _NoticeCardState extends State<NoticeCard> {
     final t = SphygmaTheme.of(context);
 
     return Container(
-      margin: EdgeInsets.symmetric(vertical: t.gapSmall),
-      padding: EdgeInsets.all(t.gapSmall + 4),
+      // Maße wie jede andere Fläche — nur der farbige Balken links
+      // unterscheidet den Hinweis vom gewöhnlichen Inhalt.
+      margin: EdgeInsets.only(bottom: t.gapSmall),
+      padding: EdgeInsets.all(t.panelPadding),
       decoration: BoxDecoration(
         border: Border(
-          left: BorderSide(
-            color: t.categoryColors.values.last,
-            width: 3,
-          ),
+          left: BorderSide(color: t.categoryColors.values.last, width: 3),
         ),
-        borderRadius: widget.details == null && !t.useRoundedCards
-            ? null
-            : BorderRadius.circular(t.radius),
+        borderRadius: BorderRadius.circular(t.radius),
         color: t.line.withValues(alpha: 0.35),
       ),
       child: Column(

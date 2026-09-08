@@ -23,8 +23,7 @@ void main() {
       expect(stats.last7Days!.count, 2);
     });
 
-    test('Morgen = vor 12 Uhr, Abend = ab 18 Uhr, dazwischen zaehlt nicht',
-        () {
+    test('Morgen = vor 12 Uhr, Abend = ab 18 Uhr, dazwischen zaehlt nicht', () {
       final stats = TrendStats.compute([
         r(DateTime(2026, 9, 3, 7), 110, 70),
         r(DateTime(2026, 9, 3, 11, 59), 120, 80),

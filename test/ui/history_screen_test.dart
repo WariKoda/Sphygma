@@ -30,18 +30,18 @@ class _NoopSink implements HealthSink {
 }
 
 SlotRecord _rec(int seq, DateTime at, {int systolic = 128}) => SlotRecord(
-      userSlot: 1,
-      record: BloodPressureRecord(
-        systolic: systolic,
-        diastolic: 87,
-        pulse: 82,
-        timestamp: at,
-        arrhythmiaFlag: false,
-        movementFlag: false,
-        sequence: seq,
-      ),
-      rawBytes: Uint8List(14),
-    );
+  userSlot: 1,
+  record: BloodPressureRecord(
+    systolic: systolic,
+    diastolic: 87,
+    pulse: 82,
+    timestamp: at,
+    arrhythmiaFlag: false,
+    movementFlag: false,
+    sequence: seq,
+  ),
+  rawBytes: Uint8List(14),
+);
 
 void main() {
   late AppDatabase db;
@@ -66,12 +66,13 @@ void main() {
   }
 
   Future<void> pumpWith(WidgetTester tester, ThemeVariant v) =>
-      tester.pumpWidget(MaterialApp(
-        home: SphygmaThemeScope(
-          theme: themeFor(v),
-          child: Scaffold(body: HistoryScreen(controller: controller)),
+      tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) =>
+              SphygmaThemeScope(theme: themeFor(v), child: child!),
+          home: Scaffold(body: HistoryScreen(controller: controller)),
         ),
-      ));
+      );
 
   setUp(() {
     db = AppDatabase(NativeDatabase.memory());
@@ -86,8 +87,9 @@ void main() {
 
   group('in jeder Gestaltung', () {
     for (final v in allVariants) {
-      testWidgets('zeigt Zeitraum, Kurve und Mittelwerte (${v.name})',
-          (tester) async {
+      testWidgets('zeigt Zeitraum, Kurve und Mittelwerte (${v.name})', (
+        tester,
+      ) async {
         controller = await boot();
         final now = DateTime.now();
         await repository.importAll([
@@ -106,8 +108,9 @@ void main() {
     }
   });
 
-  testWidgets('der Zeitraumwechsel wirkt auf den Steuerungsteil',
-      (tester) async {
+  testWidgets('der Zeitraumwechsel wirkt auf den Steuerungsteil', (
+    tester,
+  ) async {
     controller = await boot();
     await pumpWith(tester, ThemeVariant.instrument);
 
@@ -129,6 +132,16 @@ void main() {
 
     await pumpWith(tester, ThemeVariant.instrument);
 
+    // Die Liste ist virtualisiert: Was nicht ins Fenster passt, ist noch
+    // nicht gebaut. Ohne Scrollen prüfte der Test, was zufällig sichtbar ist
+    // — und das ist bei einem größeren Bestand beliebig wenig.
+    // Der Verlauf ist seit der Übernahme von Tageszeiten und Wochenwert
+    // länger; die Messungen stehen unter beiden Blöcken.
+    await tester.scrollUntilVisible(find.text('MESSUNGEN'), 200);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.byType(MeasurementRow).last, 200);
+    await tester.pumpAndSettle();
+
     // Zwei Tagesüberschriften, drei Zeilen.
     expect(find.byType(DayHeading), findsNWidgets(2));
     expect(find.byType(MeasurementRow), findsNWidgets(3));
@@ -146,8 +159,9 @@ void main() {
     expect(find.byType(MeasurementSheet), findsOneWidget);
   });
 
-  testWidgets('ohne Messungen im Zeitraum steht dort ein Satz, keine Leere',
-      (tester) async {
+  testWidgets('ohne Messungen im Zeitraum steht dort ein Satz, keine Leere', (
+    tester,
+  ) async {
     controller = await boot();
 
     await pumpWith(tester, ThemeVariant.instrument);
@@ -164,9 +178,69 @@ void main() {
 
     await pumpWith(tester, ThemeVariant.instrument);
 
+    expect(find.byKey(const ValueKey('exported-dot')), findsOneWidget);
+  });
+
+  testWidgets('zeigt die Tageszeiten feiner als morgens und abends', (
+    tester,
+  ) async {
+    // Aus dem aufgelösten Konzept „Tagesprofil" übernommen: Der Verlauf über
+    // Tage sagt nichts über den Verlauf innerhalb eines Tages.
+    controller = await boot();
+    final now = DateTime.now();
+    DateTime heute(int stunde) =>
+        DateTime(now.year, now.month, now.day - 1, stunde);
+    await repository.importAll([
+      _rec(1, heute(7), systolic: 140),
+      _rec(2, heute(10), systolic: 132),
+      _rec(3, heute(15), systolic: 128),
+      _rec(4, heute(20), systolic: 120),
+    ]);
+    await controller.refreshForTest();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+    await tester.scrollUntilVisible(find.text('NACH TAGESZEIT'), 200);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Vormittags'), findsOneWidget);
+    expect(find.text('Nachmittags'), findsOneWidget);
     expect(
-      find.byKey(const ValueKey('exported-dot')),
+      find.textContaining('Am höchsten liegt der Druck morgens'),
       findsOneWidget,
     );
+    expect(find.textContaining('20 mmHg'), findsOneWidget);
+  });
+
+  testWidgets('nennt bei „Woche" den Praxiswert ohne den ersten Tag', (
+    tester,
+  ) async {
+    // Aus dem aufgelösten Konzept „Sieben Tage": Der Wochenwert lässt den
+    // ersten Tag aus, so verlangt es die Leitlinie. Das ist nicht dasselbe
+    // wie das Mittel der letzten sieben Tage.
+    controller = await boot();
+    // Gestern und vorgestern: sicher in der Vergangenheit und im Zeitraum
+    // „Woche". Auf feste Wochentage gelegte Messungen lägen je nach Lauftag
+    // in der Zukunft.
+    final jetzt = DateTime.now();
+    DateTime vorTagen(int n, int stunde) =>
+        DateTime(jetzt.year, jetzt.month, jetzt.day - n, stunde);
+    await repository.importAll([
+      _rec(1, vorTagen(2, 7), systolic: 160),
+      _rec(2, vorTagen(2, 20), systolic: 160),
+      _rec(3, vorTagen(1, 7), systolic: 120),
+      _rec(4, vorTagen(1, 20), systolic: 120),
+    ]);
+    await controller.refreshForTest();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+    await tester.scrollUntilVisible(find.text('Ohne ersten Tag'), 200);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ohne ersten Tag'), findsOneWidget);
+    expect(find.text('Felder'), findsOneWidget);
+    // Wie viele Felder belegt sind, hängt davon ab, ob die beiden Tage in
+    // dieselbe Kalenderwoche fallen — die Zahl selbst prüft
+    // measurement_week_test.
+    expect(find.textContaining(RegExp(r'[0-9]+ von 14')), findsOneWidget);
   });
 }

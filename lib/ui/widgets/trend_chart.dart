@@ -8,11 +8,7 @@ import '../../stats/chart_geometry.dart';
 import '../theme/sphygma_theme.dart';
 
 class TrendChart extends StatelessWidget {
-  const TrendChart({
-    super.key,
-    required this.measurements,
-    this.height = 120,
-  });
+  const TrendChart({super.key, required this.measurements, this.height = 120});
 
   final List<Measurement> measurements;
   final double height;

@@ -52,20 +52,19 @@ SlotRecord _rec(
   DateTime at, {
   bool movement = false,
   bool arrhythmia = false,
-}) =>
-    SlotRecord(
-      userSlot: 1,
-      record: BloodPressureRecord(
-        systolic: 128,
-        diastolic: 87,
-        pulse: 82,
-        timestamp: at,
-        arrhythmiaFlag: arrhythmia,
-        movementFlag: movement,
-        sequence: seq,
-      ),
-      rawBytes: Uint8List(14),
-    );
+}) => SlotRecord(
+  userSlot: 1,
+  record: BloodPressureRecord(
+    systolic: 128,
+    diastolic: 87,
+    pulse: 82,
+    timestamp: at,
+    arrhythmiaFlag: arrhythmia,
+    movementFlag: movement,
+    sequence: seq,
+  ),
+  rawBytes: Uint8List(14),
+);
 
 void main() {
   late AppDatabase db;
@@ -99,14 +98,15 @@ void main() {
   }
 
   Future<void> pumpWith(WidgetTester tester, ThemeVariant v, int id) =>
-      tester.pumpWidget(MaterialApp(
-        home: SphygmaThemeScope(
-          theme: themeFor(v),
-          child: Scaffold(
+      tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) =>
+              SphygmaThemeScope(theme: themeFor(v), child: child!),
+          home: Scaffold(
             body: MeasurementSheet(controller: controller, measurementId: id),
           ),
         ),
-      ));
+      );
 
   setUp(() {
     db = AppDatabase(NativeDatabase.memory());
@@ -159,8 +159,7 @@ void main() {
     expect(find.textContaining('Bewegung'), findsNothing);
   });
 
-  testWidgets('überträgt einzeln und zeigt den neuen Zustand',
-      (tester) async {
+  testWidgets('überträgt einzeln und zeigt den neuen Zustand', (tester) async {
     controller = await boot();
     await repository.importAll([_rec(1, DateTime(2026, 9, 5, 8))]);
     final id = await firstId();
@@ -203,8 +202,9 @@ void main() {
     expect(controller.status, contains('Fehler'));
   });
 
-  testWidgets('eine unbekannte Nummer wirft, statt leer zu bleiben',
-      (tester) async {
+  testWidgets('eine unbekannte Nummer wirft, statt leer zu bleiben', (
+    tester,
+  ) async {
     controller = await boot();
 
     await pumpWith(tester, ThemeVariant.instrument, 999);
@@ -217,10 +217,13 @@ void main() {
     await repository.importAll([_rec(1, DateTime(2026, 9, 5, 8))]);
     final id = await firstId();
 
-    await tester.pumpWidget(MaterialApp(
-      home: SphygmaThemeScope(
-        theme: themeFor(ThemeVariant.instrument),
-        child: Scaffold(
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => SphygmaThemeScope(
+          theme: themeFor(ThemeVariant.instrument),
+          child: child!,
+        ),
+        home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
               onPressed: () => showMeasurementSheet(
@@ -233,7 +236,7 @@ void main() {
           ),
         ),
       ),
-    ));
+    );
 
     await tester.tap(find.text('öffnen'));
     await tester.pumpAndSettle();

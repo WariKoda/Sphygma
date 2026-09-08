@@ -26,8 +26,10 @@ class OccasionResult extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
     final r = occasion.result;
-    final zone = TargetRange.heim
-        .classify(systolic: r.systolic, diastolic: r.diastolic);
+    final zone = TargetRange.heim.classify(
+      systolic: r.systolic,
+      diastolic: r.diastolic,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,14 +78,8 @@ class QualityChips extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
     final texte = <String>[
-      if (occasion.hasMovement)
-        'Bewegung erkannt'
-      else
-        'keine Bewegung',
-      if (occasion.hasArrhythmia)
-        'unregelmäßiger Puls'
-      else
-        'Puls regelmäßig',
+      if (occasion.hasMovement) 'Bewegung erkannt' else 'keine Bewegung',
+      if (occasion.hasArrhythmia) 'unregelmäßiger Puls' else 'Puls regelmäßig',
     ];
 
     return Wrap(
@@ -100,10 +96,7 @@ class QualityChips extends StatelessWidget {
               border: Border.all(color: t.line),
               borderRadius: BorderRadius.circular(t.radius),
             ),
-            child: Text(
-              text,
-              style: TextStyle(fontSize: 11, color: t.muted),
-            ),
+            child: Text(text, style: TextStyle(fontSize: 11, color: t.muted)),
           ),
       ],
     );
@@ -115,11 +108,7 @@ class QualityChips extends StatelessWidget {
 /// Kein Rohwert wird gelöscht; gezeigt wird, welche Rolle er im Ergebnis
 /// spielt.
 class RawMeasurementList extends StatelessWidget {
-  const RawMeasurementList({
-    super.key,
-    required this.occasion,
-    this.onTap,
-  });
+  const RawMeasurementList({super.key, required this.occasion, this.onTap});
 
   final MeasurementOccasion occasion;
   final void Function(Measurement)? onTap;
@@ -137,8 +126,8 @@ class RawMeasurementList extends StatelessWidget {
             index: i + 1,
             measurement: occasion.measurements[i],
             used: genutzt.contains(occasion.measurements[i].id),
-            showRole: occasion.measurements.length >
-                occasion.usedMeasurements.length,
+            showRole:
+                occasion.measurements.length > occasion.usedMeasurements.length,
             onTap: onTap,
           ),
         SizedBox(height: t.gapSmall / 2),

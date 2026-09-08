@@ -12,10 +12,7 @@ void main() {
   });
 
   test('Tag und Uhrzeit zusammen', () {
-    expect(
-      formatDayAndTime(DateTime(2026, 9, 5, 23, 57)),
-      '05.09.2026, 23:57',
-    );
+    expect(formatDayAndTime(DateTime(2026, 9, 5, 23, 57)), '05.09.2026, 23:57');
   });
 
   group('Der Wochenzeitraum', () {
@@ -23,13 +20,19 @@ void main() {
       // Sechs Kalendertage sind in der Herbstwoche 145 Stunden. Ein Zuschlag
       // in Stunden landete am Samstag — die Prüfung gilt in jeder Zeitzone,
       // in der umgestellt wird.
-      for (var tag = DateTime(2026); tag.year == 2026;
-          tag = DateTime(tag.year, tag.month, tag.day + 1)) {
+      for (
+        var tag = DateTime(2026);
+        tag.year == 2026;
+        tag = DateTime(tag.year, tag.month, tag.day + 1)
+      ) {
         final montag = mondayOf(tag);
         final sonntag = DateTime(montag.year, montag.month, montag.day + 6);
         expect(sonntag.weekday, DateTime.sunday, reason: '$tag');
-        expect(formatWeekRange(montag), contains('${sonntag.day}.'),
-            reason: '$tag');
+        expect(
+          formatWeekRange(montag),
+          contains('${sonntag.day}.'),
+          reason: '$tag',
+        );
       }
     });
 

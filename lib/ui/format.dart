@@ -9,8 +9,18 @@ String formatTime(DateTime d) => '${_two(d.hour)}:${_two(d.minute)}';
 String formatDayAndTime(DateTime d) => '${formatDay(d)}, ${formatTime(d)}';
 
 const List<String> _monate = [
-  'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
-  'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
+  'Januar',
+  'Februar',
+  'März',
+  'April',
+  'Mai',
+  'Juni',
+  'Juli',
+  'August',
+  'September',
+  'Oktober',
+  'November',
+  'Dezember',
 ];
 
 /// Der Zeitraum einer Messwoche, so wie man ihn ausspricht:

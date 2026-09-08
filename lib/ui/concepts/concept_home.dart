@@ -11,32 +11,22 @@ import '../../app/app_controller.dart';
 import '../../app/concept.dart';
 import 'occasion/occasion_home.dart';
 import 'phase/phase_home.dart';
-import 'seven_days/seven_days_home.dart';
 import 'tabbed_home.dart';
 
 Widget conceptHome({
   required AppConcept concept,
   required AppController controller,
   DateTime Function()? clock,
-}) =>
-    switch (concept) {
-      // Tagesprofil teilt die Reiter mit dem klassischen Konzept und füllt
-      // nur den ersten anders.
-      // Sieben Tage bringt einen Weg statt vier Reiter mit: ein Einstieg,
-      // von dem alles andere aufgerufen wird.
-      AppConcept.siebenTage => SevenDaysHome(
-          controller: controller,
-          // Nur „Sieben Tage" hängt am Kalendertag; die anderen Konzepte
-          // ordnen nach Nummer, Uhrzeit oder Phase. Ohne Angabe gilt die
-          // echte Uhr.
-          clock: clock ?? DateTime.now,
-        ),
-      // Messanlass braucht einen eigenen Ort für offene Grenzfälle — einen
-      // vierten Bereich, dessen Anzahl am Reiter steht.
-      AppConcept.messanlass => OccasionHome(controller: controller),
-      // Phase braucht einen eigenen Ort für die Zeitzuordnung: Ein Vergleich
-      // ist nur so belastbar wie sie.
-      AppConcept.phase => PhaseHome(controller: controller),
-      AppConcept.klassisch || AppConcept.tagesprofil =>
-        TabbedHome(controller: controller),
-    };
+}) => switch (concept) {
+  // Messanlass braucht einen eigenen Ort für offene Grenzfälle — einen
+  // vierten Bereich, dessen Anzahl am Reiter steht.
+  AppConcept.messanlass => OccasionHome(controller: controller),
+  // Phase braucht einen eigenen Ort für die Zeitzuordnung: Ein Vergleich
+  // ist nur so belastbar wie sie.
+  AppConcept.phase => PhaseHome(controller: controller),
+  AppConcept.klassisch => TabbedHome(
+    controller: controller,
+    // „Heute" zeigt die laufende Woche und hängt damit am Kalendertag.
+    clock: clock ?? DateTime.now,
+  ),
+};

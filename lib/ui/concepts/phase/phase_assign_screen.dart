@@ -14,6 +14,7 @@ import '../../../db/app_database.dart';
 import '../../../stats/phase_grouping.dart';
 import '../../format.dart';
 import '../../theme/sphygma_theme.dart';
+import '../../widgets/surface_panel.dart';
 
 class PhaseAssignScreen extends StatelessWidget {
   const PhaseAssignScreen({super.key, required this.controller});
@@ -54,7 +55,7 @@ class PhaseAssignScreen extends StatelessWidget {
         }
 
         return ListView(
-          padding: EdgeInsets.all(t.gapLarge),
+          padding: t.listPadding,
           children: [
             Text(
               'Bei ${offen.length == 1 ? "einer Messung" : "${offen.length} Messungen"} '
@@ -63,11 +64,17 @@ class PhaseAssignScreen extends StatelessWidget {
               style: TextStyle(fontSize: 12, color: t.muted, height: 1.5),
             ),
             SizedBox(height: t.gapLarge),
-            for (final m in offen)
-              _Offen(
-                controller: controller,
-                measurement: m,
-                phases: gruppen!.memberships,
+            // Wechselnder Ton wie im Prüfbereich der Anlässe: Zwei offene
+            // Fragen dürfen bei „Band" nicht zu einer Fläche verschmelzen.
+            for (final (i, m) in offen.indexed)
+              SurfacePanel(
+                tone: i % 2,
+                highlighted: true,
+                child: _Offen(
+                  controller: controller,
+                  measurement: m,
+                  phases: gruppen!.memberships,
+                ),
               ),
           ],
         );
@@ -92,70 +99,59 @@ class _Offen extends StatelessWidget {
     final t = SphygmaTheme.of(context);
     final m = measurement;
 
-    return Container(
-      margin: EdgeInsets.only(bottom: t.gapLarge),
-      padding: EdgeInsets.all(t.gapSmall),
-      decoration: BoxDecoration(
-        border: Border.all(color: t.line),
-        borderRadius: BorderRadius.circular(t.radius),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Messung Nr. ${m.deviceSequence}',
-            style: TextStyle(fontSize: 11, color: t.muted),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Messung Nr. ${m.deviceSequence}',
+          style: TextStyle(fontSize: 11, color: t.muted),
+        ),
+        Text(
+          '${m.systolic}/${m.diastolic} · Puls ${m.pulse}',
+          style: TextStyle(
+            fontSize: 17,
+            color: t.onSurface,
+            fontFeatures: const [FontFeature.tabularFigures()],
           ),
-          Text(
-            '${m.systolic}/${m.diastolic} · Puls ${m.pulse}',
-            style: TextStyle(
-              fontSize: 17,
-              color: t.onSurface,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
-          SizedBox(height: t.gapSmall),
-          _Herkunft(label: 'Laut Gerät', value: formatDayAndTime(m.measuredAt)),
-          _Herkunft(label: 'Eingelesen', value: formatDayAndTime(m.importedAt)),
-          SizedBox(height: t.gapSmall / 2),
-          Text(
-            'Der Importzeitpunkt ist kein Messzeitpunkt: Beim Voll-Readout '
-            'kommen alte Aufzeichnungen gemeinsam an.',
-            style: TextStyle(fontSize: 11, color: t.muted, height: 1.5),
-          ),
-          SizedBox(height: t.gapSmall),
-          Text(
-            'Zuordnung',
-            style: TextStyle(fontSize: 12, color: t.muted),
-          ),
-          Wrap(
-            spacing: t.gapSmall,
-            runSpacing: t.gapSmall / 2,
-            children: [
-              for (final p in phases)
-                OutlinedButton(
-                  onPressed: () => controller.assignToPhase(
-                    deviceSequence: m.deviceSequence,
-                    phaseId: p.phase.id,
-                  ),
-                  child: Text(p.phase.name),
-                ),
-              TextButton(
+        ),
+        SizedBox(height: t.gapSmall),
+        _Herkunft(label: 'Laut Gerät', value: formatDayAndTime(m.measuredAt)),
+        _Herkunft(label: 'Eingelesen', value: formatDayAndTime(m.importedAt)),
+        SizedBox(height: t.gapSmall / 2),
+        Text(
+          'Der Importzeitpunkt ist kein Messzeitpunkt: Beim Voll-Readout '
+          'kommen alte Aufzeichnungen gemeinsam an.',
+          style: TextStyle(fontSize: 11, color: t.muted, height: 1.5),
+        ),
+        SizedBox(height: t.gapSmall),
+        Text('Zuordnung', style: TextStyle(fontSize: 12, color: t.muted)),
+        Wrap(
+          spacing: t.gapSmall,
+          runSpacing: t.gapSmall / 2,
+          children: [
+            for (final p in phases)
+              OutlinedButton(
                 onPressed: () => controller.assignToPhase(
                   deviceSequence: m.deviceSequence,
-                  phaseId: null,
+                  phaseId: p.phase.id,
                 ),
-                child: const Text('Keiner Phase'),
+                child: Text(p.phase.name),
               ),
-            ],
-          ),
-          if (phases.isEmpty)
-            Text(
-              'Es gibt noch keine Phase, der sie zugeordnet werden könnte.',
-              style: TextStyle(fontSize: 11, color: t.muted),
+            TextButton(
+              onPressed: () => controller.assignToPhase(
+                deviceSequence: m.deviceSequence,
+                phaseId: null,
+              ),
+              child: const Text('Keiner Phase'),
             ),
-        ],
-      ),
+          ],
+        ),
+        if (phases.isEmpty)
+          Text(
+            'Es gibt noch keine Phase, der sie zugeordnet werden könnte.',
+            style: TextStyle(fontSize: 11, color: t.muted),
+          ),
+      ],
     );
   }
 }

@@ -125,16 +125,19 @@ void main() {
   for (final k in allConcepts) {
     testWidgets('${k.name}: die Einordnung folgt dem Flag', (tester) async {
       await controller.setConcept(k);
-      await tester.pumpWidget(MaterialApp(
-        home: SphygmaThemeScope(
-          theme: themeFor(ThemeVariant.instrument),
-          child: conceptHome(
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => SphygmaThemeScope(
+            theme: themeFor(ThemeVariant.instrument),
+            child: child!,
+          ),
+          home: conceptHome(
             concept: k,
             controller: controller,
             clock: () => _jetzt,
           ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
 
       if (escClassificationEnabled) {
@@ -147,7 +150,8 @@ void main() {
         expect(
           find.byType(ClassificationScale),
           findsNothing,
-          reason: 'Ohne SPHYGMA_ESC darf ${k.name} nichts klassifizieren '
+          reason:
+              'Ohne SPHYGMA_ESC darf ${k.name} nichts klassifizieren '
               '(PLAN.md §3.2)',
         );
       }

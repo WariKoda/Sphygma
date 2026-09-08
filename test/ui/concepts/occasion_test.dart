@@ -26,21 +26,25 @@ class _NoopSink implements HealthSink {
   Future<void> deleteBloodPressure(String clientRecordId) async {}
 }
 
-SlotRecord _rec(int seq, DateTime at, {int sys = 124, int dia = 82,
-    bool bewegung = false}) =>
-    SlotRecord(
-      userSlot: 1,
-      record: BloodPressureRecord(
-        systolic: sys,
-        diastolic: dia,
-        pulse: 78,
-        timestamp: at,
-        arrhythmiaFlag: false,
-        movementFlag: bewegung,
-        sequence: seq,
-      ),
-      rawBytes: Uint8List(14),
-    );
+SlotRecord _rec(
+  int seq,
+  DateTime at, {
+  int sys = 124,
+  int dia = 82,
+  bool bewegung = false,
+}) => SlotRecord(
+  userSlot: 1,
+  record: BloodPressureRecord(
+    systolic: sys,
+    diastolic: dia,
+    pulse: 78,
+    timestamp: at,
+    arrhythmiaFlag: false,
+    movementFlag: bewegung,
+    sequence: seq,
+  ),
+  rawBytes: Uint8List(14),
+);
 
 /// Zwei Tage alt: sicher in der Vergangenheit, egal wann der Test läuft.
 final _basis = DateTime.now().subtract(const Duration(days: 2));
@@ -82,12 +86,13 @@ void main() {
   }
 
   Future<void> pumpWith(WidgetTester tester, ThemeVariant v) =>
-      tester.pumpWidget(MaterialApp(
-        home: SphygmaThemeScope(
-          theme: themeFor(v),
-          child: OccasionHome(controller: controller),
+      tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) =>
+              SphygmaThemeScope(theme: themeFor(v), child: child!),
+          home: OccasionHome(controller: controller),
         ),
-      ));
+      );
 
   setUp(() {
     db = AppDatabase(NativeDatabase.memory());
@@ -114,8 +119,9 @@ void main() {
     }
   });
 
-  testWidgets('ein Anlass, ein Ergebnis — die Rohwerte stehen daneben',
-      (tester) async {
+  testWidgets('ein Anlass, ein Ergebnis — die Rohwerte stehen daneben', (
+    tester,
+  ) async {
     await boot();
     await repository.importAll([
       _rec(1, _basis, sys: 130, dia: 88),
@@ -140,8 +146,10 @@ void main() {
     await tester.pumpAndSettle();
 
     // Fünf Rohmessungen, vier Anlässe.
-    expect(find.textContaining('4 Messanlässe aus 5 Rohmessungen'),
-        findsOneWidget);
+    expect(
+      find.textContaining('4 Messanlässe aus 5 Rohmessungen'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('offene Grenzfälle stehen als Anzahl am Reiter', (tester) async {
@@ -154,8 +162,9 @@ void main() {
     expect(find.widgetWithText(Badge, '1'), findsOneWidget);
   });
 
-  testWidgets('ein Grenzfall wird entschieden, nicht still zusammengefasst',
-      (tester) async {
+  testWidgets('ein Grenzfall wird entschieden, nicht still zusammengefasst', (
+    tester,
+  ) async {
     await boot();
     await bestand();
     expect(controller.occasions, hasLength(4));
@@ -217,15 +226,20 @@ void main() {
     await bestand();
 
     await pumpWith(tester, ThemeVariant.instrument);
-    await tester.tap(find.byIcon(Icons.tune));
+    await tester.tap(find.byIcon(Icons.settings));
     await tester.pumpAndSettle();
 
-    expect(find.text('Konzept und Gestaltung'), findsOneWidget);
+    expect(find.text('Einstellungen'), findsOneWidget);
+    // Die Konzeptwahl steht weit unten: Vor ihr liegen Abgleich,
+    // Übertragung und Kopplung — was häufiger gebraucht wird, steht oben.
+    await tester.scrollUntilVisible(find.text('KONZEPT'), 300);
+    await tester.pumpAndSettle();
     expect(find.text('KONZEPT'), findsOneWidget);
   });
 
-  testWidgets('die Auswertung mittelt Anlässe, nicht Rohmessungen',
-      (tester) async {
+  testWidgets('die Auswertung mittelt Anlässe, nicht Rohmessungen', (
+    tester,
+  ) async {
     await boot();
     // Ein dreifach gemessener Anlass und drei einzelne. Zählte man
     // Rohmessungen, hätte der erste Anlass dreifaches Gewicht.
@@ -250,8 +264,9 @@ void main() {
     expect(find.textContaining('4 Anlässe · 6 Rohmessungen'), findsOneWidget);
   });
 
-  testWidgets('eine Entscheidung lässt sich zurücknehmen und wirkt wirklich',
-      (tester) async {
+  testWidgets('eine Entscheidung lässt sich zurücknehmen und wirkt wirklich', (
+    tester,
+  ) async {
     await boot();
     await bestand();
 
