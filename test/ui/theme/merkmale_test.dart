@@ -84,42 +84,61 @@ void main() {
     );
   });
 
-  testWidgets('Kennzahlen kippen ab fünf Einträgen zurück auf Zeilen', (
+  testWidgets('Karten weichen Zeilen, wenn die Breite nicht reicht', (
     tester,
   ) async {
-    // Nebeneinander taugt nur für wenige Zahlen. Fünf Tagesabschnitte in
-    // Karten wären schmaler als ihr Inhalt — dann sind Zeilen die ehrlichere
-    // Anordnung, auch im „Tagebuch".
-    Future<void> zeige(int anzahl) => tester.pumpWidget(
+    // Nebeneinander taugt nur, solange jede Karte breiter bleibt als ihr
+    // Inhalt. Eine feste Obergrenze an Einträgen reichte dafür nicht: Vier
+    // Karten auf 360 Pixeln bei doppelter Schriftgröße brechen die Messwerte
+    // mitten auseinander (Codex-Gegenblick 09.09.2026).
+    Future<void> zeige({
+      required int anzahl,
+      required double breite,
+      required double schrift,
+    }) => tester.pumpWidget(
       MaterialApp(
-        home: SphygmaThemeScope(
-          theme: themeFrom(
-            characteristic: Characteristic.tagebuch,
-            palette: Palette.himmel,
-            typeface: Typeface.system,
-          ),
-          child: Scaffold(
-            body: StatTiles(
-              stats: [
-                for (var i = 0; i < anzahl; i++)
-                  Stat(label: 'Wert $i', value: '12$i/8$i · 7$i'),
-              ],
+        home: MediaQuery(
+          data: MediaQueryData(textScaler: TextScaler.linear(schrift)),
+          child: SphygmaThemeScope(
+            theme: themeFrom(
+              characteristic: Characteristic.tagebuch,
+              palette: Palette.himmel,
+              typeface: Typeface.system,
+            ),
+            child: Scaffold(
+              body: SizedBox(
+                width: breite,
+                child: StatTiles(
+                  stats: [
+                    for (var i = 0; i < anzahl; i++)
+                      Stat(label: 'Wert $i', value: '14$i/9$i · 8$i'),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
       ),
     );
 
-    await zeige(maxKarten);
-    expect(find.byType(Row), findsWidgets, reason: 'wenige Zahlen: Karten');
-    final mitKarten = tester.widgetList(find.byType(Expanded)).length;
-    expect(mitKarten, maxKarten);
+    int karten() => tester.widgetList(find.byType(Expanded)).length;
 
-    await zeige(maxKarten + 1);
+    await zeige(anzahl: 2, breite: 400, schrift: 1.0);
+    expect(karten(), 2, reason: 'zwei Zahlen auf breitem Schirm: Karten');
+
+    await zeige(anzahl: 4, breite: 360, schrift: 2.0);
     expect(
-      tester.widgetList(find.byType(Expanded)).length,
+      karten(),
       0,
-      reason: 'zu viele Zahlen: keine Karten mehr, sondern Zeilen',
+      reason: 'vier Karten auf 360 Pixeln bei doppelter Schrift wären '
+          'schmaler als ihr Inhalt — dann sind Zeilen richtig',
+    );
+
+    await zeige(anzahl: maxKarten + 1, breite: 1200, schrift: 1.0);
+    expect(
+      karten(),
+      0,
+      reason: 'auch auf breitem Schirm sind fünf Karten kein Überblick mehr',
     );
   });
 }

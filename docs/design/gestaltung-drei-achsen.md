@@ -387,9 +387,19 @@ Zahlenblöcken auch *„Listen als Datentabelle mit festen Spalten SYS · DIA ·
 PULS und einem Spaltenkopf"*. Die Blöcke sind gebaut, die Tabelle nicht — sie
 betrifft jede Liste in jedem Konzept und ist ein eigener Schritt.
 
-### Kartengrenze
+### Wann Karten tragen
 
-`StatTiles` legt Kennzahlen nur bis zu **vier** Einträgen nebeneinander. Fünf
-Tagesabschnitte in Karten wären schmaler als ihr Inhalt; dort bleibt es auch im
-„Tagebuch" bei Zeilen. Die Regel steht im Baustein, nicht im Bildschirm, und
-ein Test hält sie fest.
+Der erste Versuch war eine feste Obergrenze: höchstens vier Einträge
+nebeneinander. Sie ist im Gegenblick gefallen — **vier Karten auf 360 Pixeln
+bei doppelter Schriftgröße brechen die Messwerte mitten auseinander.** Eine
+Zahl über Einträge sagt nichts darüber, ob der Platz reicht.
+
+`StatTiles` rechnet deshalb: Wie breit wird jede Karte, wenn Lücken und
+Polster abgezogen sind, und wie breit ist ein Messwert in der Schriftgröße,
+die der Nutzer eingestellt hat? Reicht es nicht, fällt der Baustein auf Zeilen
+zurück. Die Obergrenze von vier bleibt zusätzlich bestehen — auf einem breiten
+Schirm wären fünf Karten kein Überblick mehr, sondern ein Streifen.
+
+Die Rechnung ist grob und **absichtlich in die sichere Richtung**: Wer zu früh
+auf Zeilen fällt, verliert eine Anordnung; wer zu spät fällt, zerbricht die
+Zahlen.
