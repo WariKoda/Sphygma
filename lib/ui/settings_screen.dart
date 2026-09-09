@@ -367,7 +367,27 @@ class _AchsenWahl<T> extends StatelessWidget {
         width: double.infinity,
         child: DropdownMenu<T>(
           initialSelection: value,
-          label: Text(label),
+          // Beschriftung, Pfeil, Menüfläche und Rahmen nehmen ihre Farben aus
+          // der Gestaltung, nicht aus dem Material-Standard. Auf der dunklen
+          // Farbwelt „Nacht" stünde sonst dunkler Text auf dunklem Grund —
+          // gefunden im Codex-Gegenblick am 09.09.2026.
+          label: Text(label, style: TextStyle(color: t.muted)),
+          trailingIcon: Icon(Icons.arrow_drop_down, color: t.muted),
+          selectedTrailingIcon: Icon(Icons.arrow_drop_up, color: t.muted),
+          menuStyle: MenuStyle(
+            backgroundColor: WidgetStatePropertyAll(t.panel(0)),
+            surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+          ),
+          inputDecorationTheme: InputDecorationThemeData(
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: t.line),
+              borderRadius: BorderRadius.circular(t.chipRadius),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: t.accent),
+              borderRadius: BorderRadius.circular(t.chipRadius),
+            ),
+          ),
           expandedInsets: EdgeInsets.zero,
           textStyle: TextStyle(fontSize: 14, color: t.onSurface),
           // Eine leere Wahl gibt es nicht: Jede Achse hat immer einen Wert.

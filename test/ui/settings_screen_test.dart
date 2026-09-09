@@ -342,4 +342,30 @@ void main() {
     );
     expect(button.onPressed, isNull);
   });
+
+  testWidgets('die Auswahlfelder tragen die Farben der Gestaltung', (
+    tester,
+  ) async {
+    // Auf „Nacht" nimmt ein DropdownMenu ohne eigene Farben den
+    // Material-Standard und stellt dunklen Text auf dunklen Grund. Geprüft
+    // wird die Beschriftung, weil sie als einzige nicht schon durch
+    // `textStyle` abgedeckt ist.
+    await boot();
+    await controller.setPalette(Palette.nacht);
+
+    await pumpWith(tester, ThemeVariant.aura);
+
+    final t = themeFrom(
+      characteristic: controller.characteristic,
+      palette: Palette.nacht,
+      typeface: controller.typeface,
+    );
+    final label = tester.widget<Text>(
+      find.descendant(
+        of: find.byType(DropdownMenu<Palette>),
+        matching: find.text('Farbwelt'),
+      ),
+    );
+    expect(label.style?.color, t.muted);
+  });
 }
