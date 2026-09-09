@@ -230,4 +230,30 @@ void main() {
       () => Future<void>.delayed(const Duration(milliseconds: 50)),
     );
   });
+
+  testWidgets('eine freie Kombination erreicht die Oberfläche', (tester) async {
+    // Bis zum 09.09.2026 nahm die Hülle `themeFor(controller.themeVariant)`.
+    // Der Getter übersetzt nur die Charakteristik zurück — eine Palette, die
+    // nicht zur Diagonale gehört, ging dabei verloren: Messinstrument auf
+    // Nacht blieb hell. Gefunden im Codex-Gegenblick.
+    await tester.runAsync(() => controller.setPalette(Palette.nacht));
+    await tester.pumpWidget(SphygmaApp(controller: controller));
+    await tester.pumpAndSettle();
+
+    final context = tester.element(find.byType(TodayScreen));
+    expect(
+      SphygmaTheme.of(context).surface,
+      Palette.nacht.grund,
+      reason: 'die Palette muss ankommen, auch abseits der Diagonale',
+    );
+    expect(
+      SphygmaTheme.of(context).radius,
+      Characteristic.messinstrument.radius,
+      reason: 'und die Charakteristik daneben bestehen bleiben',
+    );
+
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+  });
 }

@@ -113,4 +113,25 @@ void main() {
     expect(await settings.characteristic(), Characteristic.tagebuch);
     expect(await settings.palette(), Palette.flieder);
   });
+
+  test('bei überlappenden Aufrufen gewinnt der spätere', () async {
+    // Der Nutzer tippt Gestaltung und gleich darauf Palette.
+    //
+    // Dieser Test bleibt auch ohne die Serialisierung grün — drift hält die
+    // Reihenfolge von sich aus ein. Er steht hier als Zusage, nicht als
+    // Regressionsschutz: Wer die Kette entfernt, verlässt sich wieder auf
+    // fremdes Verhalten. Ausdrücklich vermerkt, damit ihn niemand für einen
+    // Nachweis hält, der er nicht ist.
+    final repo = SettingsRepository(db);
+    final zuerst = repo.setThemeVariant(ThemeVariant.diary);
+    final danach = repo.setPalette(Palette.nacht);
+    await Future.wait([zuerst, danach]);
+
+    expect(await repo.palette(), Palette.nacht);
+    expect(
+      await repo.characteristic(),
+      Characteristic.tagebuch,
+      reason: 'die Charakteristik der ersten Wahl bleibt',
+    );
+  });
 }
