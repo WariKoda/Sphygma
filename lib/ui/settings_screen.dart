@@ -159,6 +159,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
             '${c.measurements.length - c.pendingExport} '
             'von ${c.measurements.length}',
       ),
+      SwitchListTile(
+        value: c.autoExport,
+        onChanged: c.setAutoExport,
+        title: Text(
+          'Neue Messungen automatisch übertragen',
+          style: TextStyle(
+            fontSize: 14,
+            color: SphygmaTheme.of(context).onSurface,
+          ),
+        ),
+        contentPadding: EdgeInsets.zero,
+        dense: true,
+      ),
+      // Ein automatischer Vorgang meldet seinen Fehler nicht bei jeder
+      // Messung — aber verschweigen darf er ihn auch nicht. Wer glaubt, seine
+      // Werte seien übertragen, verlässt sich darauf.
+      if (c.autoExportProblem case final grund?)
+        _Erklaerung(
+          text:
+              'Die letzte automatische Übertragung hat nicht geklappt: '
+              '$grund',
+        ),
       SettingButton(
         label: 'Alle übertragen',
         onPressed: c.busy || c.pendingExport == 0

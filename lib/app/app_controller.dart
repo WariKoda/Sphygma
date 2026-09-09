@@ -94,6 +94,23 @@ class AppController extends ChangeNotifier {
   /// geladen.
   bool weekPanelVisible = true;
 
+  /// Ob neue Messungen von selbst nach Health Connect gehen.
+  ///
+  /// Standard ist **an**: Messwerte dorthin zu bringen ist der Zweck dieser
+  /// App, und wer die Berechtigung erteilt hat, will genau das. Abschaltbar
+  /// bleibt es trotzdem — es gehen Gesundheitsdaten in eine fremde Akte.
+  bool autoExport = true;
+
+  /// Warum der letzte automatische Export nicht durchlief, oder null.
+  ///
+  /// Ein automatischer Vorgang darf nicht bei jeder Messung eine Fehlermeldung
+  /// werfen — Health Connect kann die Berechtigung dauerhaft verweigern, und
+  /// die Meldung käme dann endlos. Verschwiegen werden darf es aber auch
+  /// nicht: Wer glaubt, seine Werte seien übertragen, verlässt sich darauf.
+  /// Deshalb bleibt der Grund hier stehen und wird in den Einstellungen
+  /// angezeigt.
+  String? autoExportProblem;
+
   /// Die Messanlässe des gewählten Speicherplatzes: Rohmessungen, die kurz
   /// nacheinander entstanden sind, gehören zu einem Messen. Abgeleitet, nicht
   /// gespeichert — nur die Entscheidungen des Nutzers liegen in der DB.
@@ -174,6 +191,13 @@ class AppController extends ChangeNotifier {
     await settings.setTypeface(value);
   }
 
+  Future<void> setAutoExport(bool value) async {
+    await settings.setAutoExport(value);
+    autoExport = value;
+    if (value) autoExportProblem = null;
+    notifyListeners();
+  }
+
   Future<void> setWeekPanelVisible(bool value) async {
     await settings.setWeekPanelVisible(value);
     weekPanelVisible = value;
@@ -196,6 +220,7 @@ class AppController extends ChangeNotifier {
     typeface = await settings.typeface();
     concept = await settings.concept();
     weekPanelVisible = await settings.weekPanelVisible();
+    autoExport = await settings.autoExport();
     if (userSlot case final slot?) {
       intakeFloor = await repository.intakeFloor(slot);
     }
@@ -384,6 +409,7 @@ class AppController extends ChangeNotifier {
             ? 'Keine neuen Messungen (${result.readFromDevice} gelesen).'
             : '${result.newlyStored} neue Messungen.',
       );
+      if (result.newlyStored > 0) await _autoExport();
     } on NotPairedException {
       status = 'Noch nicht gepairt.';
       rethrow;
@@ -466,6 +492,27 @@ class AppController extends ChangeNotifier {
     }
   }
 
+  /// Überträgt neue Messungen nach Health Connect, wenn es eingeschaltet ist.
+  ///
+  /// **Scheitert leise, aber nicht spurlos.** Fehlt die Berechtigung, käme
+  /// sonst nach jeder Messung dieselbe Fehlermeldung; der Abgleich selbst war
+  /// ja erfolgreich, und seine Meldung soll nicht davon überschrieben werden.
+  /// Der Grund bleibt in [autoExportProblem] stehen und ist in den
+  /// Einstellungen zu sehen.
+  Future<void> _autoExport() async {
+    if (!autoExport) return;
+    final slot = userSlot;
+    if (slot == null) return;
+    try {
+      final anzahl = await exportService.exportPending(userSlot: slot);
+      autoExportProblem = null;
+      if (anzahl > 0) _log('$anzahl an Health Connect übertragen.');
+    } catch (e) {
+      autoExportProblem = '$e';
+      debugPrint('[Sphygma] Automatischer Export fehlgeschlagen: $e');
+    }
+  }
+
   /// Setzt das Lauschen neu auf.
   ///
   /// **Erst abbestellen, dann neu starten — und dazwischen warten.**
@@ -483,6 +530,11 @@ class AppController extends ChangeNotifier {
     // Zwischen Abbestellen und Neustart kann die App beendet worden sein.
     if (_disposed || !paired) return;
     _startWatching();
+    // Zwischen Abbestellen und Neustart steht `autoSyncActive` auf falsch.
+    // Ohne diese Meldung bliebe die Anzeige dabei stehen — „Kein
+    // automatischer Abgleich", obwohl er läuft (Codex-Gegenblick
+    // 2026-09-09).
+    notifyListeners();
   }
 
   Future<void> _refresh() async {

@@ -290,7 +290,14 @@ void main() {
     await pumpWith(tester, ThemeVariant.instrument);
     expect(controller.weekPanelVisible, isTrue, reason: 'Standard ist an');
 
-    await tester.tap(find.byType(SwitchListTile));
+    // Über den Text, nicht über den Typ: Seit dem automatischen Export gibt
+    // es zwei Schalter im Blatt.
+    await tester.tap(
+      find.ancestor(
+        of: find.textContaining('Wochenraster'),
+        matching: find.byType(SwitchListTile),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(controller.weekPanelVisible, isFalse);

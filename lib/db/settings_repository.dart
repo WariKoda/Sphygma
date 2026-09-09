@@ -279,6 +279,34 @@ class SettingsRepository {
   Future<void> setWeekPanelVisible(bool visible) =>
       setRawSetting(_weekPanelKey, '$visible');
 
+  static const String _autoExportKey = 'auto_export';
+
+  /// Ob neue Messungen von selbst nach Health Connect gehen.
+  ///
+  /// Standard ist an: Der Export ist der Zweck der App. Wie bei der
+  /// Gestaltung wird ein unlesbarer Wert gemeldet, aber nicht geworfen — eine
+  /// kaputte Einstellung darf die App nicht unbenutzbar machen.
+  Future<bool> autoExport() async {
+    final row = await (_db.select(_db.appSettings)
+          ..where((s) => s.key.equals(_autoExportKey)))
+        .getSingleOrNull();
+    if (row == null) return true;
+    return switch (row.value) {
+      'true' => true,
+      'false' => false,
+      _ => () {
+        debugPrint(
+          '[Sphygma] Unlesbare Export-Einstellung "${row.value}", '
+          'übertrage automatisch.',
+        );
+        return true;
+      }(),
+    };
+  }
+
+  Future<void> setAutoExport(bool value) =>
+      setRawSetting(_autoExportKey, '$value');
+
   /// Schreibt einen Einstellungswert unmittelbar. Oeffentlich, weil Tests
   /// ungueltige Zustaende herstellen koennen muessen.
   Future<void> setRawSetting(String key, String value) async {
