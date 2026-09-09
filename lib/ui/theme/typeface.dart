@@ -12,7 +12,12 @@ enum Typeface {
 
   /// Eine Serif für ruhiges Lesen. Sie macht aus dem Verlauf eher ein
   /// Tagebuch als eine Tabelle.
-  serif('Serif');
+  serif('Serif'),
+
+  /// Eine Schreibmaschinenschrift: **jedes** Zeichen gleich breit, nicht nur
+  /// die Ziffern. Werte stehen damit in Listen exakt untereinander, ohne dass
+  /// es auf ein Schriftmerkmal ankommt — die Bauart erzwingt es.
+  mono('Monospace');
 
   const Typeface(this.label);
 
@@ -44,6 +49,13 @@ class TypefaceStyle {
   /// Null überlässt die Familie wie bisher der Plattform.
   final String? fontFamily;
   final Set<FontWeight> availableWeights;
+
+  /// Ob Ziffern gleich breit laufen.
+  ///
+  /// Zwei Wege führen dahin, und beide zählen: das OpenType-Merkmal `tnum`,
+  /// oder eine Schreibmaschinenschrift, bei der ohnehin jedes Zeichen
+  /// dieselbe Breite hat. Geprüft wird an der Schriftdatei — bei den
+  /// eingebetteten Familien mit fonttools, vor dem Einchecken.
   final bool hasTabularFigures;
 
   FontWeight weightFor(WeightRole role) {
@@ -112,8 +124,32 @@ final _serif = TypefaceStyle(
   hasTabularFigures: true,
 );
 
+/// Source Code Pro, variabel von 200 bis 900.
+///
+/// Ihre tabellarischen Ziffern folgen nicht aus `tnum`, sondern aus der
+/// Bauart: An der Datei gemessen laufen **alle** Zeichen 600 Einheiten breit,
+/// Ziffern wie Buchstaben.
+///
+/// Ubuntu Mono war der naheliegende Vorschlag und ist aus zwei Gründen nicht
+/// hier gelandet: Sie steht unter der Ubuntu Font Licence statt der OFL —
+/// eine zweite Lizenz für dieselbe Sache —, und es gibt sie nur in Regular
+/// und Bold. Für die Rolle `sehrLeicht` bliebe dann nur Regular, und die
+/// Charakteristik „Luft" verlöre gerade das, was sie ausmacht.
+final _mono = TypefaceStyle(
+  fontFamily: 'SourceCodePro',
+  availableWeights: {
+    FontWeight.w200,
+    FontWeight.w300,
+    FontWeight.w400,
+    FontWeight.w500,
+    FontWeight.w700,
+  },
+  hasTabularFigures: true,
+);
+
 TypefaceStyle typefaceStyleFor(Typeface typeface) => switch (typeface) {
   Typeface.system => _system,
   Typeface.grotesk => _grotesk,
   Typeface.serif => _serif,
+  Typeface.mono => _mono,
 };

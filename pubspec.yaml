@@ -96,6 +96,14 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
+  # Die Lizenztexte der Schriften. Sie gehören ins Paket, nicht nur ins
+  # Repository: Die OFL verlangt, dass jede Kopie der Software den
+  # Lizenztext enthält. Angemeldet werden sie in font_licenses.dart.
+  assets:
+    - assets/fonts/OFL-Archivo.txt
+    - assets/fonts/OFL-SourceSerif4.txt
+    - assets/fonts/OFL-SourceCodePro.txt
+
   # Die Schriftachse (docs/design/gestaltung-drei-achsen.md). Beide Familien
   # stehen unter der SIL Open Font License — Bedingung für F-Droid; die
   # Lizenztexte liegen daneben.
@@ -114,6 +122,9 @@ flutter:
     - family: SourceSerif4
       fonts:
         - asset: assets/fonts/SourceSerif4.ttf
+    - family: SourceCodePro
+      fonts:
+        - asset: assets/fonts/SourceCodePro.ttf
   #         weight: 700
   #
   # For details regarding fonts from package dependencies,
