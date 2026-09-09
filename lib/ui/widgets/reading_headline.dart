@@ -102,11 +102,18 @@ class _Bloecke extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    // `Wrap` statt `Row`: Wer die Schrift vergrößert, braucht sie am
+    // dringendsten — und zwei Zahlen nebeneinander sind breiter als eine mit
+    // Schrägstrich. Reicht die Breite nicht, rutscht der zweite Block unter
+    // den ersten, statt über den Rand zu laufen. Bei doppelter
+    // Systemschriftgröße waren es 121 Pixel Überlauf (Codex-Gegenblick
+    // 09.09.2026).
+    return Wrap(
+      spacing: t.gapLarge,
+      runSpacing: t.gapSmall,
+      crossAxisAlignment: WrapCrossAlignment.start,
       children: [
         _Block(wert: systolic, kuerzel: 'SYS'),
-        SizedBox(width: t.gapLarge),
         _Block(wert: diastolic, kuerzel: 'DIA'),
       ],
     );
