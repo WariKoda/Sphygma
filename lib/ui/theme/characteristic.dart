@@ -30,6 +30,46 @@ enum ReadingLayout {
   bloecke,
 }
 
+/// Wo die Einordnung eines Werts erscheint.
+enum ZoneDisplay {
+  /// Als Chip oder Band **neben** dem Wert. Der Regelfall.
+  marke,
+
+  /// Die **Fläche selbst** trägt den Ton.
+  ///
+  /// Der Entwurf zu „Pegel" sagt es scharf: *„Die Einordnung färbt die
+  /// Kopffläche selbst — nicht einen Chip, eine Pille oder ein Band
+  /// darunter. Der Bildschirm sagt seinen Zustand vor der Zahl."*
+  flaeche,
+}
+
+/// Wie Kennzahlen nebeneinanderstehen — oder eben nicht.
+enum StatsLayout {
+  /// Beschriftung links, Wert rechts, eine Zeile je Kennzahl. Der Regelfall:
+  /// beliebig viele Einträge, alles untereinander lesbar.
+  zeilen,
+
+  /// Als kleine Karten nebeneinander.
+  ///
+  /// Der Entwurf zu „Tagebuch": *„Kennzahlen nebeneinander als Mini-Karten
+  /// statt untereinander als Zeilen."* Das hebt wenige Zahlen heraus, statt
+  /// sie in einer Liste gleichzumachen.
+  karten,
+}
+
+/// Wie eine Auswahl aus wenigen Möglichkeiten aussieht.
+enum SelectionStyle {
+  /// Eine Leiste gleich breiter Felder, das gewählte gefüllt.
+  leiste,
+
+  /// Einzelne Chips nebeneinander, das gewählte gefüllt.
+  ///
+  /// Der Entwurf zu „Material 3": *„Filter-Chips statt Segmentleiste; der
+  /// gewählte Chip gefüllt."* Chips sind unterschiedlich breit — sie tragen
+  /// ihren Text, statt ihn in ein gleichmäßiges Raster zu zwingen.
+  chips,
+}
+
 enum Characteristic {
   messinstrument(
     label: 'Messinstrument',
@@ -56,6 +96,7 @@ enum Characteristic {
     erhebung: 8,
     nutztAkzent: true,
     categoryRole: CategoryRole.markierung,
+     statsLayout: StatsLayout.karten,
   ),
   material(
     label: 'Material',
@@ -69,6 +110,7 @@ enum Characteristic {
     erhebung: 0,
     nutztAkzent: true,
     categoryRole: CategoryRole.markierung,
+     selectionStyle: SelectionStyle.chips,
   ),
   luft(
     label: 'Luft',
@@ -109,6 +151,7 @@ enum Characteristic {
     erhebung: 0,
     nutztAkzent: true,
     categoryRole: CategoryRole.flaeche,
+     zoneDisplay: ZoneDisplay.flaeche,
   );
 
   const Characteristic({
@@ -124,6 +167,9 @@ enum Characteristic {
     required this.nutztAkzent,
     required this.categoryRole,
     this.readingLayout = ReadingLayout.bruch,
+    this.zoneDisplay = ZoneDisplay.marke,
+    this.statsLayout = StatsLayout.zeilen,
+    this.selectionStyle = SelectionStyle.leiste,
   });
 
   final String label;
@@ -141,4 +187,13 @@ enum Characteristic {
   /// Wie der große Messwert gebaut ist. Standard ist der Bruch — abweichen
   /// muss eine Form begründen, nicht umgekehrt.
   final ReadingLayout readingLayout;
+
+  /// Wo die Einordnung erscheint: als Marke daneben oder als Ton der Fläche.
+  final ZoneDisplay zoneDisplay;
+
+  /// Wie Kennzahlen angeordnet sind — untereinander oder als Karten.
+  final StatsLayout statsLayout;
+
+  /// Wie eine Auswahl aus wenigen Möglichkeiten gebaut ist.
+  final SelectionStyle selectionStyle;
 }

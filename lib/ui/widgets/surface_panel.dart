@@ -15,6 +15,7 @@ class SurfacePanel extends StatelessWidget {
     this.tone = 0,
     this.padding,
     this.highlighted = false,
+    this.tint,
   });
 
   final Widget child;
@@ -37,6 +38,12 @@ class SurfacePanel extends StatelessWidget {
   /// Inhalt zwischen anderem Inhalt.
   final bool highlighted;
 
+  /// Ein Ton, der die Grundfläche ersetzt.
+  ///
+  /// Nur die Form „Band" nutzt ihn: Dort trägt die Fläche selbst die
+  /// Einordnung. Null heißt „wie immer" — die Tonstufe aus der Gestaltung.
+  final Color? tint;
+
   @override
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
@@ -50,7 +57,7 @@ class SurfacePanel extends StatelessWidget {
       margin: EdgeInsets.only(bottom: t.gapSmall),
       padding: padding ?? EdgeInsets.all(t.panelPadding),
       decoration: BoxDecoration(
-        color: t.panel(tone),
+        color: tint ?? t.panel(tone),
         borderRadius: BorderRadius.circular(t.radius),
         border: highlighted
             ? Border.all(color: t.onSurface.withValues(alpha: 0.35))

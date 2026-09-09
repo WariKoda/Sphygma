@@ -22,6 +22,9 @@ class SphygmaTheme {
     required this.headlineWeight,
     this.fontFamily,
     this.readingLayout = ReadingLayout.bruch,
+    this.zoneDisplay = ZoneDisplay.marke,
+    this.statsLayout = StatsLayout.zeilen,
+    this.selectionStyle = SelectionStyle.leiste,
     required this.showDividers,
     required this.panelBase,
     required this.panelRaised,
@@ -68,6 +71,18 @@ class SphygmaTheme {
   /// Ein **Aufbau**-Merkmal, kein Maß: Es steht hier, damit `ReadingHeadline`
   /// es kennt und kein Bildschirm nach der Form verzweigen muss.
   final ReadingLayout readingLayout;
+
+  /// Wo die Einordnung erscheint — als Marke daneben oder als Ton der Fläche,
+  /// auf der der Wert steht.
+  final ZoneDisplay zoneDisplay;
+
+  /// Wie Kennzahlen angeordnet sind — untereinander oder als Karten
+  /// nebeneinander.
+  final StatsLayout statsLayout;
+
+  /// Wie eine Auswahl aus wenigen Möglichkeiten gebaut ist — Leiste oder
+  /// Chips.
+  final SelectionStyle selectionStyle;
 
   /// Ob Listenzeilen durch eine Haarlinie getrennt werden.
   ///
