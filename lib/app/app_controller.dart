@@ -526,12 +526,12 @@ class AppController extends ChangeNotifier {
     // von Hand fragt weiterhin.
     // Eine Senke, die keine Rechte kennt, schreibt einfach — sie kann auch
     // keinen Dialog öffnen.
-    if (exportService.sink case final PermissionAwareSink s
-        when !await s.canWriteWithoutAsking()) {
-      autoExportProblem =
-          'Health Connect hat keine Schreibrechte. Einmal von Hand '
-          'übertragen erteilt sie.';
-      return;
+    if (exportService.sink case final PermissionAwareSink s) {
+      final lage = await s.readiness();
+      if (lage.erklaerung case final grund?) {
+        autoExportProblem = grund;
+        return;
+      }
     }
 
     try {

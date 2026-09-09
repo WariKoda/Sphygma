@@ -15,12 +15,28 @@ import 'package:sphygma/sync/export_service.dart';
 import 'package:sphygma/sync/health_sink.dart';
 import 'package:sphygma/sync/sync_service.dart';
 
+/// Eine Senke, bei der Health Connect gar nicht verfügbar ist.
+class _OhneHealthConnect implements HealthSink, PermissionAwareSink {
+  bool gefragt = false;
+
+  @override
+  Future<SinkReadiness> readiness() async => SinkReadiness.nichtVerfuegbar;
+
+  @override
+  Future<void> writeBloodPressure(BloodPressureWrite w) async {
+    gefragt = true;
+  }
+
+  @override
+  Future<void> deleteBloodPressure(String id) async {}
+}
+
 /// Eine Senke, die ihre Rechte kennt und keine hat.
 class _OhneRechte implements HealthSink, PermissionAwareSink {
   bool gefragt = false;
 
   @override
-  Future<bool> canWriteWithoutAsking() async => false;
+  Future<SinkReadiness> readiness() async => SinkReadiness.keineRechte;
 
   @override
   Future<void> writeBloodPressure(BloodPressureWrite w) async {
@@ -222,5 +238,27 @@ void main() {
     await c.exportAll();
 
     expect(senke.geschrieben, 2, reason: 'einmal von selbst, einmal von Hand');
+  });
+
+  test('fehlendes Health Connect wird nicht als fehlende Rechte gemeldet',
+      () async {
+    // „Erteile die Berechtigung" hilft nicht, wenn Health Connect gar nicht
+    // installiert ist — die Meldung schickte den Nutzer auf einen Weg, an
+    // dessen Ende nichts steht (Codex-Gegenblick 09.09.2026).
+    final senke = _OhneHealthConnect();
+    final c = await _bauen(db, senke);
+    addTearDown(c.dispose);
+    await MeasurementRepository(db).importAll([_rec(1)]);
+    await c.refreshForTest();
+
+    await c.autoExportForTest();
+
+    expect(senke.gefragt, isFalse);
+    expect(c.autoExportProblem, contains('nicht verfügbar'));
+    expect(
+      c.autoExportProblem,
+      isNot(contains('von Hand')),
+      reason: 'von Hand übertragen hilft hier nicht',
+    );
   });
 }

@@ -35,8 +35,40 @@ class BloodPressureWrite {
 /// anderes tut, ist eine Zumutung — und er käme im ungünstigsten Fall nach
 /// jeder Messung. Der Knopf von Hand fragt weiterhin.
 abstract class PermissionAwareSink {
-  /// Ob bereits geschrieben werden darf, **ohne zu fragen**.
-  Future<bool> canWriteWithoutAsking();
+  /// Ob bereits geschrieben werden darf, **ohne zu fragen** — und wenn
+  /// nicht, warum.
+  Future<SinkReadiness> readiness();
+}
+
+/// Warum der automatische Export gerade nicht schreiben kann.
+///
+/// Die Unterscheidung ist kein Detail: „Erteile die Berechtigung" hilft
+/// nicht, wenn Health Connect gar nicht installiert ist, und schickt den
+/// Nutzer auf einen Weg, an dessen Ende nichts steht.
+enum SinkReadiness {
+  /// Es darf geschrieben werden.
+  bereit,
+
+  /// Die Rechte fehlen. Ein Export von Hand erteilt sie.
+  keineRechte,
+
+  /// Health Connect fehlt oder braucht ein Update. Von Hand hilft nicht.
+  nichtVerfuegbar,
+
+  /// Die Abfrage selbst ist gescheitert — Grund unbekannt.
+  unklar;
+
+  /// Was dem Nutzer dazu zu sagen ist, oder null, wenn alles bereit ist.
+  String? get erklaerung => switch (this) {
+    bereit => null,
+    keineRechte =>
+      'Health Connect hat keine Schreibrechte. Einmal von Hand übertragen '
+          'erteilt sie.',
+    nichtVerfuegbar =>
+      'Health Connect ist auf diesem Gerät nicht verfügbar oder braucht ein '
+          'Update.',
+    unklar => 'Health Connect ließ sich nicht abfragen.',
+  };
 }
 
 abstract class HealthSink {

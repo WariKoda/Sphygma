@@ -87,22 +87,32 @@ class HealthConnectSink implements HealthSink, PermissionAwareSink {
     }
   }
 
-  /// Prüft die Rechte, **ohne** den Dialog zu öffnen.
+  /// Prüft die Lage, **ohne** den Dialog zu öffnen.
+  ///
+  /// Die Fälle bleiben unterscheidbar: Fehlende Rechte lassen sich von Hand
+  /// erteilen, ein fehlendes Health Connect nicht.
   @override
-  Future<bool> canWriteWithoutAsking() async {
+  Future<SinkReadiness> readiness() async {
     try {
       if (!_configured) {
         await _health.configure();
         _configured = true;
       }
       final status = await _health.getHealthConnectSdkStatus();
-      if (status != HealthConnectSdkStatus.sdkAvailable) return false;
-      return await _health.hasPermissions(_types, permissions: _writeOnly) ==
-          true;
+      if (status != HealthConnectSdkStatus.sdkAvailable) {
+        return SinkReadiness.nichtVerfuegbar;
+      }
+      final granted = await _health.hasPermissions(
+        _types,
+        permissions: _writeOnly,
+      );
+      return granted == true
+          ? SinkReadiness.bereit
+          : SinkReadiness.keineRechte;
     } catch (_) {
       // Im Zweifel nicht schreiben: Der automatische Weg soll nichts
       // erzwingen. Der Knopf von Hand bleibt davon unberührt.
-      return false;
+      return SinkReadiness.unklar;
     }
   }
 
