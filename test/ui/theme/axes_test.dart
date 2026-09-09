@@ -43,7 +43,10 @@ void main() {
     ];
     const radii = [3.0, 18.0, 12.0, 18.0, 2.0, 0.0];
     expect(Palette.values, hasLength(4));
-    expect(Typeface.values, [Typeface.system]);
+    // Die Diagonale steht auf der Systemschrift: Sie soll die alten
+    // Gestaltungen reproduzieren, und die hatten keine eigene Familie.
+    // Welche Schriften daneben zur Wahl stehen, prüft typeface_test.
+    expect(Typeface.values, contains(Typeface.system));
     for (var i = 0; i < allVariants.length; i++) {
       final old = themeFor(allVariants[i]);
       final composed = themeFrom(

@@ -251,4 +251,20 @@ void main() {
       () => Future<void>.delayed(const Duration(milliseconds: 50)),
     );
   });
+
+  testWidgets('die gewählte Schrift erreicht die Oberfläche', (tester) async {
+    // Wie bei der Palette: Die Achse kann gebaut sein und trotzdem nirgends
+    // ankommen. Die Familie wird einzig über ThemeData verteilt — ein
+    // Bildschirm, der seine Texte ohne Familie setzt, erbt sie von dort.
+    await tester.runAsync(() => controller.setTypeface(Typeface.serif));
+    await tester.pumpWidget(SphygmaApp(controller: controller));
+    await tester.pumpAndSettle();
+
+    final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    expect(app.theme?.textTheme.bodyMedium?.fontFamily, 'SourceSerif4');
+
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+  });
 }

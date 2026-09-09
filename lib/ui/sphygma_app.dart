@@ -28,6 +28,10 @@ class SphygmaApp extends StatelessWidget {
             colorSchemeSeed: theme.accent,
             scaffoldBackgroundColor: theme.surface,
             useMaterial3: true,
+            // Die Schriftachse kommt nur hier an: Ein Bildschirm, der seine
+            // Texte ohne Familie setzt, erbt sie aus ThemeData. Null heißt
+            // „die des Telefons" und ist der Standard.
+            fontFamily: theme.fontFamily,
           ),
           // Der Scope liegt über dem Navigator, nicht in `home`.
           //

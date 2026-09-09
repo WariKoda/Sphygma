@@ -4,7 +4,15 @@ enum Typeface {
   /// Die Schrift des Telefons. Kostet nichts und bettet nichts ein — der
   /// richtige Standard, solange keine eigene Familie ausgewählt ist
   /// (docs/design/gestaltung-drei-achsen.md, „Schriften").
-  system('System');
+  system('System'),
+
+  /// Eine technische Grotesk. Schmale Ziffern, klare Grundformen — sie trägt
+  /// die großen Messwerte, ohne sie zu schmücken.
+  grotesk('Grotesk'),
+
+  /// Eine Serif für ruhiges Lesen. Sie macht aus dem Verlauf eher ein
+  /// Tagebuch als eine Tabelle.
+  serif('Serif');
 
   const Typeface(this.label);
 
@@ -71,6 +79,41 @@ final _system = TypefaceStyle(
   hasTabularFigures: true,
 );
 
+/// Archivo, variabel von 100 bis 900 — an der eingebetteten Datei geprüft.
+///
+/// Bei einer variablen Schrift genügt **eine** Datei für alle Schnitte; die
+/// Gewichtsrolle wird über die wght-Achse gestellt, nicht über getrennte
+/// Dateien. Deshalb gilt hier jedes Gewicht als vorhanden.
+final _grotesk = TypefaceStyle(
+  fontFamily: 'Archivo',
+  availableWeights: {
+    FontWeight.w200,
+    FontWeight.w300,
+    FontWeight.w400,
+    FontWeight.w500,
+    FontWeight.w700,
+  },
+  hasTabularFigures: true,
+);
+
+/// Source Serif 4, variabel von 200 bis 900.
+///
+/// Ihre Achse beginnt bei 200 — ExtraLight gibt es nicht darunter. Für die
+/// Rolle `sehrLeicht` ist das genau der Grenzfall, den die Rollen abfangen.
+final _serif = TypefaceStyle(
+  fontFamily: 'SourceSerif4',
+  availableWeights: {
+    FontWeight.w200,
+    FontWeight.w300,
+    FontWeight.w400,
+    FontWeight.w500,
+    FontWeight.w700,
+  },
+  hasTabularFigures: true,
+);
+
 TypefaceStyle typefaceStyleFor(Typeface typeface) => switch (typeface) {
   Typeface.system => _system,
+  Typeface.grotesk => _grotesk,
+  Typeface.serif => _serif,
 };
