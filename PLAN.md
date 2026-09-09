@@ -721,3 +721,26 @@ in der Oberfläche unerreichbar.
 * Die Kommentare in `time_of_day_band.dart` behaupteten die Einstellbarkeit
   bereits als vorhanden. Das ist am 08.09. berichtigt worden — wer sie baut,
   zieht die Kommentare wieder mit.
+
+### 9.7 Gestaltung in drei Achsen
+
+Aufgenommen 2026-09-08. Entwurf und Tafel:
+`docs/design/gestaltung-drei-achsen.md` und `.html`.
+
+Vier der sechs Gestaltungen sind kaum auseinanderzuhalten. Nicht weil sie so
+entworfen wären — der Entwurf gibt jeder ein strukturelles Merkmal —, sondern
+weil davon nichts gebaut ist: Kein Bildschirm verzweigt nach der Gestaltung,
+und eine Schriftfamilie gibt es überhaupt nicht.
+
+* **Charakteristik × Palette × Schrift** statt sechs vermengter Namen. Die
+  heutigen sechs sind die Diagonale dieses Raums; niemand verliert sein
+  Aussehen.
+* Vier Kopplungen sind vorher aufzulösen, sonst bricht die Trennung leise:
+  Auras relative Flächen, Messinstruments Monochromie, Pegels
+  Kategorienfarben als Fläche und — neu durch die Schriftachse — Gewichte,
+  die eine Familie gar nicht führt.
+* **Die Trennung allein ändert am Eindruck nichts.** Erst die fehlenden
+  Struktur-Merkmale machen den Unterschied sichtbar. Also beides zusammen
+  oder die Merkmale zuerst.
+* Die Auswahl braucht dann je Achse ein Auswahlfeld statt Radiolisten, mit
+  Vorschau darunter.

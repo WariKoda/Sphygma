@@ -1,196 +1,115 @@
-// Sechs Handschriften für dieselbe Struktur. Der Nutzer wählt sie in den
-// Einstellungen; die Wahl liegt in SettingsRepository.
+// Die Diagonale bleibt für bestehende Aufrufer; freie Gestaltungen entstehen
+// ausschließlich aus Form, Farbe und Schrift.
 import 'package:flutter/widgets.dart';
 
-import '../../stats/esc_classification.dart';
+import 'characteristic.dart';
+import 'palette.dart';
 import 'sphygma_theme.dart';
+import 'typeface.dart';
+
+export 'characteristic.dart';
+export 'palette.dart';
+export 'typeface.dart';
 
 enum ThemeVariant { instrument, diary, material, aura, pulseGrid, pegel }
 
 const List<ThemeVariant> allVariants = ThemeVariant.values;
 
-/// Gruen fuer unauffaellig, Gelb fuer Grenzbereich, Rot fuer erhoeht.
-/// Zurueckhaltend gewaehlt: Es geht um Einordnung, nicht um Alarm.
-///
-/// `optimal` und `normal` teilen absichtlich eine Farbe: Die Leitlinie
-/// trennt sie, fuer den Nutzer ist beides unauffaellig. Eine eigene Farbe
-/// wuerde eine Bedeutung suggerieren, die es nicht gibt.
-/// Für den dunklen Grund von „Aura": gedämpfte Töne, die auf #14181F noch
-/// tragen. Grün und Bernstein stammen aus dem Entwurf; der Ton für erhöhte
-/// Werte ist daraus abgeleitet — der Entwurf zeigt keinen.
-const Map<EscCategory, Color> _duskScale = {
-  EscCategory.optimal: Color(0xFF8FB89A),
-  EscCategory.normal: Color(0xFF8FB89A),
-  EscCategory.highNormal: Color(0xFFE2C08A),
-  EscCategory.grade1: Color(0xFFD98C7A),
-  EscCategory.grade2: Color(0xFFC9705E),
-  EscCategory.grade3: Color(0xFFB85B4C),
+typedef ThemeAxes = ({
+  Characteristic characteristic,
+  Palette palette,
+  Typeface typeface,
+});
+
+ThemeAxes axesFor(ThemeVariant variant) => switch (variant) {
+  ThemeVariant.instrument => (
+    characteristic: Characteristic.messinstrument,
+    palette: Palette.papier,
+    typeface: Typeface.system,
+  ),
+  ThemeVariant.diary => (
+    characteristic: Characteristic.tagebuch,
+    palette: Palette.himmel,
+    typeface: Typeface.system,
+  ),
+  ThemeVariant.material => (
+    characteristic: Characteristic.material,
+    palette: Palette.flieder,
+    typeface: Typeface.system,
+  ),
+  ThemeVariant.aura => (
+    characteristic: Characteristic.luft,
+    palette: Palette.nacht,
+    typeface: Typeface.system,
+  ),
+  ThemeVariant.pulseGrid => (
+    characteristic: Characteristic.raster,
+    palette: Palette.papier,
+    typeface: Typeface.system,
+  ),
+  ThemeVariant.pegel => (
+    characteristic: Characteristic.band,
+    palette: Palette.papier,
+    typeface: Typeface.system,
+  ),
 };
 
-/// „Pegel" färbt Flächen, nicht Punkte — deshalb helle Tonflächen aus dem
-/// Entwurf statt kräftiger Signalfarben.
-const Map<EscCategory, Color> _bandScale = {
-  EscCategory.optimal: Color(0xFFD9E5E0),
-  EscCategory.normal: Color(0xFFD9E5E0),
-  EscCategory.highNormal: Color(0xFFEFE1C9),
-  EscCategory.grade1: Color(0xFFF3E4CB),
-  EscCategory.grade2: Color(0xFFE8C9A8),
-  EscCategory.grade3: Color(0xFFDCB08A),
-};
+/// Das alte Auswahlblatt kennt nur die Form der Diagonale. Eine freie
+/// Farbkombination lässt sich darin nicht ausdrücken.
+ThemeVariant variantFor(Characteristic characteristic) =>
+    switch (characteristic) {
+      Characteristic.messinstrument => ThemeVariant.instrument,
+      Characteristic.tagebuch => ThemeVariant.diary,
+      Characteristic.material => ThemeVariant.material,
+      Characteristic.luft => ThemeVariant.aura,
+      Characteristic.raster => ThemeVariant.pulseGrid,
+      Characteristic.band => ThemeVariant.pegel,
+    };
 
-const Map<EscCategory, Color> _calmScale = {
-  EscCategory.optimal: Color(0xFF7EA77E),
-  EscCategory.normal: Color(0xFF7EA77E),
-  EscCategory.highNormal: Color(0xFFC9B45E),
-  EscCategory.grade1: Color(0xFFC07D5A),
-  EscCategory.grade2: Color(0xFFB05F42),
-  EscCategory.grade3: Color(0xFFA84C3A),
-};
+SphygmaTheme themeFor(ThemeVariant variant) {
+  final axes = axesFor(variant);
+  return themeFrom(
+    characteristic: axes.characteristic,
+    palette: axes.palette,
+    typeface: axes.typeface,
+  );
+}
 
-const Map<EscCategory, Color> _vividScale = {
-  EscCategory.optimal: Color(0xFF3FA35F),
-  EscCategory.normal: Color(0xFF3FA35F),
-  EscCategory.highNormal: Color(0xFFE0A93B),
-  EscCategory.grade1: Color(0xFFE07A3B),
-  EscCategory.grade2: Color(0xFFD9553C),
-  EscCategory.grade3: Color(0xFFC33A2E),
-};
-
-SphygmaTheme themeFor(ThemeVariant variant) => switch (variant) {
-  ThemeVariant.instrument => SphygmaTheme(
-    name: 'Messinstrument',
-    surface: Color(0xFFFAF9F7),
-    onSurface: Color(0xFF1B1B1A),
-    muted: Color(0x8A1B1B1A),
-    line: Color(0xFFE4E1DB),
-    accent: Color(0xFF1B1B1A),
-    categoryColors: _calmScale,
-    radius: 3,
-    gapSmall: 8,
-    gapLarge: 22,
-    headlineSize: 58,
-    // Entwurf: 58px/300
-    headlineWeight: FontWeight.w300,
-    showDividers: true,
-    panelBase: Color(0xFFFFFFFF),
-    panelRaised: Color(0xFFFAF9F7),
-    panelBorder: Color(0xFFE4E1DB),
-    panelShadow: null,
-  ),
-  ThemeVariant.diary => SphygmaTheme(
-    name: 'Tagebuch',
-    surface: Color(0xFFF2F5FB),
-    onSurface: Color(0xFF182034),
-    muted: Color(0x8A182034),
-    line: Color(0xFFE2E8F3),
-    accent: Color(0xFF4F7FD8),
-    categoryColors: _vividScale,
-    radius: 18,
-    gapSmall: 10,
-    gapLarge: 18,
-    headlineSize: 48,
-    // Entwurf: 48px/700 auf der Verlaufskarte
-    headlineWeight: FontWeight.w700,
-    showDividers: true,
-    panelBase: Color(0xFFFFFFFF),
-    // Der blaugraue Grund der Handschrift: Als Band braucht die zweite
-    // Tonstufe einen sichtbaren Unterschied, sonst verschmelzen zwei
-    // Abschnitte trotz Tonwechsel.
-    panelRaised: Color(0xFFF2F5FB),
-    panelBorder: null,
-    panelShadow: [
-      BoxShadow(color: Color(0x264F7FD8), blurRadius: 20, offset: Offset(0, 8)),
-    ],
-  ),
-  ThemeVariant.material => SphygmaTheme(
-    name: 'Material',
-    surface: Color(0xFFFEF7FF),
-    onSurface: Color(0xFF1D1B20),
-    muted: Color(0xFF49454F),
-    line: Color(0xFFE7E0EC),
-    accent: Color(0xFF6750A4),
-    categoryColors: _vividScale,
-    radius: 12,
-    gapSmall: 8,
-    gapLarge: 16,
-    headlineSize: 42,
-    // Entwurf: 42px/400
-    headlineWeight: FontWeight.w400,
-    showDividers: true,
-    panelBase: Color(0xFFE8DEF8),
-    panelRaised: Color(0xFFFEF7FF),
-    panelBorder: null,
-    panelShadow: null,
-  ),
-  // Aus dem Entwurf docs/design/handschriften.html übernommen, nicht
-  // erfunden: Grundfarben und Maße stehen dort im CSS je Handschrift.
-  //
-  // Die einzige dunkle Handschrift. Der Entwurf hält fest, dass sie fest
-  // dunkel bleibt — dem Systemmodus zu folgen bräuchte eine zweite
-  // Farbtafel, die die Theme-Schicht heute nicht kennt.
-  ThemeVariant.aura => SphygmaTheme(
-    name: 'Aura',
-    surface: Color(0xFF14181F),
-    onSurface: Color(0xFFE8ECF2),
-    muted: Color(0xFF94A0B0),
-    // 7 % Weiß: die feine Kante, der einzige Rest von Glas.
-    line: Color(0x12FFFFFF),
-    accent: Color(0xFF6C5CE7),
-    categoryColors: _duskScale,
-    radius: 18,
-    gapSmall: 11,
-    gapLarge: 20,
-    headlineSize: 58,
-    // Entwurf: 58px/200, ExtraLight
-    headlineWeight: FontWeight.w200,
-    // „Zeilen ohne Trennstrich; Luft gliedert, nicht der Strich."
-    showDividers: false,
-    panelBase: Color(0x0BFFFFFF),
-    panelRaised: Color(0x06FFFFFF),
-    panelBorder: Color(0x12FFFFFF),
-    panelShadow: null,
-  ),
-  ThemeVariant.pulseGrid => SphygmaTheme(
-    name: 'Pulse Grid',
-    surface: Color(0xFFF5F6F4),
-    onSurface: Color(0xFF171A1C),
-    muted: Color(0xFF6C7377),
-    line: Color(0xFFDEE0DC),
-    accent: Color(0xFF087F78),
-    categoryColors: _calmScale,
-    // „Radius nur an Bedienelementen, keine Schatten."
-    radius: 2,
-    gapSmall: 8,
-    gapLarge: 22,
-    headlineSize: 52,
-    // Datentabelle — normal, nicht dünn
-    headlineWeight: FontWeight.w400,
-    showDividers: true,
-    panelBase: Color(0xFFFFFFFF),
-    panelRaised: Color(0xFFF5F6F4),
-    panelBorder: Color(0xFFDEE0DC),
-    panelShadow: null,
-  ),
-  ThemeVariant.pegel => SphygmaTheme(
-    name: 'Pegel',
-    surface: Color(0xFFECEEEB),
-    onSurface: Color(0xFF16211F),
-    muted: Color(0xFF6B7671),
-    line: Color(0xFFE3E6E3),
-    accent: Color(0xFF0E5C4C),
-    categoryColors: _bandScale,
-    // „Ganzflächige Bänder ohne Rand, Schatten, Radius oder Abstand."
-    radius: 0,
-    gapSmall: 10,
-    gapLarge: 18,
-    headlineSize: 50,
-    // Bänder tragen kräftigere Ziffern
-    headlineWeight: FontWeight.w500,
-    // „Ein Abschnitt endet, wo die Fläche ihren Ton wechselt."
-    showDividers: false,
-    panelBase: Color(0xFFFFFFFF),
-    panelRaised: Color(0xFFECEEEB),
-    panelBorder: null,
-    panelShadow: null,
-  ),
-};
+SphygmaTheme themeFrom({
+  required Characteristic characteristic,
+  required Palette palette,
+  required Typeface typeface,
+}) {
+  final font = typefaceStyleFor(typeface);
+  return SphygmaTheme(
+    name: characteristic.label,
+    surface: palette.grund,
+    onSurface: palette.onSurface,
+    muted: palette.muted,
+    line: palette.line,
+    accent: characteristic.nutztAkzent ? palette.accent : palette.onSurface,
+    categoryColors: switch (characteristic.categoryRole) {
+      CategoryRole.markierung => palette.markierung,
+      CategoryRole.flaeche => palette.categoryFlaeche,
+    },
+    radius: characteristic.radius,
+    gapSmall: characteristic.gapSmall,
+    gapLarge: characteristic.gapLarge,
+    headlineSize: characteristic.headlineSize,
+    headlineWeight: font.weightFor(characteristic.headlineWeight),
+    fontFamily: font.fontFamily,
+    showDividers: characteristic.showDividers,
+    panelBase: palette.flaeche,
+    panelRaised: palette.flaecheGehoben,
+    panelBorder: characteristic.hatKante ? palette.line : null,
+    panelShadow: characteristic.erhebung == 0
+        ? null
+        : [
+            BoxShadow(
+              color: palette.shadow,
+              blurRadius: characteristic.erhebung * 2.5,
+              offset: Offset(0, characteristic.erhebung),
+            ),
+          ],
+  );
+}

@@ -131,15 +131,46 @@ void main() {
     expect(controller.concept, AppConcept.phase);
   });
 
-  testWidgets('die Gestaltung lässt sich umschalten', (tester) async {
+  testWidgets('die Form lässt sich umschalten', (tester) async {
     await boot();
 
     await pumpWith(tester, ThemeVariant.instrument);
-    await tester.ensureVisible(find.text('Tagebuch'));
-    await tester.tap(find.text('Tagebuch'));
+    // Seit dem 09.09.2026 steht je Achse ein Auswahlfeld statt einer
+    // Radioliste: erst das Feld öffnen, dann den Eintrag wählen.
+    await tester.ensureVisible(find.byType(DropdownMenu<Characteristic>));
+    await tester.tap(find.byType(DropdownMenu<Characteristic>));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Tagebuch').last);
+    await tester.pump();
 
-    expect(controller.themeVariant, ThemeVariant.diary);
+    expect(controller.characteristic, Characteristic.tagebuch);
+    expect(
+      controller.themeVariant,
+      ThemeVariant.diary,
+      reason: 'die Diagonale übersetzt die Form zurück',
+    );
+  });
+
+  testWidgets('die Farbwelt lässt sich unabhängig von der Form wählen', (
+    tester,
+  ) async {
+    // Der Kern der Trennung: Messinstrument auf Nacht ist eine Kombination,
+    // die es als Gestaltung nie gab.
+    await boot();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+    await tester.ensureVisible(find.byType(DropdownMenu<Palette>));
+    await tester.tap(find.byType(DropdownMenu<Palette>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Nacht').last);
+    await tester.pump();
+
+    expect(controller.palette, Palette.nacht);
+    expect(
+      controller.characteristic,
+      Characteristic.messinstrument,
+      reason: 'die Form bleibt, wo sie war',
+    );
   });
 
   testWidgets('sagt, dass ein Konzeptwechsel keine Messung anfasst', (
@@ -310,5 +341,31 @@ void main() {
       ),
     );
     expect(button.onPressed, isNull);
+  });
+
+  testWidgets('die Auswahlfelder tragen die Farben der Gestaltung', (
+    tester,
+  ) async {
+    // Auf „Nacht" nimmt ein DropdownMenu ohne eigene Farben den
+    // Material-Standard und stellt dunklen Text auf dunklen Grund. Geprüft
+    // wird die Beschriftung, weil sie als einzige nicht schon durch
+    // `textStyle` abgedeckt ist.
+    await boot();
+    await controller.setPalette(Palette.nacht);
+
+    await pumpWith(tester, ThemeVariant.aura);
+
+    final t = themeFrom(
+      characteristic: controller.characteristic,
+      palette: Palette.nacht,
+      typeface: controller.typeface,
+    );
+    final label = tester.widget<Text>(
+      find.descendant(
+        of: find.byType(DropdownMenu<Palette>),
+        matching: find.text('Farbwelt'),
+      ),
+    );
+    expect(label.style?.color, t.muted);
   });
 }

@@ -1,6 +1,5 @@
-// Gestaltung als Daten, nicht als fest verdrahtete Werte. Drei Varianten
-// sind umschaltbar (Spezifikation vom 2026-09-05); kein Widget greift auf
-// feste Farben zu, sonst waere der Wechsel ein Umbau.
+// Die komponierte Gestaltung bleibt ein gemeinsamer Vertrag für Widgets;
+// die Herkunft ihrer Werte müssen die Bildschirme nicht kennen.
 import 'package:flutter/widgets.dart';
 
 import '../../stats/esc_classification.dart';
@@ -20,6 +19,7 @@ class SphygmaTheme {
     required this.gapLarge,
     required this.headlineSize,
     required this.headlineWeight,
+    this.fontFamily,
     required this.showDividers,
     required this.panelBase,
     required this.panelRaised,
@@ -57,6 +57,9 @@ class SphygmaTheme {
   /// Bildschirmen fest `FontWeight.w300`: Die Handschriften unterschieden
   /// sich damit in der Größe der Zahl, nie in ihrem Gewicht.
   final FontWeight headlineWeight;
+
+  /// Null erhält die Systemschrift, ohne eine Familie einzubetten.
+  final String? fontFamily;
 
   /// Ob Listenzeilen durch eine Haarlinie getrennt werden.
   ///

@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import '../app/app_controller.dart';
 import 'concepts/concept_home.dart';
 import 'theme/sphygma_theme.dart';
-import 'theme/variants.dart';
 
 class SphygmaApp extends StatelessWidget {
   const SphygmaApp({super.key, required this.controller});
@@ -19,13 +18,20 @@ class SphygmaApp extends StatelessWidget {
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
-        final theme = themeFor(controller.themeVariant);
+        // Die komponierte Gestaltung, nicht die Diagonale: Sonst käme eine
+        // freie Kombination — etwa Messinstrument auf Nacht — nie an, weil
+        // `themeVariant` nur die Charakteristik zurückübersetzt.
+        final theme = controller.theme;
         return MaterialApp(
           title: 'Sphygma',
           theme: ThemeData(
             colorSchemeSeed: theme.accent,
             scaffoldBackgroundColor: theme.surface,
             useMaterial3: true,
+            // Die Schriftachse kommt nur hier an: Ein Bildschirm, der seine
+            // Texte ohne Familie setzt, erbt sie aus ThemeData. Null heißt
+            // „die des Telefons" und ist der Standard.
+            fontFamily: theme.fontFamily,
           ),
           // Der Scope liegt über dem Navigator, nicht in `home`.
           //

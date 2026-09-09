@@ -9,6 +9,7 @@ import 'db/app_database.dart';
 import 'db/measurement_repository.dart';
 import 'db/occasion_repository.dart';
 import 'db/settings_repository.dart';
+import 'ui/theme/font_licenses.dart';
 import 'sync/export_service.dart';
 import 'sync/health_connect_sink.dart';
 import 'sync/sync_service.dart';
@@ -16,6 +17,8 @@ import 'ui/sphygma_app.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Die eingebetteten Schriften bringen ihre Lizenz mit — Bedingung der OFL.
+  registerFontLicenses();
 
   final database = AppDatabase(driftDatabase(name: 'sphygma'));
   final measurements = MeasurementRepository(database);
