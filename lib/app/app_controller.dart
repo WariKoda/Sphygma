@@ -20,6 +20,7 @@ import '../stats/period.dart';
 import '../sync/export_service.dart';
 import '../sync/sync_service.dart';
 import '../ui/theme/variants.dart';
+import '../ui/theme/sphygma_theme.dart';
 
 class AppController extends ChangeNotifier {
   AppController({
@@ -71,8 +72,19 @@ class AppController extends ChangeNotifier {
   /// Gewaehlter Zeitraum im Verlauf.
   Period period = Period.week;
 
-  /// Gewaehlte Gestaltung. Wird in [init] aus der DB geladen.
-  ThemeVariant themeVariant = ThemeVariant.instrument;
+  Characteristic characteristic = Characteristic.messinstrument;
+  Palette palette = Palette.papier;
+  Typeface typeface = Typeface.system;
+
+  /// Das bestehende Auswahlblatt zeigt die Form der Diagonale. Die freie
+  /// Kombination bleibt in den drei Achsen erhalten.
+  ThemeVariant get themeVariant => variantFor(characteristic);
+
+  SphygmaTheme get theme => themeFrom(
+    characteristic: characteristic,
+    palette: palette,
+    typeface: typeface,
+  );
 
   /// Die zweite Achse: wie die App geordnet ist. Frei mit der Gestaltung
   /// kombinierbar — jedes Konzept trägt denselben Funktionsumfang.
@@ -81,7 +93,6 @@ class AppController extends ChangeNotifier {
   /// Ob das Wochenraster auf „Heute" erscheint. Wird in [init] aus der DB
   /// geladen.
   bool weekPanelVisible = true;
-
 
   /// Die Messanlässe des gewählten Speicherplatzes: Rohmessungen, die kurz
   /// nacheinander entstanden sind, gehören zu einem Messen. Abgeleitet, nicht
@@ -115,17 +126,52 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
-
   Future<void> setConcept(AppConcept value) async {
     await settings.setConcept(value);
     concept = value;
     notifyListeners();
   }
 
+  // **Bei der Gestaltung wird zuerst gezeigt, dann gespeichert.**
+  //
+  // Die übrigen Einstellungen halten es umgekehrt: erst schreiben, dann
+  // melden — bei Speicherplatz oder Konzept hängt daran, welche Daten
+  // gelesen werden, und ein Zustand, der nur auf dem Bildschirm existiert,
+  // wäre dort gefährlich.
+  //
+  // Bei der Gestaltung ist die sichtbare Wirkung dagegen die Sache selbst:
+  // Wer eine Handschrift wählt, will sie beurteilen. Auf die Datenbank zu
+  // warten, bevor sich etwas rührt, macht aus der Wahl ein Rätsel — genau
+  // das war am 07.09. schon einmal zu beheben, damals im geschobenen Blatt.
+  //
+  // Der Preis ist benannt: Scheitert das Speichern, eilt die Anzeige der
+  // Datenbank voraus und die Wahl ist nach dem Neustart weg. Der Fehler
+  // wird deshalb **nicht** geschluckt — er fliegt weiter.
   Future<void> setThemeVariant(ThemeVariant value) async {
-    await settings.setThemeVariant(value);
-    themeVariant = value;
+    final axes = axesFor(value);
+    characteristic = axes.characteristic;
+    palette = axes.palette;
+    typeface = axes.typeface;
     notifyListeners();
+    await settings.setThemeVariant(value);
+  }
+
+  Future<void> setCharacteristic(Characteristic value) async {
+    characteristic = value;
+    notifyListeners();
+    await settings.setCharacteristic(value);
+  }
+
+  Future<void> setPalette(Palette value) async {
+    palette = value;
+    notifyListeners();
+    await settings.setPalette(value);
+  }
+
+  Future<void> setTypeface(Typeface value) async {
+    typeface = value;
+    notifyListeners();
+    await settings.setTypeface(value);
   }
 
   Future<void> setWeekPanelVisible(bool value) async {
@@ -145,7 +191,9 @@ class AppController extends ChangeNotifier {
   Future<void> init() async {
     userSlot = await settings.userSlot();
     paired = await keyStore.load() != null;
-    themeVariant = await settings.themeVariant();
+    characteristic = await settings.characteristic();
+    palette = await settings.palette();
+    typeface = await settings.typeface();
     concept = await settings.concept();
     weekPanelVisible = await settings.weekPanelVisible();
     await _refresh();
@@ -171,19 +219,16 @@ class AppController extends ChangeNotifier {
     // einziger Fehlschlag die Kette dauerhaft vergiften und jede weitere
     // Meldung stillschweigend uebersprungen (Codex-Review 2026-09-04).
     var pending = Future<void>.value();
-    _watch = _statusStream().listen(
-      (status) {
-        pending = pending.then((_) async {
-          if (_disposed) return;
-          try {
-            await _onAdvertisedStatus(status);
-          } catch (e) {
-            debugPrint('[Sphygma] Autosync-Meldung verworfen: $e');
-          }
-        });
-      },
-      onError: _onWatchError,
-    );
+    _watch = _statusStream().listen((status) {
+      pending = pending.then((_) async {
+        if (_disposed) return;
+        try {
+          await _onAdvertisedStatus(status);
+        } catch (e) {
+          debugPrint('[Sphygma] Autosync-Meldung verworfen: $e');
+        }
+      });
+    }, onError: _onWatchError);
   }
 
   Future<void> _onAdvertisedStatus(OmronAdvertisedStatus status) async {
@@ -243,59 +288,61 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> pair() => _run('Pairing…', () async {
-        await syncService.pair(log: _log);
-        paired = true;
-        status = 'Pairing erfolgreich.';
-        // Nach dem Pairing kann ein anderes Geraet mit eigener
-        // Nummernfolge dranhaengen.
-        _lastAutoSyncAttempt = null;
-        _startWatching();
-      });
+    await syncService.pair(log: _log);
+    paired = true;
+    status = 'Pairing erfolgreich.';
+    // Nach dem Pairing kann ein anderes Geraet mit eigener
+    // Nummernfolge dranhaengen.
+    _lastAutoSyncAttempt = null;
+    _startWatching();
+  });
 
   Future<void> sync() => _run('Verbinde…', () async {
-        try {
-          final result = await syncService.sync(log: _log);
-          // Ueber _log statt nur ueber [status]: Ein automatisch
-          // ausgeloester Abgleich soll im Protokoll nachvollziehbar sein,
-          // auch wenn niemand auf den Bildschirm geschaut hat.
-          _log(result.newlyStored == 0
-              ? 'Keine neuen Messungen (${result.readFromDevice} gelesen).'
-              : '${result.newlyStored} neue Messungen.');
-        } on NotPairedException {
-          status = 'Noch nicht gepairt.';
-          rethrow;
-        } on ProtocolException catch (e) {
-          // Entsperren mit dem gespeicherten Key abgelehnt -> Key im Geraet
-          // passt nicht mehr (z. B. nach Neuinstallation, Risiko R-4).
-          if (e.message.contains('Entsperren')) {
-            paired = false;
-            status = 'Das Gerät kennt diesen Key nicht mehr - bitte neu pairen.';
-          }
-          rethrow;
-        }
-      });
+    try {
+      final result = await syncService.sync(log: _log);
+      // Ueber _log statt nur ueber [status]: Ein automatisch
+      // ausgeloester Abgleich soll im Protokoll nachvollziehbar sein,
+      // auch wenn niemand auf den Bildschirm geschaut hat.
+      _log(
+        result.newlyStored == 0
+            ? 'Keine neuen Messungen (${result.readFromDevice} gelesen).'
+            : '${result.newlyStored} neue Messungen.',
+      );
+    } on NotPairedException {
+      status = 'Noch nicht gepairt.';
+      rethrow;
+    } on ProtocolException catch (e) {
+      // Entsperren mit dem gespeicherten Key abgelehnt -> Key im Geraet
+      // passt nicht mehr (z. B. nach Neuinstallation, Risiko R-4).
+      if (e.message.contains('Entsperren')) {
+        paired = false;
+        status = 'Das Gerät kennt diesen Key nicht mehr - bitte neu pairen.';
+      }
+      rethrow;
+    }
+  });
 
   Future<void> exportAll() => _run('Exportiere…', () async {
-        final slot = _requireSlot();
-        final n = await exportService.exportPending(userSlot: slot);
-        status = '$n Messungen nach Health Connect geschrieben.';
-      });
+    final slot = _requireSlot();
+    final n = await exportService.exportPending(userSlot: slot);
+    status = '$n Messungen nach Health Connect geschrieben.';
+  });
 
   Future<void> retractAll() => _run('Entferne…', () async {
-        final slot = _requireSlot();
-        final n = await exportService.retractExported(userSlot: slot);
-        status = '$n Messungen aus Health Connect entfernt.';
-      });
+    final slot = _requireSlot();
+    final n = await exportService.retractExported(userSlot: slot);
+    status = '$n Messungen aus Health Connect entfernt.';
+  });
 
   Future<void> exportOne(Measurement m) => _run('Exportiere…', () async {
-        await exportService.exportOne(m);
-        status = 'Messung nach Health Connect geschrieben.';
-      });
+    await exportService.exportOne(m);
+    status = 'Messung nach Health Connect geschrieben.';
+  });
 
   Future<void> retractOne(Measurement m) => _run('Entferne…', () async {
-        await exportService.retractOne(m);
-        status = 'Messung aus Health Connect entfernt.';
-      });
+    await exportService.retractOne(m);
+    status = 'Messung aus Health Connect entfernt.';
+  });
 
   int _requireSlot() {
     final slot = userSlot;

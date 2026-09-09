@@ -33,6 +33,15 @@ void _hohesFenster(WidgetTester tester) {
   addTearDown(tester.view.reset);
 }
 
+// **Warum hier überall `tester.runAsync` steht.**
+//
+// `testWidgets` läuft in einer Fake-Async-Zone: Echte Ein- und Ausgabe kommt
+// dort nur voran, wenn gepumpt wird. Ein Setter des Steuerungsteils schreibt
+// aber wirklich in SQLite. Bis zum 08.09.2026 war das je Setter ein einziger
+// INSERT, der zufällig durchrutschte; seit die Gestaltung aus drei Achsen
+// besteht, sind es mehrere Runden — und der Test blieb ohne `runAsync`
+// stehen, ohne zu scheitern. Das ist der dokumentierte Weg für echte
+// Asynchronität im Widget-Test, nicht eine Notlösung.
 class _NoopSink implements HealthSink {
   @override
   Future<void> writeBloodPressure(BloodPressureWrite write) async {}
@@ -90,7 +99,9 @@ void main() {
   });
 
   testWidgets('die gewählte Gestaltung liegt über dem Baum', (tester) async {
-    await controller.setThemeVariant(ThemeVariant.diary);
+    await tester.runAsync(
+      () => controller.setThemeVariant(ThemeVariant.diary),
+    );
     await tester.pumpWidget(SphygmaApp(controller: controller));
     await tester.pumpAndSettle();
 
@@ -102,7 +113,9 @@ void main() {
     await tester.pumpWidget(SphygmaApp(controller: controller));
     await tester.pumpAndSettle();
 
-    await controller.setThemeVariant(ThemeVariant.material);
+    await tester.runAsync(
+      () => controller.setThemeVariant(ThemeVariant.material),
+    );
     await tester.pumpAndSettle();
 
     final context = tester.element(find.byType(TodayScreen));
@@ -114,7 +127,7 @@ void main() {
     // Übertragung, Kopplung und die Wahl von Konzept und Gestaltung stehen
     // gemeinsam hinter dem Zahnrad. Fehlte es in einem Konzept, käme man
     // weder an das Gerät noch aus dem Konzept heraus.
-    await controller.setConcept(AppConcept.phase);
+    await tester.runAsync(() => controller.setConcept(AppConcept.phase));
     await tester.pumpWidget(SphygmaApp(controller: controller));
     await tester.pumpAndSettle();
 
@@ -145,7 +158,7 @@ void main() {
     // deshalb nicht drei Zugänge, sondern einer. Fehlte er in einem, käme
     // man aus diesem Konzept nicht mehr heraus.
     for (final k in allConcepts) {
-      await controller.setConcept(k);
+      await tester.runAsync(() => controller.setConcept(k));
       await tester.pumpWidget(SphygmaApp(controller: controller));
       await tester.pumpAndSettle();
 
@@ -190,7 +203,13 @@ void main() {
     await tester.ensureVisible(find.text('Tagebuch'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Tagebuch'));
-    await tester.pumpAndSettle();
+    // Ein einzelner Frame, kein pumpAndSettle: Der Tipp löst im Hintergrund
+    // einen echten Schreibvorgang aus, den niemand abwartet. In der
+    // Fake-Async-Zone kommt der nie zum Ende, und pumpAndSettle liefe bis in
+    // seinen Zehn-Minuten-Timeout. Ein Frame ist ohnehin genau das, was hier
+    // zu prüfen ist — „wirkt sofort" heißt: beim nächsten Bild, nicht wenn
+    // die Datenbank geantwortet hat.
+    await tester.pump();
     expect(
       controller.themeVariant,
       ThemeVariant.diary,
@@ -202,6 +221,13 @@ void main() {
       radiusImBlatt(),
       themeFor(ThemeVariant.diary).radius,
       reason: 'die neue Gestaltung greift erst nach dem Verlassen',
+    );
+
+    // Den angestoßenen Schreibvorgang abfließen lassen, bevor der Abbau die
+    // Datenbank schließt: `db.close()` wartet sonst auf eine Zusage, die in
+    // der Fake-Async-Zone nie kommt, und der Test bliebe im Abbau stehen.
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
     );
   });
 }

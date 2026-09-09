@@ -64,7 +64,7 @@ sauber**, weil die drei nichts gemeinsam haben, worüber sie streiten könnten �
 mit vier benannten Ausnahmen, siehe unten.
 
 Der Gewinn ist nicht nur Ordnung, sondern Prüfbarkeit: Bei echter
-Orthogonalität testet man **sechs Charakteristika plus sechs Paletten plus die
+Orthogonalität testet man **sechs Charakteristika plus vier Paletten plus die
 Schriften**, nicht ihr Produkt.
 
 ## Wo heute die Grenze verläuft — und wo sie falsch verläuft
@@ -208,14 +208,23 @@ deklarieren, ob sie sie führt, sonst ist sie für Sphygma unbrauchbar.
 
 ### Paletten
 
+**Vier**, nicht sechs (entschieden 08.09.2026): Petrol und Salbei fallen weg.
+Sie lagen zu dicht an Papier — genau der Befund, der diesen Entwurf ausgelöst
+hat, nur eine Ebene tiefer. Bei den Charakteristika bleibt es bei sechs, denn
+dort trägt jede ein eigenes Merkmal.
+
 | Name | Grund | Text | Akzent | stammt aus |
 |---|---|---|---|---|
 | Papier | `#faf9f7` | `#1b1b1a` | — (monochrom) | Messinstrument |
 | Himmel | `#f2f5fb` | `#182034` | `#4f7fd8` | Tagebuch |
 | Flieder | `#fef7ff` | `#1d1b20` | `#6750a4` | Material 3 |
 | Nacht | `#14181f` | `#e8ecf2` | `#6c5ce7` | Aura |
-| Petrol | `#f5f6f4` | `#171a1c` | `#087f78` | Pulse Grid |
-| Salbei | `#eceeeb` | `#16211f` | `#0e5c4c` | Pegel |
+
+**Die Reduktion macht Kopplung 3 akut.** Salbei brachte die einzige
+Kategorienleiter mit, die schon als Fläche taugt (`_bandScale`). Fällt sie weg,
+muss die Charakteristik **Band** ihre Flächenrolle von jeder der vier
+verbleibenden Paletten bekommen — sonst ist sie nach der Reduktion nicht mehr
+baubar. Die Flächenrolle ist damit keine Kür mehr, sondern Voraussetzung.
 
 **Damit ist die Aura-Frage beantwortet:** Aura zerfällt in beides. Seine Form
 lebt als Charakteristik **Luft** weiter, seine Farbwelt als Palette **Nacht**.
@@ -262,7 +271,7 @@ und einen erklärenden Untertitel je Eintrag, den ein Auswahlfeld nicht zeigt.
 
 `SettingsRepository` legt heute unter `theme_variant` den Namen der Variante
 ab. Nach der Trennung braucht es drei Schlüssel — und der alte Wert darf nicht
-verfallen: Wer „Pegel" gewählt hat, soll „Band auf Salbei" wiederfinden, nicht
+verfallen: Wer „Pegel" gewählt hat, soll die Form „Band" wiederfinden, nicht
 den Standard.
 
 | gespeichert | wird zu |
@@ -271,8 +280,16 @@ den Standard.
 | `diary` | Tagebuch · Himmel · System |
 | `material` | Material · Flieder · System |
 | `aura` | Luft · Nacht · System |
-| `pulseGrid` | Raster · Petrol · System |
-| `pegel` | Band · Salbei · System |
+| `pulseGrid` | Raster · Papier · System |
+| `pegel` | Band · Papier · System |
+
+Die letzten beiden sind die einzige Stelle, an der jemand eine Änderung
+bemerkt: Ihre Paletten gibt es nicht mehr. Papier ist für beide der nächste
+Nachbar — Pulse Grid teilte mit Messinstrument ohnehin dieselbe
+Kategorienleiter (`_calmScale`), und Pegels Salbei war ein sehr blasses Grün,
+dem Papiers Warmweiß näher steht als Himmel oder Flieder. **Die Form bleibt
+beiden erhalten**, und die ist das Kennzeichen der Handschrift; nur der Ton
+wechselt.
 
 Die sechs Kombinationen der Diagonale sind damit genau die heutigen sechs
 Gestaltungen — **niemand verliert sein Aussehen.** Der alte Schlüssel wird
@@ -322,7 +339,4 @@ wandert zur Charakteristik, wo er hingehört — er prüft Form, nicht Farbe.
   die Charakteristik liefert **Bausteine** statt Werte (aufwendiger, hält die
   Bildschirme frei). Der zweite Weg passt zu dem, was `SurfacePanel` schon tut.
   Zu entscheiden, bevor gebaut wird.
-* **Ob sechs Paletten nötig sind.** Sechs Charakteristika sind begründet — jede
-  trägt ein eigenes Merkmal. Bei den Paletten ist das offen: Papier, Petrol und
-  Salbei liegen dicht beieinander. Drei bis vier könnten genügen.
 * **Welche Schriften**, unter welcher Lizenz, zu welchem Preis in Megabyte.
