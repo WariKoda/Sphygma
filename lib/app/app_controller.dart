@@ -196,6 +196,9 @@ class AppController extends ChangeNotifier {
     typeface = await settings.typeface();
     concept = await settings.concept();
     weekPanelVisible = await settings.weekPanelVisible();
+    if (userSlot case final slot?) {
+      intakeFloor = await repository.intakeFloor(slot);
+    }
     await _refresh();
     _startWatching();
   }
@@ -285,6 +288,63 @@ class AppController extends ChangeNotifier {
     // (Codex-Review 2026-09-04).
     _lastAutoSyncAttempt = null;
     await _refresh();
+  }
+
+  /// Die Aufnahmegrenze des gewählten Speicherplatzes, oder null.
+  ///
+  /// Alles unterhalb wird nie angezeigt und nie übertragen. Sie wird beim
+  /// Koppeln gesetzt und ist jederzeit widerrufbar.
+  int? intakeFloor;
+
+  /// Übernimmt alles, was auf dem Gerät liegt — die Grenze fällt.
+  Future<void> takeAll() async {
+    final slot = _slotOderWurf();
+    await repository.setIntakeFloor(slot, null);
+    intakeFloor = null;
+    await _refresh();
+  }
+
+  /// Übernimmt nur, was ab [ab] gemessen wurde.
+  ///
+  /// Das Datum wird **einmal** in eine Messungsnummer übersetzt: Die
+  /// Geräteuhr geht nachweislich falsch, eine Grenze aus Zeitstempeln wäre
+  /// nicht stabil. Gibt es ab dann nichts, gilt alles Bekannte als alt —
+  /// dann liegt die Grenze über der höchsten Nummer.
+  Future<void> takeFrom(DateTime ab) async {
+    final slot = _slotOderWurf();
+    final grenze =
+        await repository.firstSequenceFrom(slot, ab) ??
+        ((await repository.highestSequenceFor(slot) ?? 0) + 1);
+    await repository.setIntakeFloor(slot, grenze);
+    intakeFloor = grenze;
+    await _refresh();
+  }
+
+  /// Übernimmt nur, was ab jetzt dazukommt.
+  ///
+  /// Die Grenze liegt eine Nummer über der höchsten bekannten. Ohne jede
+  /// Messung ist das 1 — dann fällt nichts weg, weil es nichts gibt.
+  Future<void> takeOnlyNew() async {
+    final slot = _slotOderWurf();
+    final grenze = (await repository.highestSequenceFor(slot) ?? 0) + 1;
+    await repository.setIntakeFloor(slot, grenze);
+    intakeFloor = grenze;
+    await _refresh();
+  }
+
+  /// Der gewählte Speicherplatz — oder ein Wurf.
+  ///
+  /// Ohne Slot wüsste niemand, für wen die Grenze gilt. Ein Standard wäre
+  /// hier gefährlich: Er könnte die Messungen des falschen Benutzers
+  /// ausblenden oder freigeben.
+  int _slotOderWurf() {
+    final slot = userSlot;
+    if (slot == null) {
+      throw StateError(
+        'Ohne gewählten Speicherplatz gibt es keine Aufnahmegrenze.',
+      );
+    }
+    return slot;
   }
 
   Future<void> pair() => _run('Pairing…', () async {

@@ -21,6 +21,7 @@ import 'theme/sphygma_theme.dart';
 import 'widgets/surface_panel.dart';
 import 'theme/variants.dart';
 import 'widgets/section_header.dart';
+import 'intake_choice_sheet.dart';
 import 'widgets/setting_row.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -39,6 +40,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// gekoppelt werden, und ein falsch gewählter Speicherplatz ließe sonst
   /// dauerhaft den falschen Benutzer auslesen.
   bool _pairingOpen = false;
+
+  /// Koppelt, liest aus und fragt dann, was übernommen werden soll.
+  ///
+  /// **Die Reihenfolge ist der Punkt.** Erst das Gerät auslesen, dann fragen:
+  /// Vorher weiß niemand, wie viele Messungen dort liegen, und „nur neue"
+  /// hätte keine Grenze, an der es sich festmachen könnte. Die Messungen
+  /// landen dabei vollständig in der Datenbank — sie bleibt reines Abbild des
+  /// Geräts. Was die Wahl bewirkt, ist eine Grenze, keine Löschung.
+  ///
+  /// Schlägt das Koppeln fehl, wird nicht gefragt: Eine Grenze ohne Kopplung
+  /// wäre eine Entscheidung über Daten, die es nicht gibt.
+  Future<void> _koppelnUndFragen(AppController c) async {
+    try {
+      await c.pair();
+      await c.sync();
+    } catch (e) {
+      debugPrint('[Sphygma] Koppeln fehlgeschlagen: $e');
+      return;
+    }
+    if (!mounted) return;
+    await showIntakeChoice(context, controller: c);
+  }
 
   /// Startet eine Aktion des Steuerungsteils.
   ///
@@ -183,7 +206,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             filled: true,
             onPressed: c.busy || c.userSlot == null
                 ? null
-                : () => _start(c.pair),
+                : () => _koppelnUndFragen(c),
           ),
         ],
       ],
