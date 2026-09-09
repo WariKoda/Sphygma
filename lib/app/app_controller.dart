@@ -445,19 +445,26 @@ class AppController extends ChangeNotifier {
       // mehr: Das Abo steht zwar noch, bekommt aber nie wieder ein
       // Advertising. Der erste Abgleich tötete so den Autosync, bis die App
       // neu startete (am Gerät bemerkt, 2026-09-09).
-      _restartWatching();
+      await _restartWatching();
     }
   }
 
   /// Setzt das Lauschen neu auf.
   ///
-  /// Der alte Datenstrom wird abbestellt, damit sein Scan sauber endet —
-  /// sonst blieben zwei Abos auf einem Scan, den es nicht mehr gibt.
-  void _restartWatching() {
+  /// **Erst abbestellen, dann neu starten — und dazwischen warten.**
+  ///
+  /// Das Abbestellen läuft asynchron: `watchOmronStatus` beendet dabei in
+  /// seinem `finally` den Scan. Startete der neue Scan schon vorher, würde
+  /// dieses `finally` **ihn** stoppen — und der Autosync wäre wieder tot, nur
+  /// über eine Race statt über die Reihenfolge (Codex-Gegenblick 2026-09-09,
+  /// unmittelbar nach dem ersten Anlauf dieses Fixes).
+  Future<void> _restartWatching() async {
     if (_disposed || !paired) return;
     final alt = _watch;
     _watch = null;
-    unawaited(alt?.cancel());
+    await alt?.cancel();
+    // Zwischen Abbestellen und Neustart kann die App beendet worden sein.
+    if (_disposed || !paired) return;
     _startWatching();
   }
 

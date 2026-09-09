@@ -103,4 +103,53 @@ void main() {
 
     expect(abos, 0);
   });
+
+  test('das alte Abo endet, bevor das neue beginnt', () async {
+    // Sonst stoppt das `finally` des alten Datenstroms den **neuen** Scan:
+    // `watchOmronStatus` beendet den Scan beim Abbestellen, und das läuft
+    // asynchron. Der Autosync wäre wieder tot, nur über eine Race statt über
+    // die Reihenfolge (Codex-Gegenblick 09.09.2026).
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final repository = MeasurementRepository(db);
+    final keyStore = InMemoryPairingKeyStore();
+    await keyStore.save(Uint8List(16));
+
+    // Das Protokoll der Ereignisse in ihrer tatsächlichen Reihenfolge.
+    final ablauf = <String>[];
+    final controller = AppController(
+      settings: SettingsRepository(db),
+      keyStore: keyStore,
+      repository: repository,
+      occasionRepository: OccasionRepository(db),
+      syncService: SyncService(keyStore: keyStore, repository: repository),
+      exportService: ExportService(repository: repository, sink: _NoopSink()),
+      statusStream: () {
+        ablauf.add('start');
+        late StreamController<OmronAdvertisedStatus> c;
+        c = StreamController<OmronAdvertisedStatus>(
+          // Ein verzögertes Aufräumen, wie es der echte Scan hat: Dort wartet
+          // `stopScan()` auf die Plattform.
+          onCancel: () async {
+            await Future<void>.delayed(const Duration(milliseconds: 20));
+            ablauf.add('stopp');
+          },
+        );
+        return c.stream;
+      },
+    );
+    addTearDown(controller.dispose);
+
+    await controller.init();
+    await controller.setUserSlot(1);
+    await controller.sync().catchError((_) {});
+
+    expect(
+      ablauf,
+      ['start', 'stopp', 'start'],
+      reason:
+          'die tatsächliche Reihenfolge war $ablauf — endet das alte Abo erst '
+          'nach dem neuen Start, stoppt es den neuen Scan',
+    );
+  });
 }
