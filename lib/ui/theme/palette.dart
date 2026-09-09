@@ -4,6 +4,7 @@ import '../../stats/esc_classification.dart';
 
 enum Palette {
   papier(
+    label: 'Papier',
     grund: Color(0xFFFAF9F7),
     onSurface: Color(0xFF1B1B1A),
     muted: Color(0x8A1B1B1A),
@@ -17,6 +18,7 @@ enum Palette {
     markierung: _calmScale,
   ),
   himmel(
+    label: 'Himmel',
     grund: Color(0xFFF2F5FB),
     onSurface: Color(0xFF182034),
     muted: Color(0x8A182034),
@@ -28,6 +30,7 @@ enum Palette {
     markierung: _vividScale,
   ),
   flieder(
+    label: 'Flieder',
     grund: Color(0xFFFEF7FF),
     onSurface: Color(0xFF1D1B20),
     muted: Color(0xFF49454F),
@@ -40,6 +43,7 @@ enum Palette {
     markierung: _vividScale,
   ),
   nacht(
+    label: 'Nacht',
     grund: Color(0xFF14181F),
     onSurface: Color(0xFFE8ECF2),
     muted: Color(0xFF94A0B0),
@@ -54,6 +58,7 @@ enum Palette {
   );
 
   const Palette({
+    required this.label,
     required this.grund,
     required this.onSurface,
     required this.muted,
@@ -64,6 +69,9 @@ enum Palette {
     required this.shadow,
     required this.markierung,
   });
+
+  /// Sichtbarer Name in der Auswahl.
+  final String label;
 
   final Color grund;
   final Color onSurface;

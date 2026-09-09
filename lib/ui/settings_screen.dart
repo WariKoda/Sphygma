@@ -252,30 +252,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ],
   );
 
+  /// Drei Achsen, drei Auswahlfelder.
+  ///
+  /// Als Radiolisten untereinander wäre das Blatt unlesbar: Sechs Formen,
+  /// vier Farbwelten und die Schriften sind zusammen mehr Zeilen, als ein
+  /// Abschnitt trägt. Je Achse ein Feld hält es auf drei Zeilen — und macht
+  /// zugleich sichtbar, dass es **drei unabhängige** Entscheidungen sind und
+  /// nicht eine Liste fertiger Gestaltungen.
   Widget _gestaltung(AppController c, SphygmaTheme t) => _Karte(
     titel: 'Gestaltung',
     children: [
       _Erklaerung(
-        text: 'Ändert Typografie, Abstände und Tonstufen, nicht die Messdaten.',
+        text:
+            'Die Form bestimmt, wie getrennt und geordnet wird; die Farbwelt '
+            'die Töne; die Schrift die Familie. Alle drei sind frei '
+            'kombinierbar und ändern keine Messdaten.',
       ),
-      RadioGroup<ThemeVariant>(
-        groupValue: c.themeVariant,
-        onChanged: (chosen) =>
-            chosen == null ? null : c.setThemeVariant(chosen),
-        child: Column(
-          children: [
-            for (final v in allVariants)
-              RadioListTile<ThemeVariant>(
-                value: v,
-                title: Text(
-                  themeFor(v).name,
-                  style: TextStyle(fontSize: 14, color: t.onSurface),
-                ),
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-              ),
-          ],
-        ),
+      _AchsenWahl<Characteristic>(
+        label: 'Form',
+        value: c.characteristic,
+        werte: Characteristic.values,
+        name: (v) => v.label,
+        onChanged: c.setCharacteristic,
+      ),
+      _AchsenWahl<Palette>(
+        label: 'Farbwelt',
+        value: c.palette,
+        werte: Palette.values,
+        name: (v) => v.label,
+        onChanged: c.setPalette,
+      ),
+      _AchsenWahl<Typeface>(
+        label: 'Schrift',
+        value: c.typeface,
+        werte: Typeface.values,
+        name: (v) => v.label,
+        onChanged: c.setTypeface,
       ),
     ],
   );
@@ -322,6 +334,53 @@ Future<void> showSettings(
       builder: (_) => SettingsScreen(controller: controller),
     ),
   );
+}
+
+/// Ein Auswahlfeld für eine Achse der Gestaltung.
+///
+/// `DropdownMenu` statt `DropdownButton`: Es trägt seine Beschriftung selbst
+/// und sieht aus wie ein Feld, nicht wie ein Knopf — bei drei Feldern
+/// untereinander ist das der Unterschied zwischen einer Liste und einem
+/// Formular.
+class _AchsenWahl<T> extends StatelessWidget {
+  const _AchsenWahl({
+    required this.label,
+    required this.value,
+    required this.werte,
+    required this.name,
+    required this.onChanged,
+  });
+
+  final String label;
+  final T value;
+  final List<T> werte;
+  final String Function(T) name;
+  final void Function(T) onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = SphygmaTheme.of(context);
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: t.gapSmall),
+      child: SizedBox(
+        width: double.infinity,
+        child: DropdownMenu<T>(
+          initialSelection: value,
+          label: Text(label),
+          expandedInsets: EdgeInsets.zero,
+          textStyle: TextStyle(fontSize: 14, color: t.onSurface),
+          // Eine leere Wahl gibt es nicht: Jede Achse hat immer einen Wert.
+          // Der Rückfall auf `value` fängt nur das Schließen ohne Auswahl ab.
+          onSelected: (gewaehlt) => onChanged(gewaehlt ?? value),
+          dropdownMenuEntries: [
+            for (final v in werte)
+              DropdownMenuEntry<T>(value: v, label: name(v)),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _Erklaerung extends StatelessWidget {

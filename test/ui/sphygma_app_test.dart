@@ -200,15 +200,13 @@ void main() {
 
     expect(radiusImBlatt(), themeFor(ThemeVariant.instrument).radius);
 
-    await tester.ensureVisible(find.text('Tagebuch'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Tagebuch'));
-    // Ein einzelner Frame, kein pumpAndSettle: Der Tipp löst im Hintergrund
-    // einen echten Schreibvorgang aus, den niemand abwartet. In der
-    // Fake-Async-Zone kommt der nie zum Ende, und pumpAndSettle liefe bis in
-    // seinen Zehn-Minuten-Timeout. Ein Frame ist ohnehin genau das, was hier
-    // zu prüfen ist — „wirkt sofort" heißt: beim nächsten Bild, nicht wenn
-    // die Datenbank geantwortet hat.
+    // Der Kern dieses Tests ist der Theme-Scope über dem Navigator, nicht die
+    // Bauform des Auswahlfelds — die prüft settings_screen_test. Deshalb hier
+    // der Setter direkt: Was zählt, ist dass die **offene** Route die neue
+    // Gestaltung mitbekommt, ohne dass man sie verlässt.
+    await tester.runAsync(
+      () => controller.setCharacteristic(Characteristic.tagebuch),
+    );
     await tester.pump();
     expect(
       controller.themeVariant,
@@ -223,9 +221,6 @@ void main() {
       reason: 'die neue Gestaltung greift erst nach dem Verlassen',
     );
 
-    // Den angestoßenen Schreibvorgang abfließen lassen, bevor der Abbau die
-    // Datenbank schließt: `db.close()` wartet sonst auf eine Zusage, die in
-    // der Fake-Async-Zone nie kommt, und der Test bliebe im Abbau stehen.
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 50)),
     );

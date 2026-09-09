@@ -94,6 +94,10 @@ td.diag::after{content:"";position:absolute;top:-6px;right:-6px;width:9px;
 
 /* ---------- Die Probe ---------- */
 .probe{
+  /* Die Flächenrolle der Kategorienfarbe — dieselbe Rechnung wie
+     Palette.categoryFlaeche in lib/ui/theme/palette.dart: 18 % Markierung
+     im eigenen Grund. Auf Nacht wird sie dadurch dunkel statt pastellig. */
+  --kat-flaeche:color-mix(in srgb, var(--kat) 18%, var(--grund));
   --radius:6px; --weight:400; --num:26px; --gap:7px;
   --schrift:system-ui,-apple-system,"Segoe UI",sans-serif;
   width:158px;background:var(--grund);color:var(--text);
@@ -208,23 +212,17 @@ td.diag::after{content:"";position:absolute;top:-6px;right:-6px;width:9px;
 
 /* — Paletten — */
 .p-papier{--grund:#faf9f7;--flaeche:#fff;--text:#1b1b1a;--muted-c:#6f6d68;
-  --linie:#e4e1db;--akzent:#1b1b1a;--kat:#c07d5a;--kat-flaeche:#efdcd2;
+  --linie:#e4e1db;--akzent:#465c78;--kat:#c07d5a;
   --kante:#e4e1db;--sk0:#7ea77e;--sk1:#7ea77e;--sk2:#c9b45e;--sk3:#c07d5a;--sk4:#b05f42;--sk5:#a84c3a}
 .p-himmel{--grund:#f2f5fb;--flaeche:#fff;--text:#182034;--muted-c:#6b7590;
-  --linie:#e2e8f3;--akzent:#4f7fd8;--kat:#e07a3b;--kat-flaeche:#f8e2d1;
+  --linie:#e2e8f3;--akzent:#4f7fd8;--kat:#e07a3b;
   --kante:#e2e8f3;--sk0:#3fa35f;--sk1:#3fa35f;--sk2:#e0a93b;--sk3:#e07a3b;--sk4:#d9553c;--sk5:#c33a2e}
 .p-flieder{--grund:#fef7ff;--flaeche:#fff;--flaeche2:#e8def8;--text:#1d1b20;
   --muted-c:#49454f;--linie:#e7e0ec;--akzent:#6750a4;--kat:#e07a3b;
-  --kat-flaeche:#f8e0d2;--kante:#e7e0ec;--sk0:#3fa35f;--sk1:#3fa35f;--sk2:#e0a93b;--sk3:#e07a3b;--sk4:#d9553c;--sk5:#c33a2e}
-.p-nacht{--grund:#14181f;--flaeche:rgba(255,255,255,.043);--text:#e8ecf2;
-  --muted-c:#94a0b0;--linie:rgba(255,255,255,.071);--akzent:#6c5ce7;
-  --kat:#d98c7a;--kat-flaeche:#3d2c27;--kante:rgba(255,255,255,.071);--sk0:#8fb89a;--sk1:#8fb89a;--sk2:#e2c08a;--sk3:#d98c7a;--sk4:#c9705e;--sk5:#b85b4c}
-.p-petrol{--grund:#f5f6f4;--flaeche:#fff;--text:#171a1c;--muted-c:#6c7377;
-  --linie:#dee0dc;--akzent:#087f78;--kat:#c07d5a;--kat-flaeche:#eeddd3;
-  --kante:#dee0dc;--sk0:#7ea77e;--sk1:#7ea77e;--sk2:#c9b45e;--sk3:#c07d5a;--sk4:#b05f42;--sk5:#a84c3a}
-.p-salbei{--grund:#eceeeb;--flaeche:#fff;--text:#16211f;--muted-c:#6b7671;
-  --linie:#e3e6e3;--akzent:#0e5c4c;--kat:#f3e4cb;--kat-flaeche:#f3e4cb;
-  --kante:#e3e6e3;--sk0:#d9e5e0;--sk1:#d9e5e0;--sk2:#efe1c9;--sk3:#f3e4cb;--sk4:#e8c9a8;--sk5:#dcb08a}
+  --kante:#e7e0ec;--sk0:#3fa35f;--sk1:#3fa35f;--sk2:#e0a93b;--sk3:#e07a3b;--sk4:#d9553c;--sk5:#c33a2e}
+.p-nacht{--grund:#14181f;--flaeche:#1e2229;--text:#e8ecf2;
+  --muted-c:#94a0b0;--linie:#242a33;--akzent:#6c5ce7;
+  --kat:#d98c7a;--kante:#242a33;--sk0:#8fb89a;--sk1:#8fb89a;--sk2:#e2c08a;--sk3:#d98c7a;--sk4:#c9705e;--sk5:#b85b4c}
 
 /* — Schriften — */
 .s-system{--schrift:system-ui,-apple-system,"Segoe UI",sans-serif}
@@ -300,7 +298,7 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--rule);
   <p class="lede">Sechs Gestaltungen, vier davon kaum unterscheidbar — weil sie
   vermengen, was drei Dinge sind. Trennt man sie, wird aus sechs Namen ein
   Raum, und die heutigen sechs sind nur noch seine Diagonale.</p>
-  <p class="byline">Entwurf 08.09.2026 · noch nicht gebaut · Werte gemessen an <span class="mono">lib/ui/theme/variants.dart</span></p>
+  <p class="byline">Entwurf 08.09. · <strong>Achsen gebaut 09.09.</strong> · Werte aus <span class="mono">lib/ui/theme/palette.dart</span> und <span class="mono">characteristic.dart</span></p>
 </header>
 
 <section>
@@ -329,8 +327,17 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--rule);
       laufen in der System-Schrift; <span class="mono">pubspec.yaml</span> bettet
       keine ein. Gestaltet sind nur Größe und Gewicht.</span></div>
   </div>
+  <p class="note"><strong>Stand 09.09.:</strong> Die drei Achsen sind gebaut —
+  <span class="mono">Characteristic</span>, <span class="mono">Palette</span>
+  und <span class="mono">Typeface</span> tragen die Theme-Schicht, die vier
+  Kopplungen sind aufgelöst, 507 Tests grün. Die Struktur-Merkmale unten und
+  die Auswahl je Achse fehlen noch — <em>deshalb sieht man von alldem in der
+  App bislang nichts</em>.</p>
   <p class="note">Sie sind nicht zu ähnlich <em>entworfen</em>, sondern zu
-  ähnlich <em>gebaut</em>.</p>
+  ähnlich <em>gebaut</em>. — Nachtrag 08.09.: Von den sechs Paletten bleiben
+  <strong>vier</strong>. Petrol und Salbei lagen zu dicht an Papier; das ist
+  derselbe Befund wie oben, nur eine Ebene tiefer. Bei den Charakteristika
+  bleibt es bei sechs, denn dort trägt jede ein eigenes Merkmal.</p>
 </section>
 
 <section>
@@ -341,14 +348,13 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--rule);
   12.07.2026 07:13, 144/92, Puls 89</span> — ein echter Wert aus dem
   Beispieldatensatz, mit Bewegungs-Kennzeichen. <strong>Waagerecht die Palette,
   senkrecht die Charakteristik.</strong> Die markierte Diagonale ist der heutige
-  Bestand; die übrigen 30 Felder sind neu.</p>
+  Bestand; die übrigen 18 Felder sind neu.</p>
 
   <div class="scroller">
   <table class="matrix">
     <thead>
       <tr><th></th>
-        <th>Papier</th><th>Himmel</th><th>Flieder</th>
-        <th>Nacht</th><th>Petrol</th><th>Salbei</th></tr>
+        <th>Papier</th><th>Himmel</th><th>Flieder</th><th>Nacht</th></tr>
     </thead>
     <tbody id="matrix-body"></tbody>
   </table>
@@ -438,29 +444,29 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--rule);
     darauf muss Text lesbar bleiben. Ein Chip von 60 Pixeln verträgt einen Ton,
     der über die halbe Breite unerträglich wird.</p>
     <div class="paar">
-      <figure><div class="probe c-band p-salbei" data-probe></div>
-        <figcaption>Band auf Salbei — die eigene, blasse Fassung.</figcaption></figure>
-      <figure class="bad"><div class="probe c-band p-petrol"
-        style="--kat-flaeche:#b05f42" data-probe></div>
+      <figure><div class="probe c-band p-papier" data-probe></div>
+        <figcaption>Band auf Papier — mit der Flächenrolle der Palette.</figcaption></figure>
+      <figure class="bad"><div class="probe c-band p-himmel"
+        style="" data-probe></div>
         <figcaption>Mit der Markierungsfarbe einer fremden Palette: Text auf
         Signalfarbe.</figcaption></figure>
-      <figure><div class="probe c-band p-petrol" data-probe></div>
+      <figure><div class="probe c-band p-himmel" data-probe></div>
         <figcaption>Aufgelöst: jede Palette führt beide Rollen.</figcaption></figure>
     </div>
     <table class="werte">
       <thead><tr><th>Palette</th><th>Markierung</th><th>Fläche</th><th>wofür</th></tr></thead>
       <tbody>
         <tr><td>Papier</td>
-          <td class="mono"><span class="sw" style="background:#b05f42"></span>#b05f42</td>
-          <td class="mono"><span class="sw" style="background:#eddcd3"></span>#eddcd3</td>
+          <td class="mono"><span class="sw" style="background:#c07d5a"></span>#c07d5a</td>
+          <td class="mono"><span class="sw" style="background:#efdcd2"></span>#efdcd2</td>
           <td>Punkte, Chips, Rasterzellen — nicht für große Flächen</td></tr>
-        <tr><td>Salbei</td>
-          <td class="mono"><span class="sw" style="background:#c08a5e"></span>#c08a5e</td>
-          <td class="mono"><span class="sw" style="background:#e8c9a8"></span>#e8c9a8</td>
-          <td>heute schon vorhanden — die Vorlage für alle</td></tr>
+        <tr><td>Himmel</td>
+          <td class="mono"><span class="sw" style="background:#e07a3b"></span>#e07a3b</td>
+          <td class="mono"><span class="sw" style="background:#f8e2d1"></span>#f8e2d1</td>
+          <td>kräftiger Ton, deshalb die blassere Fläche</td></tr>
         <tr><td>Nacht</td>
-          <td class="mono"><span class="sw" style="background:#c9705e"></span>#c9705e</td>
-          <td class="mono"><span class="sw" style="background:#3a2a26"></span>#3a2a26</td>
+          <td class="mono"><span class="sw" style="background:#d98c7a"></span>#d98c7a</td>
+          <td class="mono"><span class="sw" style="background:#3d2c27"></span>#3d2c27</td>
           <td>auf dunklem Grund abgedunkelt statt aufgehellt</td></tr>
       </tbody>
     </table>
@@ -536,7 +542,7 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--rule);
   getrennte SYS/DIA-Blöcke, Datentabelle, eingefärbte Kopffläche, Chips und FAB.
   Also: erst die Merkmale, oder beides zusammen.</p>
   <p>Was die Trennung <em>dafür</em> bringt, ist Prüfbarkeit. Bei echter
-  Orthogonalität prüft man sechs Charakteristika <strong>plus</strong> sechs
+  Orthogonalität prüft man sechs Charakteristika <strong>plus</strong> vier
   Paletten <strong>plus</strong> die Schriften — statt jede Kombination. Mit vier
   Ausnahmen: Genau die Kopplungen oben bekommen je einen eigenen Test, weil nur
   sie beim Kreuzen brechen können.</p>
@@ -576,7 +582,7 @@ const CHARAKTERISTIKA = [
   ["c-raster","Raster","Spalten · SYS/DIA · r2"],
   ["c-band","Band","Flächenwechsel · r0 · halbfett"],
 ];
-const PALETTEN = ["p-papier","p-himmel","p-flieder","p-nacht","p-petrol","p-salbei"];
+const PALETTEN = ["p-papier","p-himmel","p-flieder","p-nacht"];
 const SCHRIFTEN = ["s-system","s-grotesk","s-serif","s-technisch"];
 
 // Eine echte Messung aus dem Beispieldatensatz.

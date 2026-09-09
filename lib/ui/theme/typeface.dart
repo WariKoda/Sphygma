@@ -1,6 +1,16 @@
 import 'package:flutter/widgets.dart';
 
-enum Typeface { system }
+enum Typeface {
+  /// Die Schrift des Telefons. Kostet nichts und bettet nichts ein — der
+  /// richtige Standard, solange keine eigene Familie ausgewählt ist
+  /// (docs/design/gestaltung-drei-achsen.md, „Schriften").
+  system('System');
+
+  const Typeface(this.label);
+
+  /// Sichtbarer Name in der Auswahl.
+  final String label;
+}
 
 enum WeightRole { sehrLeicht, leicht, normal, halbfett, fett }
 
