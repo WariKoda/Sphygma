@@ -98,6 +98,7 @@ SphygmaTheme themeFrom({
     headlineSize: characteristic.headlineSize,
     headlineWeight: font.weightFor(characteristic.headlineWeight),
     fontFamily: font.fontFamily,
+    readingLayout: characteristic.readingLayout,
     showDividers: characteristic.showDividers,
     panelBase: palette.flaeche,
     panelRaised: palette.flaecheGehoben,

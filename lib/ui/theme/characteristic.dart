@@ -11,6 +11,25 @@ enum CategoryRole { markierung, flaeche }
 /// verspräche das Auswahlfeld eine Farbwelt, die es nicht liefert; bei „Pulse
 /// Grid" und „Pegel" käme dazu, dass ihre Farbwelten (Petrol und Salbei) am
 /// 09.09.2026 gestrichen wurden. Ein Formname nennt die Form, sonst nichts.
+/// Wie der große Messwert gebaut ist.
+///
+/// Das ist kein Farbunterschied und keine Maßfrage, sondern **Aufbau** — der
+/// Punkt, an dem sich die Formen unterscheiden sollen. Bis zum 09.09.2026
+/// zeigten alle sechs denselben Bruch und trennten sich nur in Radius,
+/// Abstand und Gewicht; genau deshalb sahen vier von ihnen gleich aus.
+enum ReadingLayout {
+  /// „144/92" — ein Wert, zwei Zahlen, ein Schrägstrich.
+  bruch,
+
+  /// SYS und DIA als zwei gleichwertige Blöcke mit Beschriftung darunter.
+  ///
+  /// Der Entwurf zu „Pulse Grid" verlangt es ausdrücklich: *„SYS und DIA als
+  /// zwei gleichwertige Zahlenblöcke mit Beschriftung darunter — nicht als
+  /// 124/85."* Der Bruch stellt den systolischen Wert voran; nebeneinander
+  /// sind beide gleich wichtig.
+  bloecke,
+}
+
 enum Characteristic {
   messinstrument(
     label: 'Messinstrument',
@@ -76,6 +95,7 @@ enum Characteristic {
     erhebung: 0,
     nutztAkzent: true,
     categoryRole: CategoryRole.markierung,
+    readingLayout: ReadingLayout.bloecke,
   ),
   band(
     label: 'Band',
@@ -103,6 +123,7 @@ enum Characteristic {
     required this.erhebung,
     required this.nutztAkzent,
     required this.categoryRole,
+    this.readingLayout = ReadingLayout.bruch,
   });
 
   final String label;
@@ -116,4 +137,8 @@ enum Characteristic {
   final double erhebung;
   final bool nutztAkzent;
   final CategoryRole categoryRole;
+
+  /// Wie der große Messwert gebaut ist. Standard ist der Bruch — abweichen
+  /// muss eine Form begründen, nicht umgekehrt.
+  final ReadingLayout readingLayout;
 }

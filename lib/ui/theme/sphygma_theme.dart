@@ -3,6 +3,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../../stats/esc_classification.dart';
+import 'characteristic.dart';
 
 @immutable
 class SphygmaTheme {
@@ -20,6 +21,7 @@ class SphygmaTheme {
     required this.headlineSize,
     required this.headlineWeight,
     this.fontFamily,
+    this.readingLayout = ReadingLayout.bruch,
     required this.showDividers,
     required this.panelBase,
     required this.panelRaised,
@@ -60,6 +62,12 @@ class SphygmaTheme {
 
   /// Null erhält die Systemschrift, ohne eine Familie einzubetten.
   final String? fontFamily;
+
+  /// Wie der große Messwert gebaut ist — Bruch oder zwei Blöcke.
+  ///
+  /// Ein **Aufbau**-Merkmal, kein Maß: Es steht hier, damit `ReadingHeadline`
+  /// es kennt und kein Bildschirm nach der Form verzweigen muss.
+  final ReadingLayout readingLayout;
 
   /// Ob Listenzeilen durch eine Haarlinie getrennt werden.
   ///
