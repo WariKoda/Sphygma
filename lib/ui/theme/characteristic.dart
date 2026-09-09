@@ -3,6 +3,14 @@ import 'typeface.dart';
 enum CategoryRole { markierung, flaeche }
 
 // Die Namen der Diagonale bleiben für das bestehende Einstellungsblatt erhalten.
+/// Die Form: wie getrennt, geordnet und gebaut wird.
+///
+/// **Die Namen sind bewusst andere als die der alten Gestaltungen.** „Aura"
+/// war keine Form, sondern eine ganze Gestaltung — sie ist in die Form
+/// **Luft** und die Farbwelt **Nacht** zerfallen. Stünde hier weiter „Aura",
+/// verspräche das Auswahlfeld eine Farbwelt, die es nicht liefert; bei „Pulse
+/// Grid" und „Pegel" käme dazu, dass ihre Farbwelten (Petrol und Salbei) am
+/// 09.09.2026 gestrichen wurden. Ein Formname nennt die Form, sonst nichts.
 enum Characteristic {
   messinstrument(
     label: 'Messinstrument',
@@ -44,7 +52,7 @@ enum Characteristic {
     categoryRole: CategoryRole.markierung,
   ),
   luft(
-    label: 'Aura',
+    label: 'Luft',
     radius: 18,
     gapSmall: 11,
     gapLarge: 20,
@@ -57,7 +65,7 @@ enum Characteristic {
     categoryRole: CategoryRole.markierung,
   ),
   raster(
-    label: 'Pulse Grid',
+    label: 'Raster',
     radius: 2,
     gapSmall: 8,
     gapLarge: 22,
@@ -70,7 +78,7 @@ enum Characteristic {
     categoryRole: CategoryRole.markierung,
   ),
   band(
-    label: 'Pegel',
+    label: 'Band',
     radius: 0,
     gapSmall: 10,
     gapLarge: 18,

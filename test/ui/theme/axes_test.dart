@@ -10,7 +10,12 @@ double contrast(Color a, Color b) {
 }
 
 void main() {
-  test('die Diagonale bewahrt Form, Namen und Gewichte', () {
+  test('die Diagonale bewahrt Form, Farbwelt und Gewichte', () {
+    // Der Name eines komponierten Themes ist der **Formname**, nicht der der
+    // alten Gestaltung: Seit dem 09.09.2026 heißt die Form von „Aura" Luft,
+    // die von „Pulse Grid" Raster, die von „Pegel" Band. Sichtbar ist der
+    // Name ohnehin nirgends mehr — er steht nur noch in einer Fehlermeldung
+    // in zone_color.dart.
     const characteristics = Characteristic.values;
     const palettes = [
       Palette.papier,
@@ -24,9 +29,9 @@ void main() {
       'Messinstrument',
       'Tagebuch',
       'Material',
-      'Aura',
-      'Pulse Grid',
-      'Pegel',
+      'Luft',
+      'Raster',
+      'Band',
     ];
     const weights = [
       FontWeight.w300,
@@ -144,5 +149,21 @@ void main() {
       throwsArgumentError,
     );
     expect(typefaceStyleFor(Typeface.system).hasTabularFigures, isTrue);
+  });
+
+  test('kein Formname trägt den Namen einer alten Gestaltung', () {
+    // Bis zum 09.09.2026 hießen drei Formen noch „Aura", „Pulse Grid" und
+    // „Pegel" — die Namen ganzer Gestaltungen, die in Form und Farbwelt
+    // zerfallen sind. Im Auswahlfeld versprach das eine Farbwelt, die die
+    // Form nicht liefert; zwei davon gibt es überhaupt nicht mehr.
+    const zerfallen = {'Aura', 'Pulse Grid', 'Pegel'};
+    for (final c in Characteristic.values) {
+      expect(
+        zerfallen.contains(c.label),
+        isFalse,
+        reason: '${c.name} heißt „${c.label}" — das ist eine Gestaltung, '
+            'keine Form',
+      );
+    }
   });
 }
