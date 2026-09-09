@@ -395,7 +395,23 @@ class _AchsenWahl<T> extends StatelessWidget {
           onSelected: (gewaehlt) => onChanged(gewaehlt ?? value),
           dropdownMenuEntries: [
             for (final v in werte)
-              DropdownMenuEntry<T>(value: v, label: name(v)),
+              DropdownMenuEntry<T>(
+                value: v,
+                label: name(v),
+                // Auch die Einträge im aufgeklappten Menü nehmen ihre Farben
+                // aus der Gestaltung. `menuStyle` färbt nur die Fläche; der
+                // Text blieb im Material-Standard und war auf den dunklen
+                // Farbwelten nicht zu lesen (am Gerät gefunden, 09.09.2026).
+                style: ButtonStyle(
+                  foregroundColor: WidgetStatePropertyAll(t.onSurface),
+                  textStyle: WidgetStatePropertyAll(
+                    TextStyle(fontSize: 14, color: t.onSurface),
+                  ),
+                  overlayColor: WidgetStatePropertyAll(
+                    t.onSurface.withValues(alpha: 0.08),
+                  ),
+                ),
+              ),
           ],
         ),
       ),

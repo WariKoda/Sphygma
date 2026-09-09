@@ -89,7 +89,6 @@ class TodayScreen extends StatelessWidget {
           // Zahnrad unter „Ansicht".
           if (controller.measurements.isNotEmpty && controller.weekPanelVisible)
             SurfacePanel(
-              tone: 1,
               // Der Wecker gehört hierher, nicht in den Bildschirm: Ohne ihn
               // bliebe „Heute fehlt noch…" über Mitternacht beim gestrigen
               // Tag stehen, und am Montag stünde die Vorwoche als „diese
@@ -112,7 +111,6 @@ class TodayScreen extends StatelessWidget {
             ),
           if (controller.measurements.length > 1)
             SurfacePanel(
-              tone: 1,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

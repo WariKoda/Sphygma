@@ -82,7 +82,6 @@ class LastOccasionScreen extends StatelessWidget {
               ),
             ),
             SurfacePanel(
-              tone: 1,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

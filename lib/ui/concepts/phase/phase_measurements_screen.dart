@@ -114,7 +114,6 @@ class PhaseMeasurementsScreen extends StatelessWidget {
                   style: TextStyle(fontSize: 13, color: t.onSurface),
                 ),
               SurfacePanel(
-                tone: 1,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

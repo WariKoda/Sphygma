@@ -62,7 +62,6 @@ class HistoryScreen extends StatelessWidget {
                   if (inPeriod.isEmpty)
                     SliverToBoxAdapter(
                       child: SurfacePanel(
-                        tone: 1,
                         child: Padding(
                           padding: EdgeInsets.symmetric(
                             vertical: t.gapLarge * 2,
@@ -77,7 +76,6 @@ class HistoryScreen extends StatelessWidget {
                   else ...[
                     SliverToBoxAdapter(
                       child: SurfacePanel(
-                        tone: 1,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [

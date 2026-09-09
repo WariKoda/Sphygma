@@ -76,7 +76,6 @@ class OccasionArchiveScreen extends StatelessWidget {
                   // sind es 89 Zeilen, und eine Column baute sie alle auf
                   // einmal.
                   SurfaceSliver(
-                    tone: 1,
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (context, i) => _AnlassZeile(

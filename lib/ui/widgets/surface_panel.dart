@@ -26,6 +26,16 @@ class SurfacePanel extends StatelessWidget {
   /// Handschriften setzen die zweite Stufe gegen ihren Grund ab. Benachbarte
   /// Flächen sollten verschiedene Stufen tragen, damit die Gliederung auch
   /// dort trägt, wo die Handschrift wenig Kontrast hat.
+  /// Die Tonstufe der Fläche.
+  ///
+  /// **Alle Karten eines Bildschirms tragen denselben Ton.** Bis zum
+  /// 09.09.2026 setzten manche Bildschirme `tone: 1` und andere nicht, ohne
+  /// erkennbare Regel. Bei den meisten Farbwelten fiel das kaum auf — bei
+  /// „Material" dagegen ist die zweite Tonstufe **identisch mit dem Grund**,
+  /// und diese Karten verschwanden schlicht.
+  ///
+  /// Die zweite Stufe bleibt für den Fall, für den sie gedacht war: eine
+  /// Fläche innerhalb einer anderen, nicht zwei Karten nebeneinander.
   final int tone;
 
   final EdgeInsetsGeometry? padding;
