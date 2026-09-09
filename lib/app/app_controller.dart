@@ -437,7 +437,28 @@ class AppController extends ChangeNotifier {
     } finally {
       busy = false;
       await _refresh();
+      // **Nach jeder Aktion neu lauschen.**
+      //
+      // Ein Abgleich verbindet sich mit dem Gerät, und dafür startet
+      // `OmronSession.scan()` einen eigenen Scan — der ersetzt den Dauerscan
+      // des Autosyncs und wird danach beendet. Danach läuft **kein** Scan
+      // mehr: Das Abo steht zwar noch, bekommt aber nie wieder ein
+      // Advertising. Der erste Abgleich tötete so den Autosync, bis die App
+      // neu startete (am Gerät bemerkt, 2026-09-09).
+      _restartWatching();
     }
+  }
+
+  /// Setzt das Lauschen neu auf.
+  ///
+  /// Der alte Datenstrom wird abbestellt, damit sein Scan sauber endet —
+  /// sonst blieben zwei Abos auf einem Scan, den es nicht mehr gibt.
+  void _restartWatching() {
+    if (_disposed || !paired) return;
+    final alt = _watch;
+    _watch = null;
+    unawaited(alt?.cancel());
+    _startWatching();
   }
 
   Future<void> _refresh() async {
