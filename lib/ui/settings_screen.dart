@@ -63,11 +63,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       await c.sync();
     } catch (e) {
-      // Der Readout kann abbrechen, obwohl die Kopplung steht. Gefragt wird
-      // **trotzdem**: „Koppeln" verschwindet danach aus dem Blatt, und ohne
-      // diese Frage bliebe die Wahl beim Standard, ohne dass sie je gestellt
-      // wurde. Zu entscheiden gibt es dann eben weniger.
+      // **Nach einem abgebrochenen Readout wird nicht gefragt.**
+      //
+      // Die Datenbank wäre dann leer, und „nur neue Messungen" setzte die
+      // Grenze auf 1 — also auf *alles sichtbar*. Der Nutzer hielte seine
+      // Wahl für getroffen, und beim nächsten Abgleich stünden alle alten
+      // Messungen da. Eine Wahl, die das Gegenteil dessen bewirkt, was sie
+      // verspricht, ist schlimmer als keine.
+      //
+      // Verloren geht nichts: Die Übernahme ist eine Einstellung und über
+      // „Übernahme ändern" jederzeit erreichbar, sobald der Abgleich einmal
+      // durchgelaufen ist.
       debugPrint('[Sphygma] Erster Abgleich fehlgeschlagen: $e');
+      return;
     }
     if (!mounted) return;
     await showIntakeChoice(context, controller: c);

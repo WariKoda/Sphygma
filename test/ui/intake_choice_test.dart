@@ -176,4 +176,55 @@ void main() {
     expect(controller.measurements, hasLength(5));
     expect(controller.intakeFloor, isNull);
   });
+
+  test('die Grenze wechselt mit dem Speicherplatz', () async {
+    // Sie gilt je Slot. Zeigte die Einstellung weiter die des vorigen,
+    // behauptete sie etwas über Daten, die einem anderen Benutzer gehören
+    // (Codex-Gegenblick 09.09.2026).
+    await controller.takeOnlyNew();
+    expect(controller.intakeFloor, 6);
+
+    await controller.setUserSlot(2);
+    expect(
+      controller.intakeFloor,
+      isNull,
+      reason: 'Speicherplatz 2 hat eine eigene Grenze — hier gar keine',
+    );
+
+    await controller.setUserSlot(1);
+    expect(controller.intakeFloor, 6, reason: 'und Slot 1 seine wieder');
+  });
+
+  test('auf leerem Bestand bewirkt „nur neue" nichts Trügerisches', () async {
+    // Wäre die Datenbank leer — etwa nach einem abgebrochenen Readout —,
+    // setzte `takeOnlyNew` die Grenze auf 1, also auf *alles sichtbar*. Der
+    // Test hält fest, was dann gilt, damit die Oberfläche in diesem Fall gar
+    // nicht erst fragt.
+    final leer = AppDatabase(NativeDatabase.memory());
+    addTearDown(leer.close);
+    final leeresRepo = MeasurementRepository(leer);
+    final c = AppController(
+      settings: SettingsRepository(leer),
+      keyStore: InMemoryPairingKeyStore(),
+      repository: leeresRepo,
+      occasionRepository: OccasionRepository(leer),
+      syncService: SyncService(
+        keyStore: InMemoryPairingKeyStore(),
+        repository: leeresRepo,
+      ),
+      exportService: ExportService(repository: leeresRepo, sink: _NoopSink()),
+      statusStream: () => const Stream.empty(),
+    );
+    await c.init();
+    await c.setUserSlot(1);
+    addTearDown(c.dispose);
+
+    await c.takeOnlyNew();
+
+    expect(
+      c.intakeFloor,
+      1,
+      reason: 'ohne Bestand liegt die Grenze bei 1 — sie blendet nichts aus',
+    );
+  });
 }

@@ -287,6 +287,11 @@ class AppController extends ChangeNotifier {
     // tragen wie Slot 1, und ohne Ruecksetzen bliebe sein Sync aus
     // (Codex-Review 2026-09-04).
     _lastAutoSyncAttempt = null;
+    // Auch die Aufnahmegrenze gilt je Slot. Ohne dieses Nachladen zeigte die
+    // Einstellung weiter die Grenze des vorigen Speicherplatzes — und
+    // behauptete damit etwas über Daten, die einem anderen Benutzer gehören
+    // (Codex-Gegenblick 2026-09-09).
+    intakeFloor = await repository.intakeFloor(slot);
     await _refresh();
   }
 
