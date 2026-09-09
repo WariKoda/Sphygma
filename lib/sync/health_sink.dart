@@ -25,6 +25,20 @@ class BloodPressureWrite {
   final bool arrhythmia;
 }
 
+/// Eine Senke, die Schreibrechte kennt und danach gefragt werden kann.
+///
+/// Getrennt von [HealthSink], damit einfache Senken — etwa in Tests — davon
+/// unberührt bleiben: Wer keine Rechte kennt, schreibt einfach.
+///
+/// Der **automatische** Export fragt hier nach, bevor er etwas versucht. Ein
+/// Berechtigungsdialog, der von selbst aufgeht, während der Nutzer etwas
+/// anderes tut, ist eine Zumutung — und er käme im ungünstigsten Fall nach
+/// jeder Messung. Der Knopf von Hand fragt weiterhin.
+abstract class PermissionAwareSink {
+  /// Ob bereits geschrieben werden darf, **ohne zu fragen**.
+  Future<bool> canWriteWithoutAsking();
+}
+
 abstract class HealthSink {
   /// Schreibt Blutdruck und Puls. Wirft bei jedem Fehler - ein stiller
   /// Teilerfolg wuerde die Export-Buchfuehrung verfaelschen.

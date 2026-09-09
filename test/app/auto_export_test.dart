@@ -15,6 +15,22 @@ import 'package:sphygma/sync/export_service.dart';
 import 'package:sphygma/sync/health_sink.dart';
 import 'package:sphygma/sync/sync_service.dart';
 
+/// Eine Senke, die ihre Rechte kennt und keine hat.
+class _OhneRechte implements HealthSink, PermissionAwareSink {
+  bool gefragt = false;
+
+  @override
+  Future<bool> canWriteWithoutAsking() async => false;
+
+  @override
+  Future<void> writeBloodPressure(BloodPressureWrite w) async {
+    gefragt = true;
+  }
+
+  @override
+  Future<void> deleteBloodPressure(String id) async {}
+}
+
 class _ZaehlendeSenke implements HealthSink {
   int geschrieben = 0;
   @override
@@ -127,5 +143,84 @@ void main() {
     await c.setAutoExport(true);
 
     expect(c.autoExportProblem, isNull);
+  });
+
+  test('beim ersten Koppeln wird vor der Übernahmewahl nichts übertragen',
+      () async {
+    // Der schwerste der drei Befunde: Beim Koppeln läuft der Abgleich, bevor
+    // der Nutzer entschieden hat, was übernommen wird. Ohne diese Bremse
+    // gingen die Messungen eines Vorbesitzers in die Gesundheitsakte, bevor
+    // die Frage überhaupt gestellt wurde (Codex-Gegenblick 09.09.2026).
+    final senke = _ZaehlendeSenke();
+    final c = await _bauen(db, senke);
+    addTearDown(c.dispose);
+    await MeasurementRepository(db).importAll([_rec(1), _rec(2)]);
+    await c.refreshForTest();
+
+    // Ein Abgleich ohne Gerät scheitert — geprüft wird, dass der Export
+    // dabei gar nicht erst angestoßen wird.
+    await c.sync(autoExport: false).catchError((_) {});
+
+    expect(senke.geschrieben, 0);
+  });
+
+  test('ohne Schreibrechte öffnet der automatische Weg keinen Dialog',
+      () async {
+    // Ein Berechtigungsdialog, der von selbst aufgeht, während der Nutzer
+    // etwas anderes tut, ist eine Zumutung — und käme im ungünstigsten Fall
+    // nach jeder Messung.
+    final senke = _OhneRechte();
+    final c = await _bauen(db, senke);
+    addTearDown(c.dispose);
+    await MeasurementRepository(db).importAll([_rec(1)]);
+    await c.refreshForTest();
+
+    await c.autoExportForTest();
+
+    expect(senke.gefragt, isFalse, reason: 'es wurde nicht zu schreiben versucht');
+    expect(c.autoExportProblem, isNotNull, reason: 'aber der Grund steht da');
+  });
+
+  test('zurückgezogene Werte gehen nicht von selbst wieder hinaus', () async {
+    // `retractOne` löscht die Exportmarkierung — die Messung gilt danach
+    // wieder als offen. Ohne eine eigene Marke schickte der nächste Abgleich
+    // sie ungefragt erneut hinaus, und das Zurückziehen wäre wirkungslos
+    // (Codex-Gegenblick 09.09.2026).
+    final senke = _ZaehlendeSenke();
+    final c = await _bauen(db, senke);
+    addTearDown(c.dispose);
+    final repo = MeasurementRepository(db);
+    await repo.importAll([_rec(1), _rec(2)]);
+    await c.refreshForTest();
+
+    await c.autoExportForTest();
+    expect(senke.geschrieben, 2);
+
+    // Der Nutzer entfernt sie wieder aus seiner Gesundheitsakte.
+    await c.retractAll();
+    expect(c.pendingExport, 2, reason: 'sie gelten wieder als offen');
+
+    await c.autoExportForTest();
+    expect(
+      senke.geschrieben,
+      2,
+      reason: 'nichts kam von selbst zurück — das Zurückziehen hält',
+    );
+  });
+
+  test('von Hand übertragen holt auch Zurückgezogenes zurück', () async {
+    // Wer den Knopf drückt, meint es so. Nur der automatische Weg hält sich
+    // zurück.
+    final senke = _ZaehlendeSenke();
+    final c = await _bauen(db, senke);
+    addTearDown(c.dispose);
+    await MeasurementRepository(db).importAll([_rec(1)]);
+    await c.refreshForTest();
+
+    await c.autoExportForTest();
+    await c.retractAll();
+    await c.exportAll();
+
+    expect(senke.geschrieben, 2, reason: 'einmal von selbst, einmal von Hand');
   });
 }

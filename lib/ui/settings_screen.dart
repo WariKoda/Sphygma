@@ -61,7 +61,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return;
     }
     try {
-      await c.sync();
+      await c.sync(autoExport: false);
     } catch (e) {
       // **Nach einem abgebrochenen Readout wird nicht gefragt.**
       //

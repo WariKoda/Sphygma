@@ -18,6 +18,7 @@ import '../stats/occasion_grouping.dart';
 import '../stats/phase_grouping.dart';
 import '../stats/period.dart';
 import '../sync/export_service.dart';
+import '../sync/health_sink.dart';
 import '../sync/sync_service.dart';
 import '../ui/theme/variants.dart';
 import '../ui/theme/sphygma_theme.dart';
@@ -203,6 +204,12 @@ class AppController extends ChangeNotifier {
     weekPanelVisible = value;
     notifyListeners();
   }
+
+  /// Nur für Tests: stößt den automatischen Export an.
+  ///
+  /// Der echte Weg führt über einen Abgleich, und der braucht ein Gerät.
+  @visibleForTesting
+  Future<void> autoExportForTest() => _autoExport();
 
   /// Nur fuer Tests: erzwingt das Neuladen aus der DB.
   @visibleForTesting
@@ -398,7 +405,16 @@ class AppController extends ChangeNotifier {
     _startWatching();
   });
 
-  Future<void> sync() => _run('Verbinde…', () async {
+  /// Holt neue Messungen vom Gerät.
+  ///
+  /// [autoExport] steuert, ob danach automatisch übertragen wird. Beim
+  /// **ersten Koppeln** steht das auf falsch: Dort läuft der Abgleich, bevor
+  /// der Nutzer entschieden hat, was von dem, was auf dem Gerät liegt,
+  /// überhaupt übernommen werden soll. Ohne diese Bremse gingen die
+  /// Messungen eines Vorbesitzers in die Gesundheitsakte, bevor die Frage
+  /// überhaupt gestellt wurde (Codex-Gegenblick 2026-09-09).
+  Future<void> sync({bool autoExport = true}) =>
+      _run('Verbinde…', () async {
     try {
       final result = await syncService.sync(log: _log);
       // Ueber _log statt nur ueber [status]: Ein automatisch
@@ -409,7 +425,7 @@ class AppController extends ChangeNotifier {
             ? 'Keine neuen Messungen (${result.readFromDevice} gelesen).'
             : '${result.newlyStored} neue Messungen.',
       );
-      if (result.newlyStored > 0) await _autoExport();
+        if (autoExport && result.newlyStored > 0) await _autoExport();
     } on NotPairedException {
       status = 'Noch nicht gepairt.';
       rethrow;
@@ -503,9 +519,33 @@ class AppController extends ChangeNotifier {
     if (!autoExport) return;
     final slot = userSlot;
     if (slot == null) return;
+
+    // **Nichts erzwingen.** Fehlen die Schreibrechte, öffnete der Export
+    // einen Berechtigungsdialog — von selbst, während der Nutzer etwas
+    // anderes tut, und im ungünstigsten Fall nach jeder Messung. Der Knopf
+    // von Hand fragt weiterhin.
+    // Eine Senke, die keine Rechte kennt, schreibt einfach — sie kann auch
+    // keinen Dialog öffnen.
+    if (exportService.sink case final PermissionAwareSink s
+        when !await s.canWriteWithoutAsking()) {
+      autoExportProblem =
+          'Health Connect hat keine Schreibrechte. Einmal von Hand '
+          'übertragen erteilt sie.';
+      return;
+    }
+
     try {
-      final anzahl = await exportService.exportPending(userSlot: slot);
+      final anzahl = await exportService.exportPending(
+        userSlot: slot,
+        onlyNew: true,
+      );
       autoExportProblem = null;
+      // Die Marke nachziehen: Was jetzt draußen ist, geht nicht noch einmal
+      // von selbst hinaus, auch nicht nach einem Zurückziehen.
+      final hoechste = await repository.highestSequenceFor(slot);
+      if (hoechste != null) {
+        await repository.setAutoExportMark(slot, hoechste);
+      }
       if (anzahl > 0) _log('$anzahl an Health Connect übertragen.');
     } catch (e) {
       autoExportProblem = '$e';

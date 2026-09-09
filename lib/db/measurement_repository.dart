@@ -100,6 +100,46 @@ class MeasurementRepository {
   /// Der Einstellungsschlüssel der Aufnahmegrenze eines Speicherplatzes.
   static String intakeFloorKey(int userSlot) => 'intake_floor_$userSlot';
 
+  static String _autoExportMarkKey(int userSlot) => 'auto_export_mark_$userSlot';
+
+  /// Die höchste Messungsnummer, die je **automatisch** übertragen wurde.
+  ///
+  /// Der automatische Export nimmt nur, was darüber liegt. Das ist die
+  /// Bedeutung von „neue Messungen": höher als alles, was schon von selbst
+  /// hinausging.
+  ///
+  /// Der Grund ist ein Fund aus dem Gegenblick: Zieht der Nutzer eine
+  /// Messung aus Health Connect zurück, wird ihre Exportmarkierung gelöscht —
+  /// sie gilt danach wieder als offen. Ohne diese Marke schickte der nächste
+  /// Abgleich sie ungefragt erneut hinaus, und das Zurückziehen wäre
+  /// wirkungslos. Von Hand übertragen lässt sie sich weiterhin.
+  Future<int?> autoExportMark(int userSlot) async {
+    final row = await (_db.select(_db.appSettings)
+          ..where((s) => s.key.equals(_autoExportMarkKey(userSlot))))
+        .getSingleOrNull();
+    return row == null ? null : int.parse(row.value);
+  }
+
+  Future<void> setAutoExportMark(int userSlot, int sequence) async {
+    await _db
+        .into(_db.appSettings)
+        .insert(
+          AppSettingsCompanion.insert(
+            key: _autoExportMarkKey(userSlot),
+            value: '$sequence',
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
+  }
+
+  /// Offene Messungen **oberhalb** der Marke des automatischen Exports.
+  Future<List<Measurement>> pendingAutoExport(int userSlot) async {
+    final offen = await pendingExport(userSlot);
+    final marke = await autoExportMark(userSlot);
+    if (marke == null) return offen;
+    return offen.where((m) => m.deviceSequence > marke).toList();
+  }
+
   /// Setzt die Aufnahmegrenze. Null hebt sie auf — dann ist wieder alles
   /// sichtbar, was auf dem Gerät steht.
   Future<void> setIntakeFloor(int userSlot, int? sequence) async {

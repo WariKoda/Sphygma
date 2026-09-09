@@ -39,7 +39,7 @@ class HealthConnectWriteException implements Exception {
       'nicht angenommen.';
 }
 
-class HealthConnectSink implements HealthSink {
+class HealthConnectSink implements HealthSink, PermissionAwareSink {
   HealthConnectSink({Health? health}) : _health = health ?? Health();
 
   final Health _health;
@@ -84,6 +84,25 @@ class HealthConnectSink implements HealthSink {
       if (!ok) {
         throw HealthConnectPermissionDeniedException();
       }
+    }
+  }
+
+  /// Prüft die Rechte, **ohne** den Dialog zu öffnen.
+  @override
+  Future<bool> canWriteWithoutAsking() async {
+    try {
+      if (!_configured) {
+        await _health.configure();
+        _configured = true;
+      }
+      final status = await _health.getHealthConnectSdkStatus();
+      if (status != HealthConnectSdkStatus.sdkAvailable) return false;
+      return await _health.hasPermissions(_types, permissions: _writeOnly) ==
+          true;
+    } catch (_) {
+      // Im Zweifel nicht schreiben: Der automatische Weg soll nichts
+      // erzwingen. Der Knopf von Hand bleibt davon unberührt.
+      return false;
     }
   }
 
