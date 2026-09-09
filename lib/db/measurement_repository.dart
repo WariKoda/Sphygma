@@ -75,10 +75,119 @@ class MeasurementRepository {
     return row?.read(sequence.max());
   }
 
+  /// Die Aufnahmegrenze eines Speicherplatzes, oder null.
+  ///
+  /// Beim Koppeln entscheidet der Nutzer, was von dem, was schon auf dem
+  /// Gerät liegt, übernommen wird. Alles **unterhalb** dieser Messungsnummer
+  /// wird nie angezeigt und nie nach Health Connect übertragen.
+  ///
+  /// **Eine Grenze statt vieler Markierungen**, und **die Messungsnummer
+  /// statt eines Datums**: Die Nummer zählt am Gerät monoton weiter, auch
+  /// nach „alle Daten löschen" (docs/protocol/hem-6232t.md §8.3), während die
+  /// Geräteuhr nachweislich falsch geht. Eine Grenze ist damit stabil,
+  /// umkehrbar und überlebt einen erneuten Voll-Readout.
+  ///
+  /// Gelesen wird sie hier und nicht im Steuerungsteil, damit sie niemand
+  /// vergessen kann: Jede Abfrage, die Messungen **zum Anzeigen oder
+  /// Übertragen** liefert, filtert sie mit.
+  Future<int?> intakeFloor(int userSlot) async {
+    final row = await (_db.select(_db.appSettings)
+          ..where((s) => s.key.equals(intakeFloorKey(userSlot))))
+        .getSingleOrNull();
+    return row == null ? null : int.parse(row.value);
+  }
+
+  /// Der Einstellungsschlüssel der Aufnahmegrenze eines Speicherplatzes.
+  static String intakeFloorKey(int userSlot) => 'intake_floor_$userSlot';
+
+  static String _autoExportMarkKey(int userSlot) => 'auto_export_mark_$userSlot';
+
+  /// Die höchste Messungsnummer, die je **automatisch** übertragen wurde.
+  ///
+  /// Der automatische Export nimmt nur, was darüber liegt. Das ist die
+  /// Bedeutung von „neue Messungen": höher als alles, was schon von selbst
+  /// hinausging.
+  ///
+  /// Der Grund ist ein Fund aus dem Gegenblick: Zieht der Nutzer eine
+  /// Messung aus Health Connect zurück, wird ihre Exportmarkierung gelöscht —
+  /// sie gilt danach wieder als offen. Ohne diese Marke schickte der nächste
+  /// Abgleich sie ungefragt erneut hinaus, und das Zurückziehen wäre
+  /// wirkungslos. Von Hand übertragen lässt sie sich weiterhin.
+  Future<int?> autoExportMark(int userSlot) async {
+    final row = await (_db.select(_db.appSettings)
+          ..where((s) => s.key.equals(_autoExportMarkKey(userSlot))))
+        .getSingleOrNull();
+    return row == null ? null : int.parse(row.value);
+  }
+
+  Future<void> setAutoExportMark(int userSlot, int sequence) async {
+    await _db
+        .into(_db.appSettings)
+        .insert(
+          AppSettingsCompanion.insert(
+            key: _autoExportMarkKey(userSlot),
+            value: '$sequence',
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
+  }
+
+  /// Offene Messungen **oberhalb** der Marke des automatischen Exports.
+  Future<List<Measurement>> pendingAutoExport(int userSlot) async {
+    final offen = await pendingExport(userSlot);
+    final marke = await autoExportMark(userSlot);
+    if (marke == null) return offen;
+    return offen.where((m) => m.deviceSequence > marke).toList();
+  }
+
+  /// Setzt die Aufnahmegrenze. Null hebt sie auf — dann ist wieder alles
+  /// sichtbar, was auf dem Gerät steht.
+  Future<void> setIntakeFloor(int userSlot, int? sequence) async {
+    if (sequence == null) {
+      await (_db.delete(_db.appSettings)
+            ..where((s) => s.key.equals(intakeFloorKey(userSlot))))
+          .go();
+      return;
+    }
+    await _db
+        .into(_db.appSettings)
+        .insert(
+          AppSettingsCompanion.insert(
+            key: intakeFloorKey(userSlot),
+            value: '$sequence',
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
+  }
+
+  /// Die kleinste Messungsnummer, die ab einem Zeitpunkt gemessen wurde.
+  ///
+  /// So wird aus der Wahl „ab diesem Datum" **einmal** eine Grenze in
+  /// Messungsnummern. Danach hängt sie nicht mehr an Zeitstempeln, die das
+  /// Gerät falsch schreibt. Null heißt: Es gibt keine Messung ab dann — die
+  /// Grenze liegt dann über allem Bekannten.
+  Future<int?> firstSequenceFrom(int userSlot, DateTime ab) async {
+    final sequence = _db.measurements.deviceSequence;
+    final query = _db.selectOnly(_db.measurements)
+      ..addColumns([sequence.min()])
+      ..where(
+        _db.measurements.userSlot.equals(userSlot) &
+            _db.measurements.measuredAt.isBiggerOrEqualValue(ab),
+      );
+    final row = await query.getSingleOrNull();
+    return row?.read(sequence.min());
+  }
+
   /// Alle Messungen eines Slots, aelteste zuerst.
-  Future<List<Measurement>> allForSlot(int userSlot) {
+  Future<List<Measurement>> allForSlot(int userSlot) async {
+    final floor = await intakeFloor(userSlot);
     final query = _db.select(_db.measurements)
-      ..where((m) => m.userSlot.equals(userSlot))
+      ..where(
+        (m) => floor == null
+            ? m.userSlot.equals(userSlot)
+            : m.userSlot.equals(userSlot) &
+                  m.deviceSequence.isBiggerOrEqualValue(floor),
+      )
       ..orderBy([
         // Nach Datum, wie am Geraet abgelesen. Der Gerätezähler dient dem
         // Dedup und der Uhr-Prüfung, nicht der Anzeige-Reihenfolge; bei
@@ -91,9 +200,15 @@ class MeasurementRepository {
   }
 
   /// Noch nicht nach Health Connect exportierte Messungen eines Slots.
-  Future<List<Measurement>> pendingExport(int userSlot) {
+  Future<List<Measurement>> pendingExport(int userSlot) async {
+    final floor = await intakeFloor(userSlot);
     final query = _db.select(_db.measurements)
-      ..where((m) => m.userSlot.equals(userSlot) & m.exportedAt.isNull())
+      ..where(
+        (m) => floor == null
+            ? m.userSlot.equals(userSlot) & m.exportedAt.isNull()
+            : m.userSlot.equals(userSlot) & m.exportedAt.isNull() &
+                  m.deviceSequence.isBiggerOrEqualValue(floor),
+      )
       ..orderBy([
         // Nach Datum, wie am Geraet abgelesen. Der Gerätezähler dient dem
         // Dedup und der Uhr-Prüfung, nicht der Anzeige-Reihenfolge; bei
@@ -106,6 +221,13 @@ class MeasurementRepository {
   }
 
   /// Bereits nach Health Connect exportierte Messungen eines Slots.
+  ///
+  /// **Ohne die Aufnahmegrenze** — bewusst, und aus demselben Grund wie bei
+  /// [highestSequenceFor]: Diese Abfrage dient dem *Zurückziehen* aus Health
+  /// Connect, nicht der Anzeige. Wurde eine Messung exportiert und erst
+  /// danach ausgeblendet, ist sie in der Gesundheitsakte bereits da. Filterte
+  /// diese Liste sie heraus, bliebe sie dort für immer — die App könnte sie
+  /// nicht mehr entfernen. Ausblenden darf den Rückweg nicht versperren.
   Future<List<Measurement>> exported(int userSlot) {
     final query = _db.select(_db.measurements)
       ..where((m) => m.userSlot.equals(userSlot) & m.exportedAt.isNotNull())

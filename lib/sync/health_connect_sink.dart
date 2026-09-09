@@ -39,7 +39,7 @@ class HealthConnectWriteException implements Exception {
       'nicht angenommen.';
 }
 
-class HealthConnectSink implements HealthSink {
+class HealthConnectSink implements HealthSink, PermissionAwareSink {
   HealthConnectSink({Health? health}) : _health = health ?? Health();
 
   final Health _health;
@@ -84,6 +84,41 @@ class HealthConnectSink implements HealthSink {
       if (!ok) {
         throw HealthConnectPermissionDeniedException();
       }
+    }
+  }
+
+  /// Prüft die Lage, **ohne** den Dialog zu öffnen.
+  ///
+  /// Die Fälle bleiben unterscheidbar: Fehlende Rechte lassen sich von Hand
+  /// erteilen, ein fehlendes Health Connect nicht.
+  @override
+  Future<SinkReadiness> readiness() async {
+    try {
+      if (!_configured) {
+        await _health.configure();
+        _configured = true;
+      }
+      final status = await _health.getHealthConnectSdkStatus();
+      // Null heißt **nicht** „nicht verfügbar": Das Paket fängt einen
+      // Abfragefehler selbst ab und liefert dafür null
+      // (health 13.3.2, health_plugin.dart — dort steht der catch-Zweig).
+      // Als Verfügbarkeitsproblem gemeldet, riete die Meldung zur
+      // Installation, obwohl vielleicht nur die Abfrage schiefging.
+      if (status == null) return SinkReadiness.unklar;
+      if (status != HealthConnectSdkStatus.sdkAvailable) {
+        return SinkReadiness.nichtVerfuegbar;
+      }
+      final granted = await _health.hasPermissions(
+        _types,
+        permissions: _writeOnly,
+      );
+      return granted == true
+          ? SinkReadiness.bereit
+          : SinkReadiness.keineRechte;
+    } catch (_) {
+      // Im Zweifel nicht schreiben: Der automatische Weg soll nichts
+      // erzwingen. Der Knopf von Hand bleibt davon unberührt.
+      return SinkReadiness.unklar;
     }
   }
 

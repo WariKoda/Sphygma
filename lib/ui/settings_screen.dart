@@ -21,6 +21,7 @@ import 'theme/sphygma_theme.dart';
 import 'widgets/surface_panel.dart';
 import 'theme/variants.dart';
 import 'widgets/section_header.dart';
+import 'intake_choice_sheet.dart';
 import 'widgets/setting_row.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -39,6 +40,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// gekoppelt werden, und ein falsch gewählter Speicherplatz ließe sonst
   /// dauerhaft den falschen Benutzer auslesen.
   bool _pairingOpen = false;
+
+  /// Koppelt, liest aus und fragt dann, was übernommen werden soll.
+  ///
+  /// **Die Reihenfolge ist der Punkt.** Erst das Gerät auslesen, dann fragen:
+  /// Vorher weiß niemand, wie viele Messungen dort liegen, und „nur neue"
+  /// hätte keine Grenze, an der es sich festmachen könnte. Die Messungen
+  /// landen dabei vollständig in der Datenbank — sie bleibt reines Abbild des
+  /// Geräts. Was die Wahl bewirkt, ist eine Grenze, keine Löschung.
+  ///
+  /// Schlägt das Koppeln fehl, wird nicht gefragt: Eine Grenze ohne Kopplung
+  /// wäre eine Entscheidung über Daten, die es nicht gibt.
+  Future<void> _koppelnUndFragen(AppController c) async {
+    try {
+      await c.pair();
+    } catch (e) {
+      // Ohne Kopplung wird nicht gefragt: Eine Grenze ohne Gerät wäre eine
+      // Entscheidung über Daten, die es nicht gibt.
+      debugPrint('[Sphygma] Koppeln fehlgeschlagen: $e');
+      return;
+    }
+    try {
+      await c.sync(autoExport: false);
+    } catch (e) {
+      // **Nach einem abgebrochenen Readout wird nicht gefragt.**
+      //
+      // Die Datenbank wäre dann leer, und „nur neue Messungen" setzte die
+      // Grenze auf 1 — also auf *alles sichtbar*. Der Nutzer hielte seine
+      // Wahl für getroffen, und beim nächsten Abgleich stünden alle alten
+      // Messungen da. Eine Wahl, die das Gegenteil dessen bewirkt, was sie
+      // verspricht, ist schlimmer als keine.
+      //
+      // Verloren geht nichts: Die Übernahme ist eine Einstellung und über
+      // „Übernahme ändern" jederzeit erreichbar, sobald der Abgleich einmal
+      // durchgelaufen ist.
+      debugPrint('[Sphygma] Erster Abgleich fehlgeschlagen: $e');
+      return;
+    }
+    if (!mounted) return;
+    await showIntakeChoice(context, controller: c);
+  }
 
   /// Startet eine Aktion des Steuerungsteils.
   ///
@@ -118,6 +159,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
             '${c.measurements.length - c.pendingExport} '
             'von ${c.measurements.length}',
       ),
+      SwitchListTile(
+        value: c.autoExport,
+        onChanged: c.setAutoExport,
+        title: Text(
+          'Neue Messungen automatisch übertragen',
+          style: TextStyle(
+            fontSize: 14,
+            color: SphygmaTheme.of(context).onSurface,
+          ),
+        ),
+        contentPadding: EdgeInsets.zero,
+        dense: true,
+      ),
+      // Ein automatischer Vorgang meldet seinen Fehler nicht bei jeder
+      // Messung — aber verschweigen darf er ihn auch nicht. Wer glaubt, seine
+      // Werte seien übertragen, verlässt sich darauf.
+      if (c.autoExportProblem case final grund?)
+        _Erklaerung(
+          text:
+              'Die letzte automatische Übertragung hat nicht geklappt: '
+              '$grund',
+        ),
       SettingButton(
         label: 'Alle übertragen',
         onPressed: c.busy || c.pendingExport == 0
@@ -145,6 +208,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         if (c.userSlot != null)
           SettingRow(label: 'Speicherplatz', value: 'Benutzer ${c.userSlot}'),
+        // Die Übernahme ist eine **Einstellung**, nicht nur ein Schritt beim
+        // Koppeln. Sonst wäre sie nur nach erneutem Koppeln erreichbar — und
+        // wer sein Gerät nicht zur Hand hat oder beim ersten Versuch einen
+        // Verbindungsabbruch hatte, käme nie wieder an sie heran, obwohl das
+        // Blatt verspricht, man könne später freigeben (Codex-Gegenblick
+        // 09.09.2026).
+        if (c.userSlot != null)
+          SettingRow(
+            label: 'Übernommen',
+            value: c.intakeFloor == null
+                ? 'alle Messungen'
+                : 'ab Messung Nr. ${c.intakeFloor}',
+          ),
+        if (c.userSlot != null)
+          SettingButton(
+            label: 'Übernahme ändern',
+            onPressed: c.busy
+                ? null
+                : () => showIntakeChoice(context, controller: c),
+          ),
         if (c.paired && !_pairingOpen)
           SettingButton(
             label: 'Neu koppeln',
@@ -183,7 +266,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             filled: true,
             onPressed: c.busy || c.userSlot == null
                 ? null
-                : () => _start(c.pair),
+                : () => _koppelnUndFragen(c),
           ),
         ],
       ],

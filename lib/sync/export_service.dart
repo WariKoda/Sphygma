@@ -18,8 +18,19 @@ class ExportService {
   /// jede einzelne erst nach erfolgreichem Schreiben. Liefert die Anzahl.
   /// Scheitert die Senke, bleibt der betroffene Datensatz unexportiert und
   /// der Fehler wird durchgereicht.
-  Future<int> exportPending({required int userSlot, int? limit}) async {
-    var pending = await repository.pendingExport(userSlot);
+  /// Überträgt offene Messungen.
+  ///
+  /// [onlyNew] nimmt nur, was über der Marke des automatischen Exports liegt
+  /// — für den automatischen Weg. Von Hand wird alles Offene übertragen,
+  /// auch früher Zurückgezogenes: Wer den Knopf drückt, meint es so.
+  Future<int> exportPending({
+    required int userSlot,
+    int? limit,
+    bool onlyNew = false,
+  }) async {
+    var pending = onlyNew
+        ? await repository.pendingAutoExport(userSlot)
+        : await repository.pendingExport(userSlot);
     if (limit != null) {
       pending = pending.take(limit).toList();
     }

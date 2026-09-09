@@ -18,6 +18,7 @@ import '../stats/occasion_grouping.dart';
 import '../stats/phase_grouping.dart';
 import '../stats/period.dart';
 import '../sync/export_service.dart';
+import '../sync/health_sink.dart';
 import '../sync/sync_service.dart';
 import '../ui/theme/variants.dart';
 import '../ui/theme/sphygma_theme.dart';
@@ -93,6 +94,23 @@ class AppController extends ChangeNotifier {
   /// Ob das Wochenraster auf „Heute" erscheint. Wird in [init] aus der DB
   /// geladen.
   bool weekPanelVisible = true;
+
+  /// Ob neue Messungen von selbst nach Health Connect gehen.
+  ///
+  /// Standard ist **an**: Messwerte dorthin zu bringen ist der Zweck dieser
+  /// App, und wer die Berechtigung erteilt hat, will genau das. Abschaltbar
+  /// bleibt es trotzdem — es gehen Gesundheitsdaten in eine fremde Akte.
+  bool autoExport = true;
+
+  /// Warum der letzte automatische Export nicht durchlief, oder null.
+  ///
+  /// Ein automatischer Vorgang darf nicht bei jeder Messung eine Fehlermeldung
+  /// werfen — Health Connect kann die Berechtigung dauerhaft verweigern, und
+  /// die Meldung käme dann endlos. Verschwiegen werden darf es aber auch
+  /// nicht: Wer glaubt, seine Werte seien übertragen, verlässt sich darauf.
+  /// Deshalb bleibt der Grund hier stehen und wird in den Einstellungen
+  /// angezeigt.
+  String? autoExportProblem;
 
   /// Die Messanlässe des gewählten Speicherplatzes: Rohmessungen, die kurz
   /// nacheinander entstanden sind, gehören zu einem Messen. Abgeleitet, nicht
@@ -174,11 +192,24 @@ class AppController extends ChangeNotifier {
     await settings.setTypeface(value);
   }
 
+  Future<void> setAutoExport(bool value) async {
+    await settings.setAutoExport(value);
+    autoExport = value;
+    if (value) autoExportProblem = null;
+    notifyListeners();
+  }
+
   Future<void> setWeekPanelVisible(bool value) async {
     await settings.setWeekPanelVisible(value);
     weekPanelVisible = value;
     notifyListeners();
   }
+
+  /// Nur für Tests: stößt den automatischen Export an.
+  ///
+  /// Der echte Weg führt über einen Abgleich, und der braucht ein Gerät.
+  @visibleForTesting
+  Future<void> autoExportForTest() => _autoExport();
 
   /// Nur fuer Tests: erzwingt das Neuladen aus der DB.
   @visibleForTesting
@@ -196,6 +227,10 @@ class AppController extends ChangeNotifier {
     typeface = await settings.typeface();
     concept = await settings.concept();
     weekPanelVisible = await settings.weekPanelVisible();
+    autoExport = await settings.autoExport();
+    if (userSlot case final slot?) {
+      intakeFloor = await repository.intakeFloor(slot);
+    }
     await _refresh();
     _startWatching();
   }
@@ -219,16 +254,27 @@ class AppController extends ChangeNotifier {
     // einziger Fehlschlag die Kette dauerhaft vergiften und jede weitere
     // Meldung stillschweigend uebersprungen (Codex-Review 2026-09-04).
     var pending = Future<void>.value();
-    _watch = _statusStream().listen((status) {
-      pending = pending.then((_) async {
-        if (_disposed) return;
-        try {
-          await _onAdvertisedStatus(status);
-        } catch (e) {
-          debugPrint('[Sphygma] Autosync-Meldung verworfen: $e');
-        }
-      });
-    }, onError: _onWatchError);
+    // Das Abonnieren selbst kann scheitern — etwa wenn der Datenstrom nur
+    // einmal gelesen werden kann. Das darf die Aktion nicht mitreißen, aus
+    // deren Abschluss heraus hier neu gelauscht wird: Der Abgleich war dann
+    // erfolgreich, nur das Lauschen nicht.
+    final StreamSubscription<OmronAdvertisedStatus> abo;
+    try {
+      abo = _statusStream().listen((status) {
+        pending = pending.then((_) async {
+          if (_disposed) return;
+          try {
+            await _onAdvertisedStatus(status);
+          } catch (e) {
+            debugPrint('[Sphygma] Autosync-Meldung verworfen: $e');
+          }
+        });
+      }, onError: _onWatchError);
+    } catch (e) {
+      debugPrint('[Sphygma] Lauschen konnte nicht beginnen: $e');
+      return;
+    }
+    _watch = abo;
   }
 
   Future<void> _onAdvertisedStatus(OmronAdvertisedStatus status) async {
@@ -284,7 +330,69 @@ class AppController extends ChangeNotifier {
     // tragen wie Slot 1, und ohne Ruecksetzen bliebe sein Sync aus
     // (Codex-Review 2026-09-04).
     _lastAutoSyncAttempt = null;
+    // Auch die Aufnahmegrenze gilt je Slot. Ohne dieses Nachladen zeigte die
+    // Einstellung weiter die Grenze des vorigen Speicherplatzes — und
+    // behauptete damit etwas über Daten, die einem anderen Benutzer gehören
+    // (Codex-Gegenblick 2026-09-09).
+    intakeFloor = await repository.intakeFloor(slot);
     await _refresh();
+  }
+
+  /// Die Aufnahmegrenze des gewählten Speicherplatzes, oder null.
+  ///
+  /// Alles unterhalb wird nie angezeigt und nie übertragen. Sie wird beim
+  /// Koppeln gesetzt und ist jederzeit widerrufbar.
+  int? intakeFloor;
+
+  /// Übernimmt alles, was auf dem Gerät liegt — die Grenze fällt.
+  Future<void> takeAll() async {
+    final slot = _slotOderWurf();
+    await repository.setIntakeFloor(slot, null);
+    intakeFloor = null;
+    await _refresh();
+  }
+
+  /// Übernimmt nur, was ab [ab] gemessen wurde.
+  ///
+  /// Das Datum wird **einmal** in eine Messungsnummer übersetzt: Die
+  /// Geräteuhr geht nachweislich falsch, eine Grenze aus Zeitstempeln wäre
+  /// nicht stabil. Gibt es ab dann nichts, gilt alles Bekannte als alt —
+  /// dann liegt die Grenze über der höchsten Nummer.
+  Future<void> takeFrom(DateTime ab) async {
+    final slot = _slotOderWurf();
+    final grenze =
+        await repository.firstSequenceFrom(slot, ab) ??
+        ((await repository.highestSequenceFor(slot) ?? 0) + 1);
+    await repository.setIntakeFloor(slot, grenze);
+    intakeFloor = grenze;
+    await _refresh();
+  }
+
+  /// Übernimmt nur, was ab jetzt dazukommt.
+  ///
+  /// Die Grenze liegt eine Nummer über der höchsten bekannten. Ohne jede
+  /// Messung ist das 1 — dann fällt nichts weg, weil es nichts gibt.
+  Future<void> takeOnlyNew() async {
+    final slot = _slotOderWurf();
+    final grenze = (await repository.highestSequenceFor(slot) ?? 0) + 1;
+    await repository.setIntakeFloor(slot, grenze);
+    intakeFloor = grenze;
+    await _refresh();
+  }
+
+  /// Der gewählte Speicherplatz — oder ein Wurf.
+  ///
+  /// Ohne Slot wüsste niemand, für wen die Grenze gilt. Ein Standard wäre
+  /// hier gefährlich: Er könnte die Messungen des falschen Benutzers
+  /// ausblenden oder freigeben.
+  int _slotOderWurf() {
+    final slot = userSlot;
+    if (slot == null) {
+      throw StateError(
+        'Ohne gewählten Speicherplatz gibt es keine Aufnahmegrenze.',
+      );
+    }
+    return slot;
   }
 
   Future<void> pair() => _run('Pairing…', () async {
@@ -297,7 +405,16 @@ class AppController extends ChangeNotifier {
     _startWatching();
   });
 
-  Future<void> sync() => _run('Verbinde…', () async {
+  /// Holt neue Messungen vom Gerät.
+  ///
+  /// [autoExport] steuert, ob danach automatisch übertragen wird. Beim
+  /// **ersten Koppeln** steht das auf falsch: Dort läuft der Abgleich, bevor
+  /// der Nutzer entschieden hat, was von dem, was auf dem Gerät liegt,
+  /// überhaupt übernommen werden soll. Ohne diese Bremse gingen die
+  /// Messungen eines Vorbesitzers in die Gesundheitsakte, bevor die Frage
+  /// überhaupt gestellt wurde (Codex-Gegenblick 2026-09-09).
+  Future<void> sync({bool autoExport = true}) =>
+      _run('Verbinde…', () async {
     try {
       final result = await syncService.sync(log: _log);
       // Ueber _log statt nur ueber [status]: Ein automatisch
@@ -308,6 +425,7 @@ class AppController extends ChangeNotifier {
             ? 'Keine neuen Messungen (${result.readFromDevice} gelesen).'
             : '${result.newlyStored} neue Messungen.',
       );
+        if (autoExport && result.newlyStored > 0) await _autoExport();
     } on NotPairedException {
       status = 'Noch nicht gepairt.';
       rethrow;
@@ -372,7 +490,91 @@ class AppController extends ChangeNotifier {
     } finally {
       busy = false;
       await _refresh();
+      // **Nach jeder Aktion neu lauschen.**
+      //
+      // Ein Abgleich verbindet sich mit dem Gerät, und dafür startet
+      // `OmronSession.scan()` einen eigenen Scan — der ersetzt den Dauerscan
+      // des Autosyncs und wird danach beendet. Danach läuft **kein** Scan
+      // mehr: Das Abo steht zwar noch, bekommt aber nie wieder ein
+      // Advertising. Der erste Abgleich tötete so den Autosync, bis die App
+      // neu startete (am Gerät bemerkt, 2026-09-09).
+      // **Nicht abgewartet, aber in sich geordnet.**
+      //
+      // Das Abbestellen wartet auf die Plattform; würde die Aktion darauf
+      // warten, hinge jeder Aufruf, der nicht nebenher gepumpt wird. Die
+      // Reihenfolge — erst das alte Abo beenden, dann neu lauschen — hält
+      // `_restartWatching` intern ein.
+      unawaited(_restartWatching());
     }
+  }
+
+  /// Überträgt neue Messungen nach Health Connect, wenn es eingeschaltet ist.
+  ///
+  /// **Scheitert leise, aber nicht spurlos.** Fehlt die Berechtigung, käme
+  /// sonst nach jeder Messung dieselbe Fehlermeldung; der Abgleich selbst war
+  /// ja erfolgreich, und seine Meldung soll nicht davon überschrieben werden.
+  /// Der Grund bleibt in [autoExportProblem] stehen und ist in den
+  /// Einstellungen zu sehen.
+  Future<void> _autoExport() async {
+    if (!autoExport) return;
+    final slot = userSlot;
+    if (slot == null) return;
+
+    // **Nichts erzwingen.** Fehlen die Schreibrechte, öffnete der Export
+    // einen Berechtigungsdialog — von selbst, während der Nutzer etwas
+    // anderes tut, und im ungünstigsten Fall nach jeder Messung. Der Knopf
+    // von Hand fragt weiterhin.
+    // Eine Senke, die keine Rechte kennt, schreibt einfach — sie kann auch
+    // keinen Dialog öffnen.
+    if (exportService.sink case final PermissionAwareSink s) {
+      final lage = await s.readiness();
+      if (lage.erklaerung case final grund?) {
+        autoExportProblem = grund;
+        return;
+      }
+    }
+
+    try {
+      final anzahl = await exportService.exportPending(
+        userSlot: slot,
+        onlyNew: true,
+      );
+      autoExportProblem = null;
+      // Die Marke nachziehen: Was jetzt draußen ist, geht nicht noch einmal
+      // von selbst hinaus, auch nicht nach einem Zurückziehen.
+      final hoechste = await repository.highestSequenceFor(slot);
+      if (hoechste != null) {
+        await repository.setAutoExportMark(slot, hoechste);
+      }
+      if (anzahl > 0) _log('$anzahl an Health Connect übertragen.');
+    } catch (e) {
+      autoExportProblem = '$e';
+      debugPrint('[Sphygma] Automatischer Export fehlgeschlagen: $e');
+    }
+  }
+
+  /// Setzt das Lauschen neu auf.
+  ///
+  /// **Erst abbestellen, dann neu starten — und dazwischen warten.**
+  ///
+  /// Das Abbestellen läuft asynchron: `watchOmronStatus` beendet dabei in
+  /// seinem `finally` den Scan. Startete der neue Scan schon vorher, würde
+  /// dieses `finally` **ihn** stoppen — und der Autosync wäre wieder tot, nur
+  /// über eine Race statt über die Reihenfolge (Codex-Gegenblick 2026-09-09,
+  /// unmittelbar nach dem ersten Anlauf dieses Fixes).
+  Future<void> _restartWatching() async {
+    if (_disposed || !paired) return;
+    final alt = _watch;
+    _watch = null;
+    await alt?.cancel();
+    // Zwischen Abbestellen und Neustart kann die App beendet worden sein.
+    if (_disposed || !paired) return;
+    _startWatching();
+    // Zwischen Abbestellen und Neustart steht `autoSyncActive` auf falsch.
+    // Ohne diese Meldung bliebe die Anzeige dabei stehen — „Kein
+    // automatischer Abgleich", obwohl er läuft (Codex-Gegenblick
+    // 2026-09-09).
+    notifyListeners();
   }
 
   Future<void> _refresh() async {
