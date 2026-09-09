@@ -65,6 +65,8 @@ void main() {
     // Auch ein **gescheiterter** Abgleich hat den Scan gestoppt, und danach
     // muss wieder gelauscht werden.
     await controller.sync().catchError((_) {});
+    // Das Neulauschen läuft neben der Aktion — kurz Zeit lassen.
+    await Future<void>.delayed(const Duration(milliseconds: 60));
 
     expect(
       abos,
@@ -117,6 +119,12 @@ void main() {
 
     // Das Protokoll der Ereignisse in ihrer tatsächlichen Reihenfolge.
     final ablauf = <String>[];
+    final offen = <StreamController<OmronAdvertisedStatus>>[];
+    addTearDown(() async {
+      for (final c in offen) {
+        await c.close();
+      }
+    });
     final controller = AppController(
       settings: SettingsRepository(db),
       keyStore: keyStore,
@@ -126,8 +134,7 @@ void main() {
       exportService: ExportService(repository: repository, sink: _NoopSink()),
       statusStream: () {
         ablauf.add('start');
-        late StreamController<OmronAdvertisedStatus> c;
-        c = StreamController<OmronAdvertisedStatus>(
+        final c = StreamController<OmronAdvertisedStatus>(
           // Ein verzögertes Aufräumen, wie es der echte Scan hat: Dort wartet
           // `stopScan()` auf die Plattform.
           onCancel: () async {
@@ -135,6 +142,10 @@ void main() {
             ablauf.add('stopp');
           },
         );
+        // Ohne dieses Schließen bliebe der Datenstrom offen, der Test-Isolate
+        // endete nie, und der Testlauf brächte den Runner zum Absturz
+        // („Cannot close sink while adding stream").
+        offen.add(c);
         return c.stream;
       },
     );
@@ -143,6 +154,7 @@ void main() {
     await controller.init();
     await controller.setUserSlot(1);
     await controller.sync().catchError((_) {});
+    await Future<void>.delayed(const Duration(milliseconds: 80));
 
     expect(
       ablauf,

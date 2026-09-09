@@ -222,16 +222,27 @@ class AppController extends ChangeNotifier {
     // einziger Fehlschlag die Kette dauerhaft vergiften und jede weitere
     // Meldung stillschweigend uebersprungen (Codex-Review 2026-09-04).
     var pending = Future<void>.value();
-    _watch = _statusStream().listen((status) {
-      pending = pending.then((_) async {
-        if (_disposed) return;
-        try {
-          await _onAdvertisedStatus(status);
-        } catch (e) {
-          debugPrint('[Sphygma] Autosync-Meldung verworfen: $e');
-        }
-      });
-    }, onError: _onWatchError);
+    // Das Abonnieren selbst kann scheitern — etwa wenn der Datenstrom nur
+    // einmal gelesen werden kann. Das darf die Aktion nicht mitreißen, aus
+    // deren Abschluss heraus hier neu gelauscht wird: Der Abgleich war dann
+    // erfolgreich, nur das Lauschen nicht.
+    final StreamSubscription<OmronAdvertisedStatus> abo;
+    try {
+      abo = _statusStream().listen((status) {
+        pending = pending.then((_) async {
+          if (_disposed) return;
+          try {
+            await _onAdvertisedStatus(status);
+          } catch (e) {
+            debugPrint('[Sphygma] Autosync-Meldung verworfen: $e');
+          }
+        });
+      }, onError: _onWatchError);
+    } catch (e) {
+      debugPrint('[Sphygma] Lauschen konnte nicht beginnen: $e');
+      return;
+    }
+    _watch = abo;
   }
 
   Future<void> _onAdvertisedStatus(OmronAdvertisedStatus status) async {
@@ -445,7 +456,13 @@ class AppController extends ChangeNotifier {
       // mehr: Das Abo steht zwar noch, bekommt aber nie wieder ein
       // Advertising. Der erste Abgleich tötete so den Autosync, bis die App
       // neu startete (am Gerät bemerkt, 2026-09-09).
-      await _restartWatching();
+      // **Nicht abgewartet, aber in sich geordnet.**
+      //
+      // Das Abbestellen wartet auf die Plattform; würde die Aktion darauf
+      // warten, hinge jeder Aufruf, der nicht nebenher gepumpt wird. Die
+      // Reihenfolge — erst das alte Abo beenden, dann neu lauschen — hält
+      // `_restartWatching` intern ein.
+      unawaited(_restartWatching());
     }
   }
 
