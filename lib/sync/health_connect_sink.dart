@@ -99,6 +99,12 @@ class HealthConnectSink implements HealthSink, PermissionAwareSink {
         _configured = true;
       }
       final status = await _health.getHealthConnectSdkStatus();
+      // Null heißt **nicht** „nicht verfügbar": Das Paket fängt einen
+      // Abfragefehler selbst ab und liefert dafür null
+      // (health 13.3.2, health_plugin.dart — dort steht der catch-Zweig).
+      // Als Verfügbarkeitsproblem gemeldet, riete die Meldung zur
+      // Installation, obwohl vielleicht nur die Abfrage schiefging.
+      if (status == null) return SinkReadiness.unklar;
       if (status != HealthConnectSdkStatus.sdkAvailable) {
         return SinkReadiness.nichtVerfuegbar;
       }
