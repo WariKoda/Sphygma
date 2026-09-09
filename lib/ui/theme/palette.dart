@@ -13,7 +13,7 @@ enum Palette {
     // lehnt den Akzent unabhängig davon ab.
     accent: Color(0xFF465C78),
     flaeche: Color(0xFFFFFFFF),
-    flaecheGehoben: Color(0xFFFAF9F7),
+    flaecheGehoben: Color(0xFFF3F1EC),
     shadow: Color(0x26465C78),
     markierung: _calmScale,
   ),
@@ -25,7 +25,7 @@ enum Palette {
     line: Color(0xFFE2E8F3),
     accent: Color(0xFF4F7FD8),
     flaeche: Color(0xFFFFFFFF),
-    flaecheGehoben: Color(0xFFF2F5FB),
+    flaecheGehoben: Color(0xFFE9EEF8),
     shadow: Color(0x264F7FD8),
     markierung: _vividScale,
   ),
@@ -38,10 +38,53 @@ enum Palette {
     accent: Color(0xFF6750A4),
     // Der Sekundärcontainer ist farbiger, nicht bloß heller als der Grund.
     flaeche: Color(0xFFE8DEF8),
-    flaecheGehoben: Color(0xFFFEF7FF),
+    flaecheGehoben: Color(0xFFF6EDFA),
     shadow: Color(0x266750A4),
     markierung: _vividScale,
   ),
+  /// Nach Masataka Okabe und Kei Ito, „Color Universal Design".
+  ///
+  /// Die acht Farben sind so gewählt, dass sie auch bei den häufigen Formen
+  /// der Farbenblindheit unterscheidbar bleiben — Rot ist Zinnober, weil
+  /// Protanope es noch erkennen; Töne zwischen Gelb und Grün sind gemieden.
+  /// Für ein Blutdrucktagebuch ist das kein Zierrat: Die Tonleiter der
+  /// Einordnung **trägt Bedeutung**, und wer sie nicht unterscheiden kann,
+  /// verliert eine Aussage.
+  ///
+  /// Werte aus dem R-Quelltext (`grDevices/colorstuff.R`, Tabelle
+  /// „Okabe-Ito"), der sie seinerseits auf die Veröffentlichung von Okabe und
+  /// Ito zurückführt.
+  okabeItoHell(
+    label: 'Okabe-Ito hell',
+    grund: Color(0xFFFAFAFA),
+    // Reines Schwarz aus der Palette — der stärkste Kontrast, den es gibt.
+    onSurface: Color(0xFF000000),
+    muted: Color(0xFF6B6B6B),
+    line: Color(0xFFDCDCDC),
+    // Blau statt Zinnober als Akzent: Zinnober trägt in der Tonleiter
+    // Bedeutung und wäre als Schmuckfarbe daneben missverständlich.
+    accent: Color(0xFF0072B2),
+    flaeche: Color(0xFFFFFFFF),
+    flaecheGehoben: Color(0xFFF0F0F0),
+    shadow: Color(0x1A000000),
+    markierung: _okabeItoScale,
+  ),
+  okabeItoDunkel(
+    label: 'Okabe-Ito dunkel',
+    grund: Color(0xFF0E0E0E),
+    onSurface: Color(0xFFFAFAFA),
+    // Das Grau der Palette, aufgehellt: Auf schwarzem Grund trägt #999999
+    // als Nebentext gerade noch, darunter wird es unlesbar.
+    muted: Color(0xFFA8A8A8),
+    line: Color(0xFF2E2E2E),
+    // Himmelblau statt Blau: Auf dunklem Grund ist #0072B2 zu dunkel.
+    accent: Color(0xFF56B4E9),
+    flaeche: Color(0xFF1C1C1C),
+    flaecheGehoben: Color(0xFF262626),
+    shadow: Color(0x66000000),
+    markierung: _okabeItoScale,
+  ),
+
   nacht(
     label: 'Nacht',
     grund: Color(0xFF14181F),
@@ -96,6 +139,21 @@ enum Palette {
 // Optimal und normal teilen Grün: Beide sind unauffällig; eine zusätzliche
 // Farbe würde eine Bedeutung suggerieren, die es für den Nutzer nicht gibt.
 // Auf dunklem Grund tragen die gedämpften Töne der Nacht besser.
+/// Die Einordnung in den Farben von Okabe und Ito.
+///
+/// Grün, Gelb, Orange, Zinnober, Purpurrot — eine Folge, die auch ohne
+/// Rot-Grün-Unterscheidung als Reihe lesbar bleibt. Purpurrot steht am
+/// oberen Ende, weil die Palette kein dunkleres Rot führt und ein
+/// erfundener Ton die Barrierefreiheit gerade aufheben würde.
+const Map<EscCategory, Color> _okabeItoScale = {
+  EscCategory.optimal: Color(0xFF009E73),
+  EscCategory.normal: Color(0xFF009E73),
+  EscCategory.highNormal: Color(0xFFF0E442),
+  EscCategory.grade1: Color(0xFFE69F00),
+  EscCategory.grade2: Color(0xFFD55E00),
+  EscCategory.grade3: Color(0xFFCC79A7),
+};
+
 const Map<EscCategory, Color> _duskScale = {
   EscCategory.optimal: Color(0xFF8FB89A),
   EscCategory.normal: Color(0xFF8FB89A),

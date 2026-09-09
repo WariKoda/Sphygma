@@ -42,7 +42,10 @@ void main() {
       FontWeight.w500,
     ];
     const radii = [3.0, 18.0, 12.0, 18.0, 2.0, 0.0];
-    expect(Palette.values, hasLength(4));
+    // Die Diagonale steht auf den vier Farbwelten, aus denen die alten
+    // Gestaltungen stammen. Wie viele daneben zur Wahl stehen, ist offen —
+    // am 09.09.2026 kamen die beiden Okabe-Ito-Welten dazu.
+    expect(Palette.values.length, greaterThanOrEqualTo(4));
     // Die Diagonale steht auf der Systemschrift: Sie soll die alten
     // Gestaltungen reproduzieren, und die hatten keine eigene Familie.
     // Welche Schriften daneben zur Wahl stehen, prüft typeface_test.

@@ -9,6 +9,7 @@ import 'theme/sphygma_theme.dart';
 import 'widgets/classification_scale.dart';
 import 'widgets/notice_card.dart';
 import 'widgets/reading_headline.dart';
+import 'widgets/reading_panel.dart';
 import 'measurement_sheet.dart';
 import 'widgets/at_day_change.dart';
 import 'widgets/surface_panel.dart';
@@ -51,7 +52,12 @@ class TodayScreen extends StatelessWidget {
       child: ListView(
         padding: t.listPadding,
         children: [
-          SurfacePanel(
+          // ReadingPanel statt SurfacePanel: Die Form „Band" färbt diese
+          // Fläche mit der Einordnung. Der Bildschirm entscheidet das nicht,
+          // er reicht nur die Werte durch.
+          ReadingPanel(
+            systolic: latest?.systolic,
+            diastolic: latest?.diastolic,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -83,7 +89,6 @@ class TodayScreen extends StatelessWidget {
           // Zahnrad unter „Ansicht".
           if (controller.measurements.isNotEmpty && controller.weekPanelVisible)
             SurfacePanel(
-              tone: 1,
               // Der Wecker gehört hierher, nicht in den Bildschirm: Ohne ihn
               // bliebe „Heute fehlt noch…" über Mitternacht beim gestrigen
               // Tag stehen, und am Montag stünde die Vorwoche als „diese
@@ -106,7 +111,6 @@ class TodayScreen extends StatelessWidget {
             ),
           if (controller.measurements.length > 1)
             SurfacePanel(
-              tone: 1,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

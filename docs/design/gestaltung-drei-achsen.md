@@ -1,6 +1,8 @@
 # Gestaltung in drei Achsen: Charakteristik, Palette, Schrift
 
-Entwurf vom 2026-09-08. Noch nicht gebaut.
+Entwurf vom 2026-09-08. **Gebaut am 08./09.09.2026** — die drei Achsen, ihre
+Auswahl, vier Schriften und die Aufbau-Merkmale je Form. Was davon abweicht
+oder offenblieb, steht unten unter „Was daraus wurde".
 
 Tafel dazu: `gestaltung-drei-achsen.html` — die Kreuzung als Bild, im Browser zu
 öffnen. Wer wissen will, ob die Trennung trägt, schaut dort und liest hier das
@@ -340,3 +342,64 @@ wandert zur Charakteristik, wo er hingehört — er prüft Form, nicht Farbe.
   Bildschirme frei). Der zweite Weg passt zu dem, was `SurfacePanel` schon tut.
   Zu entscheiden, bevor gebaut wird.
 * **Welche Schriften**, unter welcher Lizenz, zu welchem Preis in Megabyte.
+
+---
+
+## Was daraus wurde, 09.09.2026
+
+### Gebaut
+
+| Form | Merkmal | Wo |
+|---|---|---|
+| Raster | SYS und DIA als zwei gleichwertige Blöcke | `ReadingHeadline` |
+| Band | die Einordnung färbt die Kopffläche selbst | `ReadingPanel` |
+| Tagebuch | Kennzahlen als Karten nebeneinander | `StatTiles` |
+| Material | Filter-Chips statt Segmentleiste | Zeitraumwahl im Verlauf |
+| Messinstrument | Haarlinien, keine Flächen, monochrom | `showDividers`, `nutztAkzent` |
+| Luft | keine Trennstriche, Luft gliedert | `showDividers` |
+
+**Der Bausteinweg hat sich bewährt.** Kein Bildschirm verzweigt nach der Form —
+die Entscheidung sitzt jeweils im Baustein, der die Sache ohnehin baut. „Heute"
+ruft `ReadingPanel`, der Verlauf ruft `StatTiles`, und beide wissen nichts von
+Charakteristiken. Die Grenze, die von Anfang an galt, steht noch.
+
+Ein Test prüft nicht nur, dass jede Form ihr Merkmal trägt, sondern dass
+**keine zwei Formen dieselbe Aufbau-Signatur haben**. Zwei Formen, die sich nur
+noch in Zahlen unterscheiden, wären genau das Problem, das dieser Umbau beheben
+sollte — jetzt wird es rot.
+
+### Nicht gebaut, mit Grund
+
+**Der Extended FAB für Material.** Der Entwurf verlangt *„ein Extended FAB je
+Bildschirm — und nur einer"*. Dafür braucht ein Bildschirm eine Hauptaktion,
+und Sphygma hat keine: Die App holt Messungen **von selbst**, sobald das Gerät
+nach einer Messung sendet. „Jetzt abgleichen" ist der Rückfall für den Fall,
+dass das nicht klappt, und steht zu Recht bei den Einstellungen.
+
+Ein FAB, der eine Aktion herausstellt, die man im Normalbetrieb nie braucht,
+wäre eine leere Geste — und würde auf „Heute" gerade die Stelle besetzen, an
+der der letzte Messwert steht. Das Merkmal bleibt offen, bis es eine Aktion
+gibt, die einen FAB verdient. Ein Kandidat wäre die Notiz zu einer Messung
+(`PLAN.md` §9.1).
+
+**Die Datentabelle für Raster.** Der Entwurf nennt neben den getrennten
+Zahlenblöcken auch *„Listen als Datentabelle mit festen Spalten SYS · DIA ·
+PULS und einem Spaltenkopf"*. Die Blöcke sind gebaut, die Tabelle nicht — sie
+betrifft jede Liste in jedem Konzept und ist ein eigener Schritt.
+
+### Wann Karten tragen
+
+Der erste Versuch war eine feste Obergrenze: höchstens vier Einträge
+nebeneinander. Sie ist im Gegenblick gefallen — **vier Karten auf 360 Pixeln
+bei doppelter Schriftgröße brechen die Messwerte mitten auseinander.** Eine
+Zahl über Einträge sagt nichts darüber, ob der Platz reicht.
+
+`StatTiles` rechnet deshalb: Wie breit wird jede Karte, wenn Lücken und
+Polster abgezogen sind, und wie breit ist ein Messwert in der Schriftgröße,
+die der Nutzer eingestellt hat? Reicht es nicht, fällt der Baustein auf Zeilen
+zurück. Die Obergrenze von vier bleibt zusätzlich bestehen — auf einem breiten
+Schirm wären fünf Karten kein Überblick mehr, sondern ein Streifen.
+
+Die Rechnung ist grob und **absichtlich in die sichere Richtung**: Wer zu früh
+auf Zeilen fällt, verliert eine Anordnung; wer zu spät fällt, zerbricht die
+Zahlen.

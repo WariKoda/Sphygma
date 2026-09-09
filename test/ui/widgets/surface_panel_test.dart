@@ -131,4 +131,23 @@ void main() {
       expect(d.border, isNull);
     });
   });
+
+  test('jede Farbwelt hebt ihre Flächen vom Grund ab', () {
+    // Eine Fläche, die dieselbe Farbe hat wie der Grund, ist keine Fläche —
+    // die Karte verschwindet. Bei „Material" war `flaecheGehoben` identisch
+    // mit dem Grund, und jede Karte mit der zweiten Tonstufe war unsichtbar
+    // (gefunden am Gerät, 09.09.2026).
+    for (final p in Palette.values) {
+      expect(
+        p.flaeche,
+        isNot(p.grund),
+        reason: '${p.name}: die Grundfläche ist der Grund',
+      );
+      expect(
+        p.flaecheGehoben,
+        isNot(p.grund),
+        reason: '${p.name}: die gehobene Fläche ist der Grund',
+      );
+    }
+  });
 }

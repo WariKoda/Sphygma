@@ -15,6 +15,7 @@ class SurfacePanel extends StatelessWidget {
     this.tone = 0,
     this.padding,
     this.highlighted = false,
+    this.tint,
   });
 
   final Widget child;
@@ -25,6 +26,16 @@ class SurfacePanel extends StatelessWidget {
   /// Handschriften setzen die zweite Stufe gegen ihren Grund ab. Benachbarte
   /// Flächen sollten verschiedene Stufen tragen, damit die Gliederung auch
   /// dort trägt, wo die Handschrift wenig Kontrast hat.
+  /// Die Tonstufe der Fläche.
+  ///
+  /// **Alle Karten eines Bildschirms tragen denselben Ton.** Bis zum
+  /// 09.09.2026 setzten manche Bildschirme `tone: 1` und andere nicht, ohne
+  /// erkennbare Regel. Bei den meisten Farbwelten fiel das kaum auf — bei
+  /// „Material" dagegen ist die zweite Tonstufe **identisch mit dem Grund**,
+  /// und diese Karten verschwanden schlicht.
+  ///
+  /// Die zweite Stufe bleibt für den Fall, für den sie gedacht war: eine
+  /// Fläche innerhalb einer anderen, nicht zwei Karten nebeneinander.
   final int tone;
 
   final EdgeInsetsGeometry? padding;
@@ -36,6 +47,12 @@ class SurfacePanel extends StatelessWidget {
   /// zeichnet. Ohne das stünde eine ausstehende Entscheidung als gewöhnlicher
   /// Inhalt zwischen anderem Inhalt.
   final bool highlighted;
+
+  /// Ein Ton, der die Grundfläche ersetzt.
+  ///
+  /// Nur die Form „Band" nutzt ihn: Dort trägt die Fläche selbst die
+  /// Einordnung. Null heißt „wie immer" — die Tonstufe aus der Gestaltung.
+  final Color? tint;
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +67,7 @@ class SurfacePanel extends StatelessWidget {
       margin: EdgeInsets.only(bottom: t.gapSmall),
       padding: padding ?? EdgeInsets.all(t.panelPadding),
       decoration: BoxDecoration(
-        color: t.panel(tone),
+        color: tint ?? t.panel(tone),
         borderRadius: BorderRadius.circular(t.radius),
         border: highlighted
             ? Border.all(color: t.onSurface.withValues(alpha: 0.35))

@@ -11,10 +11,12 @@ import '../stats/period_averages.dart';
 import '../stats/trend_stats.dart';
 import 'format.dart';
 import 'measurement_sheet.dart';
+import 'theme/characteristic.dart';
 import 'theme/sphygma_theme.dart';
 import '../stats/measurement_week.dart';
 import '../stats/time_of_day_band.dart';
 import 'widgets/surface_panel.dart';
+import 'widgets/stat_tiles.dart';
 import 'widgets/surface_sliver.dart';
 import 'widgets/trend_chart.dart';
 
@@ -60,7 +62,6 @@ class HistoryScreen extends StatelessWidget {
                   if (inPeriod.isEmpty)
                     SliverToBoxAdapter(
                       child: SurfacePanel(
-                        tone: 1,
                         child: Padding(
                           padding: EdgeInsets.symmetric(
                             vertical: t.gapLarge * 2,
@@ -75,24 +76,27 @@ class HistoryScreen extends StatelessWidget {
                   else ...[
                     SliverToBoxAdapter(
                       child: SurfacePanel(
-                        tone: 1,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             TrendChart(measurements: inPeriod),
                             SizedBox(height: t.gapLarge),
                             const _Section(title: 'MITTELWERTE'),
-                            _AverageRow(
-                              label: 'Gesamt',
-                              average: averages.overall,
-                            ),
                             // Der Praxiswert der Messwoche: sieben Tage,
                             // morgens und abends, **ohne den ersten Tag** —
                             // so verlangt es die Leitlinie für die
                             // Selbstmessung. Nur bei Zeitraum „Woche", weil
                             // die Zahl sonst nichts bedeutet.
-                            if (controller.period == Period.week)
-                              ..._Wochenwert.zeilen(context, inPeriod),
+                            StatTiles(
+                              stats: [
+                                Stat(
+                                  label: 'Gesamt',
+                                  value: formatAverage(averages.overall),
+                                ),
+                                if (controller.period == Period.week)
+                                  ..._Wochenwert.stats(inPeriod),
+                              ],
+                            ),
                             const _Section(title: 'NACH TAGESZEIT'),
                             // Fünf Abschnitte statt zweier: Der Tagesverlauf
                             // ist eine eigene Aussage, die der Verlauf über
@@ -136,6 +140,32 @@ class _PeriodPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
+
+    // Die Form entscheidet über die Bauform der Auswahl. „Material" zeigt
+    // Chips, die ihren Text tragen; alle übrigen eine Leiste gleich breiter
+    // Felder. Der Bildschirm reicht nur die Möglichkeiten durch.
+    if (t.selectionStyle == SelectionStyle.chips) {
+      return Wrap(
+        spacing: t.gapSmall,
+        runSpacing: t.gapSmall,
+        children: [
+          for (final p in Period.values)
+            FilterChip(
+              label: Text(p.label),
+              selected: p == controller.period,
+              onSelected: (_) => controller.setPeriod(p),
+              showCheckmark: false,
+              side: BorderSide(color: t.line),
+              backgroundColor: t.panel(0),
+              selectedColor: t.accent,
+              labelStyle: TextStyle(
+                fontSize: 12,
+                color: p == controller.period ? t.surface : t.onSurface,
+              ),
+            ),
+        ],
+      );
+    }
 
     return Row(
       children: [
@@ -187,39 +217,6 @@ class _Section extends StatelessWidget {
   }
 }
 
-class _AverageRow extends StatelessWidget {
-  const _AverageRow({required this.label, required this.average});
-
-  final String label;
-
-  /// Null heisst: in diesem Zeitraum gab es dort keine Messung. Dann steht
-  /// ein Strich da, keine erfundene Null.
-  final Average? average;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = SphygmaTheme.of(context);
-    final a = average;
-
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: t.gapSmall),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: TextStyle(fontSize: 13, color: t.muted)),
-          Text(
-            a == null ? '–' : '${a.systolic}/${a.diastolic} · ${a.pulse}',
-            style: TextStyle(
-              fontSize: 13,
-              color: t.onSurface,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class DayHeading extends StatelessWidget {
   const DayHeading({super.key, required this.day});
@@ -306,29 +303,24 @@ class MeasurementRow extends StatelessWidget {
 
 /// Der Wochenwert nach Leitlinie — und wie vollständig die Woche ist.
 class _Wochenwert {
-  static List<Widget> zeilen(
-    BuildContext context,
-    List<Measurement> messungen,
-  ) {
+  static List<Stat> stats(List<Measurement> messungen) {
     if (messungen.isEmpty) return const [];
     final wochen = buildWeeks(messungen);
     if (wochen.isEmpty) return const [];
     final woche = wochen.first;
+    final a = woche.average;
 
     return [
-      if (woche.average case final a?)
-        _AverageRow(label: 'Ohne ersten Tag', average: a)
-      else
-        // Die Zeile bleibt stehen: Dass es den Praxiswert gibt und warum er
-        // noch fehlt, ist eine Aussage — sie wegzulassen ließe den Eindruck,
-        // es gäbe ihn nicht.
-        const _KennzahlZeile(
-          label: 'Ohne ersten Tag',
-          wert: 'erst ab dem zweiten Messtag',
-        ),
-      _KennzahlZeile(
+      // Der Eintrag bleibt stehen, auch ohne Wert: Dass es den Praxiswert
+      // gibt und warum er noch fehlt, ist eine Aussage — ihn wegzulassen
+      // ließe den Eindruck, es gäbe ihn nicht.
+      Stat(
+        label: 'Ohne ersten Tag',
+        value: a == null ? 'erst ab dem zweiten Messtag' : formatAverage(a),
+      ),
+      Stat(
         label: 'Felder',
-        wert: '${woche.filledFields} von $fieldsPerWeek',
+        value: '${woche.filledFields} von $fieldsPerWeek',
       ),
     ];
   }
@@ -359,9 +351,15 @@ class _Tageszeiten {
     );
 
     return [
-      for (final band in _folge)
-        if (mittel[band] case final a?)
-          _AverageRow(label: band.label, average: a),
+      // Fünf Abschnitte liegen über der Kartengrenze — hier bleibt es auch
+      // im „Tagebuch" bei Zeilen. Die Entscheidung trifft der Baustein.
+      StatTiles(
+        stats: [
+          for (final band in _folge)
+            if (mittel[band] case final a?)
+              Stat(label: band.label, value: formatAverage(a)),
+        ],
+      ),
       if (mittel.length > 1)
         _Aussage(
           text:
@@ -373,27 +371,6 @@ class _Tageszeiten {
   }
 }
 
-class _KennzahlZeile extends StatelessWidget {
-  const _KennzahlZeile({required this.label, required this.wert});
-
-  final String label;
-  final String wert;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = SphygmaTheme.of(context);
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: t.gapSmall / 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: TextStyle(fontSize: 13, color: t.muted)),
-          Text(wert, style: TextStyle(fontSize: 13, color: t.onSurface)),
-        ],
-      ),
-    );
-  }
-}
 
 class _Aussage extends StatelessWidget {
   const _Aussage({required this.text});
@@ -411,4 +388,14 @@ class _Aussage extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Ein Mittelwert als Text — oder ein Strich.
+///
+/// Null heißt: In diesem Zeitraum gab es dort keine Messung. Dann steht ein
+/// Strich da, keine erfundene Null.
+String formatAverage(Average? average) {
+  final a = average;
+  if (a == null) return '–';
+  return '${a.systolic}/${a.diastolic} · ${a.pulse}';
 }
