@@ -181,15 +181,16 @@ class MeasurementRepository {
   }
 
   /// Bereits nach Health Connect exportierte Messungen eines Slots.
-  Future<List<Measurement>> exported(int userSlot) async {
-    final floor = await intakeFloor(userSlot);
+  ///
+  /// **Ohne die Aufnahmegrenze** — bewusst, und aus demselben Grund wie bei
+  /// [highestSequenceFor]: Diese Abfrage dient dem *Zurückziehen* aus Health
+  /// Connect, nicht der Anzeige. Wurde eine Messung exportiert und erst
+  /// danach ausgeblendet, ist sie in der Gesundheitsakte bereits da. Filterte
+  /// diese Liste sie heraus, bliebe sie dort für immer — die App könnte sie
+  /// nicht mehr entfernen. Ausblenden darf den Rückweg nicht versperren.
+  Future<List<Measurement>> exported(int userSlot) {
     final query = _db.select(_db.measurements)
-      ..where(
-        (m) => floor == null
-            ? m.userSlot.equals(userSlot) & m.exportedAt.isNotNull()
-            : m.userSlot.equals(userSlot) & m.exportedAt.isNotNull() &
-                  m.deviceSequence.isBiggerOrEqualValue(floor),
-      )
+      ..where((m) => m.userSlot.equals(userSlot) & m.exportedAt.isNotNull())
       ..orderBy([
         // Nach Datum, wie am Geraet abgelesen. Der Gerätezähler dient dem
         // Dedup und der Uhr-Prüfung, nicht der Anzeige-Reihenfolge; bei

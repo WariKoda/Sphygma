@@ -54,10 +54,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _koppelnUndFragen(AppController c) async {
     try {
       await c.pair();
-      await c.sync();
     } catch (e) {
+      // Ohne Kopplung wird nicht gefragt: Eine Grenze ohne Gerät wäre eine
+      // Entscheidung über Daten, die es nicht gibt.
       debugPrint('[Sphygma] Koppeln fehlgeschlagen: $e');
       return;
+    }
+    try {
+      await c.sync();
+    } catch (e) {
+      // Der Readout kann abbrechen, obwohl die Kopplung steht. Gefragt wird
+      // **trotzdem**: „Koppeln" verschwindet danach aus dem Blatt, und ohne
+      // diese Frage bliebe die Wahl beim Standard, ohne dass sie je gestellt
+      // wurde. Zu entscheiden gibt es dann eben weniger.
+      debugPrint('[Sphygma] Erster Abgleich fehlgeschlagen: $e');
     }
     if (!mounted) return;
     await showIntakeChoice(context, controller: c);
@@ -168,6 +178,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         if (c.userSlot != null)
           SettingRow(label: 'Speicherplatz', value: 'Benutzer ${c.userSlot}'),
+        // Die Übernahme ist eine **Einstellung**, nicht nur ein Schritt beim
+        // Koppeln. Sonst wäre sie nur nach erneutem Koppeln erreichbar — und
+        // wer sein Gerät nicht zur Hand hat oder beim ersten Versuch einen
+        // Verbindungsabbruch hatte, käme nie wieder an sie heran, obwohl das
+        // Blatt verspricht, man könne später freigeben (Codex-Gegenblick
+        // 09.09.2026).
+        if (c.userSlot != null)
+          SettingRow(
+            label: 'Übernommen',
+            value: c.intakeFloor == null
+                ? 'alle Messungen'
+                : 'ab Messung Nr. ${c.intakeFloor}',
+          ),
+        if (c.userSlot != null)
+          SettingButton(
+            label: 'Übernahme ändern',
+            onPressed: c.busy
+                ? null
+                : () => showIntakeChoice(context, controller: c),
+          ),
         if (c.paired && !_pairingOpen)
           SettingButton(
             label: 'Neu koppeln',

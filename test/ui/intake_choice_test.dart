@@ -146,4 +146,34 @@ void main() {
 
     expect(ohne.takeOnlyNew, throwsStateError);
   });
+
+  test('Ausblenden versperrt nicht den Rückweg aus Health Connect', () async {
+    // Wurde eine Messung exportiert und erst danach ausgeblendet, ist sie in
+    // der Gesundheitsakte bereits da. Fände `exported()` sie nicht mehr,
+    // bliebe sie dort für immer — die App könnte sie nicht mehr entfernen.
+    // Gefunden im Codex-Gegenblick am 09.09.2026.
+    await controller.exportAll();
+    expect(await repository.exported(1), hasLength(5));
+
+    await controller.takeOnlyNew();
+
+    expect(controller.measurements, isEmpty, reason: 'nichts mehr sichtbar');
+    expect(
+      await repository.exported(1),
+      hasLength(5),
+      reason: 'aber alles bleibt zurückziehbar',
+    );
+  });
+
+  test('die Übernahme lässt sich ohne Gerät ändern', () async {
+    // Das Auswahlblatt verspricht, später wieder freizugeben. Wäre es nur
+    // nach erneutem Koppeln erreichbar, wäre das Versprechen leer — wer sein
+    // Messgerät nicht zur Hand hat, käme nie wieder daran.
+    await controller.takeOnlyNew();
+    expect(controller.measurements, isEmpty);
+
+    await controller.takeAll();
+    expect(controller.measurements, hasLength(5));
+    expect(controller.intakeFloor, isNull);
+  });
 }
