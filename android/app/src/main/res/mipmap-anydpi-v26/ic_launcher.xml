@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Das adaptive Startsymbol.
+
+     Android schneidet Symbole in eine Form, die das Gerät bestimmt — rund,
+     Squircle oder eckig. Sichtbar bleibt nur der innere Kreis von 72 der
+     108 Einheiten; das Zeichen liegt vollständig darin (weiteste Ecke 35,7
+     von 36 erlaubt).
+
+     `monochrome` bedient den Themed-Icon-Modus ab Android 13: Dort färbt das
+     System das Symbol selbst nach dem Hintergrundbild ein und braucht eine
+     Silhouette. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+    <monochrome android:drawable="@mipmap/ic_launcher_monochrome" />
+</adaptive-icon>

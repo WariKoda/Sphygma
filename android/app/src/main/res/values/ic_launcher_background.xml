@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Der Markenton. Gehört bewusst keiner der sechs Farbwelten der App:
+         Das Startsymbol steht außerhalb und muss auf allen tragen
+         (PLAN.md §9.4). -->
+    <color name="ic_launcher_background">#3A5A6B</color>
+</resources>
