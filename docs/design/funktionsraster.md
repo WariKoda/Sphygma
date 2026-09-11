@@ -7,6 +7,7 @@ in [Umsetzung der Konzepte](umsetzung-konzepte.md).
 | Funktion | Ort und Verhalten |
 |---|---|
 | Heutige Messungen | Heute: getrennte Blutdruck-/Pulsbereiche, heutige Morgen-/Abendmittel mit Anzahl und Zeitspanne; Tagesliste und Einzelmessungsdetails |
+| Morgen-/Abendfenster | Einstellungen → Ansicht; Standard 05–10 / 18–23 Uhr, gilt für Heute, Woche und Verlauf |
 | Wochenraster / letzte Tage | Heute; beide Abschnitte unabhängig abschaltbar |
 | Zeitraum und Auswertung | Verlauf: dieselbe Auswahl für Liste, Kurve und Kennzahlen |
 | Tags / Bemerkungen | Messungsdetail; mehrere Tags frei anlegbar, Freitext pro Messung |

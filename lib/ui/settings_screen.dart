@@ -18,6 +18,7 @@ import 'package:flutter/material.dart';
 import '../app/app_controller.dart';
 import 'theme/sphygma_theme.dart';
 import 'widgets/surface_panel.dart';
+import 'widgets/measurement_windows_editor.dart';
 import 'theme/variants.dart';
 import 'widgets/section_header.dart';
 import 'intake_choice_sheet.dart';
@@ -385,6 +386,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         contentPadding: EdgeInsets.zero,
         dense: true,
+      ),
+      SettingButton(
+        label: 'Morgen und Abend',
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => MeasurementWindowsEditor(
+              initialValue: c.measurementWindows,
+              onSave: c.setMeasurementWindows,
+            ),
+          ),
+        ),
       ),
       SettingButton(
         label: 'Tags verwalten',

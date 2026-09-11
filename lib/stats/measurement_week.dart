@@ -12,6 +12,7 @@
 // die Zahl willkürlich.
 import '../db/app_database.dart';
 import 'time_of_day_band.dart';
+import 'measurement_windows.dart';
 import 'trend_stats.dart';
 
 /// Die vierzehn Felder einer Woche: sieben Tage, morgens und abends.
@@ -110,17 +111,11 @@ Average? _mittel(List<Measurement> liste) => Average.of([
 
 /// Bildet Messwochen von Montag bis Sonntag, die jüngste zuerst.
 ///
-/// [schnitt] bestimmt, wo morgens endet und abends beginnt — standardmäßig um
-/// 12 Uhr, verschiebbar für Schichtdienst.
-///
-/// Bewusst **nur der Schnittpunkt**, kein ganzes [BandGrid]: Die vierzehn
-/// Felder einer Woche sind sieben Tage mal zwei Tageshälften. Ein feineres
-/// Raster würde weitere Bänder zählen, während [MeasurementWeek.isComplete]
-/// weiter auf vierzehn prüft, und Messungen fielen aus beiden Bandmitteln
-/// heraus. Was nicht übergeben werden kann, kann auch nicht falsch sein.
+/// Die beiden Zeitfenster belegen das Raster. Messungen außerhalb bleiben
+/// in der Woche und ihren Gesamtmitteln, füllen aber kein Morgen-/Abendfeld.
 List<MeasurementWeek> buildWeeks(
   List<Measurement> measurements, {
-  TimeOfDayMinutes? schnitt,
+  MeasurementWindows? windows,
 }) {
   if (measurements.isEmpty) return const [];
 
@@ -134,9 +129,7 @@ List<MeasurementWeek> buildWeeks(
     );
   }
 
-  final raster = schnitt == null
-      ? BandGrid.grob
-      : BandGrid.grobMit(schnitt: schnitt);
+  final selectedWindows = windows ?? MeasurementWindows.defaults;
 
   final nachWoche = <DateTime, List<Measurement>>{};
   for (final m in measurements) {
@@ -145,7 +138,8 @@ List<MeasurementWeek> buildWeeks(
 
   final montage = nachWoche.keys.toList()..sort((a, b) => b.compareTo(a));
   return [
-    for (final montag in montage) _build(montag, nachWoche[montag]!, raster),
+    for (final montag in montage)
+      _build(montag, nachWoche[montag]!, selectedWindows),
   ];
 }
 
@@ -194,12 +188,21 @@ int weekSpan(DateTime firstMonday, DateTime lastMonday) {
   return zaehler;
 }
 
-MeasurementWeek _build(DateTime montag, List<Measurement> ms, BandGrid raster) {
+MeasurementWeek _build(
+  DateTime montag,
+  List<Measurement> ms,
+  MeasurementWindows windows,
+) {
   ms.sort((a, b) => a.measuredAt.compareTo(b.measuredAt));
 
   final belegt = <int, Map<TimeBand, List<Measurement>>>{};
   for (final m in ms) {
-    final band = raster.bandAt(TimeOfDayMinutes.of(m.measuredAt));
+    final band = windows.isMorning(m.measuredAt)
+        ? TimeBand.morgens
+        : windows.isEvening(m.measuredAt)
+        ? TimeBand.abends
+        : null;
+    if (band == null) continue;
     belegt
         .putIfAbsent(m.measuredAt.weekday, () => {})
         .putIfAbsent(band, () => [])
@@ -222,7 +225,8 @@ MeasurementWeek _build(DateTime montag, List<Measurement> ms, BandGrid raster) {
       if (!_sameDay(m.measuredAt, ersterTag)) m,
   ];
 
-  final nachBand = groupByBand(ms, raster);
+  final morning = ms.where((m) => windows.isMorning(m.measuredAt)).toList();
+  final evening = ms.where((m) => windows.isEvening(m.measuredAt)).toList();
 
   return MeasurementWeek(
     beginsAt: montag,
@@ -231,8 +235,8 @@ MeasurementWeek _build(DateTime montag, List<Measurement> ms, BandGrid raster) {
     fields: List.unmodifiable(felder),
     average: _mittel(ohneErsten),
     averageWithFirstDay: _mittel(ms),
-    morningAverage: _mittel(nachBand[TimeBand.morgens] ?? const []),
-    eveningAverage: _mittel(nachBand[TimeBand.abends] ?? const []),
+    morningAverage: _mittel(morning),
+    eveningAverage: _mittel(evening),
   );
 }
 

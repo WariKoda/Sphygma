@@ -64,6 +64,7 @@ class TodayScreen extends StatelessWidget {
             else
               TodayVitals(
                 latest: latest,
+                windows: controller.measurementWindows,
                 measurements: controller.measurements,
                 now: now,
                 onOpenLatest: () => showMeasurementSheet(
@@ -87,6 +88,7 @@ class TodayScreen extends StatelessWidget {
                 controller.weekPanelVisible)
               SurfacePanel(
                 child: ThisWeekPanel(
+                  windows: controller.measurementWindows,
                   measurements: controller.measurements,
                   now: now,
                   onFieldTap: (field) {

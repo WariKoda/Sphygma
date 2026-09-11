@@ -652,11 +652,11 @@ Aufgenommen 2026-09-08 aus dem Abgleich in
 als „Einstellung" und sind es nie geworden: In der Rechenschicht sind sie frei,
 in der Oberfläche unerreichbar.
 
-* **Tageszeit-Grenzen** — `BandGrid` nimmt seine Schnittpunkte als Parameter,
-  aber außerhalb der Tests ruft niemand `grobMit` mit etwas anderem als 12:00.
-  Wer im Schichtdienst arbeitet, hat einen anderen Morgen als der Rest, und ein
-  Wochenraster könnte von weiteren Tagesabschnitten profitieren. Der neue
-  Messplan ordnet direkt nach Uhrzeit zu und benötigt diese Bandgrenzen nicht.
+* **Tageszeit-Grenzen** — am 11.09.2026 als getrennte Morgen-/Abendfenster
+  umgesetzt, unter Einstellungen → Ansicht → Morgen und Abend. Standard nach
+  Nutzerwahl 05–10 und 18–23 Uhr. Heute, Wochenraster und Verlauf verwenden
+  dieselbe Einstellung. Messungen außerhalb bleiben in Gesamtauswertungen und
+  Listen; der Messplan und seine Erinnerungen bleiben unabhängig.
 * **Zielbereich** — jede Aufrufstelle nimmt fest `TargetRange.heim` (135/85).
   Ein Arzt gibt durchaus ein individuelles Ziel vor („unter 130/80"), das wäre
   der echte Anwendungsfall. Aber: Ein frei nach oben verschiebbarer

@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 
 import '../../db/app_database.dart';
 import '../../stats/measurement_week.dart';
+import '../../stats/measurement_windows.dart';
 import '../../stats/time_of_day_band.dart';
 import '../theme/sphygma_theme.dart';
 import 'week_grid.dart';
@@ -21,6 +22,7 @@ class ThisWeekPanel extends StatelessWidget {
     required this.measurements,
     required this.now,
     this.onFieldTap,
+    this.windows,
   });
 
   /// Alle Messungen eines Speicherplatzes; die laufende Woche wird daraus
@@ -30,6 +32,7 @@ class ThisWeekPanel extends StatelessWidget {
   /// Was als „jetzt" gilt. Einsetzbar, damit Tests nicht vom Wochentag ihres
   /// Laufs abhängen — und damit die Anzeige über Mitternacht wandert.
   final DateTime now;
+  final MeasurementWindows? windows;
 
   final void Function(WeekField field)? onFieldTap;
 
@@ -40,11 +43,12 @@ class ThisWeekPanel extends StatelessWidget {
   /// nicht gemessen.
   static MeasurementWeek? currentWeek(
     List<Measurement> measurements,
-    DateTime now,
-  ) {
+    DateTime now, {
+    MeasurementWindows? windows,
+  }) {
     if (measurements.isEmpty) return null;
     final montag = mondayOf(now);
-    for (final w in buildWeeks(measurements)) {
+    for (final w in buildWeeks(measurements, windows: windows)) {
       if (w.beginsAt == montag) return w;
     }
     return null;
@@ -70,7 +74,7 @@ class ThisWeekPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
-    final woche = currentWeek(measurements, now);
+    final woche = currentWeek(measurements, now, windows: windows);
 
     if (woche == null) {
       return Column(

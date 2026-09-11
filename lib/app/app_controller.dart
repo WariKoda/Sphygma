@@ -13,6 +13,7 @@ import '../db/measurement_repository.dart';
 import '../db/settings_repository.dart';
 import '../protocol/exceptions.dart';
 import '../stats/measurement_metadata.dart';
+import '../stats/measurement_windows.dart';
 import '../plan/plan_controller.dart';
 import '../stats/measurement_filter.dart';
 import '../stats/phase_grouping.dart';
@@ -100,6 +101,7 @@ class AppController extends ChangeNotifier {
 
   /// Ob das Wochenraster auf „Heute" erscheint. Wird in [init] aus der DB
   /// geladen.
+  MeasurementWindows measurementWindows = MeasurementWindows.defaults;
   bool weekPanelVisible = true;
   bool recentMeasurementsVisible = true;
   DateTime? lastSuccessfulSyncAt;
@@ -217,6 +219,12 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setMeasurementWindows(MeasurementWindows value) async {
+    await settings.setMeasurementWindows(value);
+    measurementWindows = value;
+    notifyListeners();
+  }
+
   Future<void> setWeekPanelVisible(bool value) async {
     await settings.setWeekPanelVisible(value);
     weekPanelVisible = value;
@@ -250,6 +258,7 @@ class AppController extends ChangeNotifier {
     palette = await settings.palette();
     typeface = await settings.typeface();
     phasesEnabled = await settings.phasesEnabled();
+    measurementWindows = await settings.measurementWindows();
     weekPanelVisible = await settings.weekPanelVisible();
     recentMeasurementsVisible = await settings.recentMeasurementsVisible();
     lastSuccessfulSyncAt = await settings.lastSuccessfulSyncAt();

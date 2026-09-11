@@ -16,6 +16,7 @@ import '../stats/chart_geometry.dart';
 import 'theme/characteristic.dart';
 import 'theme/sphygma_theme.dart';
 import '../stats/measurement_week.dart';
+import '../stats/measurement_windows.dart';
 import '../stats/time_of_day_band.dart';
 import 'widgets/surface_panel.dart';
 import 'widgets/stat_tiles.dart';
@@ -176,14 +177,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                 ),
                                 if (controller.period == Period.week &&
                                     !controller.historyFilter.isActive)
-                                  ..._Wochenwert.stats(inPeriod),
+                                  ..._Wochenwert.stats(
+                                    inPeriod,
+                                    controller.measurementWindows,
+                                  ),
                               ],
                             ),
                             const _Section(title: 'NACH TAGESZEIT'),
                             // Fünf Abschnitte statt zweier: Der Tagesverlauf
                             // ist eine eigene Aussage, die der Verlauf über
                             // Tage nicht gibt.
-                            ..._Tageszeiten.zeilen(context, inPeriod),
+                            ..._Tageszeiten.zeilen(
+                              context,
+                              inPeriod,
+                              controller.measurementWindows,
+                            ),
                           ],
                         ),
                       ),
@@ -384,9 +392,12 @@ class MeasurementRow extends StatelessWidget {
 
 /// Der Wochenwert nach Leitlinie — und wie vollständig die Woche ist.
 class _Wochenwert {
-  static List<Stat> stats(List<Measurement> messungen) {
+  static List<Stat> stats(
+    List<Measurement> messungen,
+    MeasurementWindows windows,
+  ) {
     if (messungen.isEmpty) return const [];
-    final wochen = buildWeeks(messungen);
+    final wochen = buildWeeks(messungen, windows: windows);
     if (wochen.isEmpty) return const [];
     final woche = wochen.first;
     final a = woche.average;
@@ -417,9 +428,10 @@ class _Tageszeiten {
   static List<Widget> zeilen(
     BuildContext context,
     List<Measurement> messungen,
+    MeasurementWindows windows,
   ) {
     if (messungen.isEmpty) return const [];
-    final mittel = averagesByBand(messungen, BandGrid.fein);
+    final mittel = averagesByWindows(messungen, windows);
     if (mittel.isEmpty) return const [];
 
     final werte = mittel.values.map((a) => a.systolic).toList()..sort();

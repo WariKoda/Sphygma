@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 
 import '../ui/theme/variants.dart';
+import '../stats/measurement_windows.dart';
 import 'app_database.dart';
 
 enum IntakeState { awaitingReadout, awaitingChoice, complete }
@@ -11,6 +12,16 @@ class SettingsRepository {
   SettingsRepository(this._db);
 
   final AppDatabase _db;
+
+  Future<MeasurementWindows> measurementWindows() async {
+    final value = await _rawSetting('measurement_windows');
+    return value == null
+        ? MeasurementWindows.defaults
+        : MeasurementWindows.decode(value);
+  }
+
+  Future<void> setMeasurementWindows(MeasurementWindows value) =>
+      setRawSetting('measurement_windows', value.encode());
 
   static const String _userSlotKey = 'user_slot';
 

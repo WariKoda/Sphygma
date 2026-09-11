@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sphygma/db/app_database.dart';
+import 'package:sphygma/stats/measurement_windows.dart';
 import 'package:sphygma/app/feature_flags.dart';
 import 'package:sphygma/ui/theme/sphygma_theme.dart';
 import 'package:sphygma/ui/theme/variants.dart';
@@ -44,6 +45,7 @@ void main() {
     VoidCallback? latest,
     VoidCallback? today,
     double textScale = 1,
+    MeasurementWindows? windows,
   }) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(360, 800);
@@ -60,6 +62,7 @@ void main() {
           body: SingleChildScrollView(
             child: TodayVitals(
               measurements: measurements ?? values,
+              windows: windows,
               latest: noLatest ? null : latestMeasurement ?? values.last,
               now: now,
               onOpenLatest: latest,
@@ -70,6 +73,38 @@ void main() {
       ),
     );
   }
+
+  testWidgets('13 Uhr bleibt in Tagesanzahl, aber nicht im Abendmittel', (
+    tester,
+  ) async {
+    final midday = reading(5, DateTime(2026, 9, 11, 13), 190, 110, 99);
+    await pump(
+      tester,
+      variant: ThemeVariant.diary,
+      measurements: [midday],
+      latestMeasurement: midday,
+      today: () {},
+    );
+    expect(find.text('Noch keine Messung'), findsNWidgets(4));
+    expect(find.textContaining('190'), findsOneWidget);
+    expect(find.text('99'), findsOneWidget);
+    expect(find.textContaining('1 Messungen ansehen'), findsOneWidget);
+    await pump(
+      tester,
+      variant: ThemeVariant.diary,
+      measurements: [midday],
+      latestMeasurement: midday,
+      windows: MeasurementWindows(
+        morningStart: 5 * 60,
+        morningEnd: 10 * 60,
+        eveningStart: 13 * 60,
+        eveningEnd: 14 * 60,
+      ),
+    );
+    expect(find.text('Noch keine Messung'), findsNWidgets(2));
+    expect(find.text('190/110'), findsNWidgets(2));
+    expect(tester.takeException(), isNull);
+  });
 
   for (final variant in allVariants) {
     testWidgets('rendert ${variant.name} bei 360px und Textfaktor 2', (

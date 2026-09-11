@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/feature_flags.dart';
 import '../../db/app_database.dart';
 import '../../stats/esc_classification.dart';
+import '../../stats/measurement_windows.dart';
 import '../theme/characteristic.dart';
 import '../theme/sphygma_theme.dart';
 import 'classification_scale.dart';
@@ -14,12 +15,14 @@ class TodayVitals extends StatelessWidget {
   const TodayVitals({
     super.key,
     required this.measurements,
+    this.windows,
     required this.latest,
     required this.now,
     required this.onOpenLatest,
     required this.onOpenToday,
   });
 
+  final MeasurementWindows? windows;
   final List<Measurement> measurements;
   final Measurement? latest;
   final DateTime now;
@@ -28,14 +31,19 @@ class TodayVitals extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final selectedWindows = windows ?? MeasurementWindows.defaults;
     final today = measurements
         .where((measurement) => _sameDay(measurement.measuredAt, now))
         .toList();
     final morning = today
-        .where((measurement) => measurement.measuredAt.hour < 12)
+        .where(
+          (measurement) => selectedWindows.isMorning(measurement.measuredAt),
+        )
         .toList();
     final evening = today
-        .where((measurement) => measurement.measuredAt.hour >= 12)
+        .where(
+          (measurement) => selectedWindows.isEvening(measurement.measuredAt),
+        )
         .toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
