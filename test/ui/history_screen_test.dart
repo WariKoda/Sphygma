@@ -8,11 +8,13 @@ import 'package:sphygma/app/app_controller.dart';
 import 'package:sphygma/ble/pairing_key_store.dart';
 import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/db/measurement_repository.dart';
-import 'package:sphygma/db/occasion_repository.dart';
+import 'package:sphygma/db/measurement_metadata_repository.dart';
+import 'package:sphygma/db/phase_repository.dart';
 import 'package:sphygma/db/settings_repository.dart';
 import 'package:sphygma/protocol/readout.dart';
 import 'package:sphygma/protocol/record.dart';
 import 'package:sphygma/stats/period.dart';
+import 'package:sphygma/stats/measurement_filter.dart';
 import 'package:sphygma/sync/export_service.dart';
 import 'package:sphygma/sync/health_sink.dart';
 import 'package:sphygma/sync/sync_service.dart';
@@ -55,7 +57,8 @@ void main() {
       settings: SettingsRepository(db),
       keyStore: keyStore,
       repository: repository,
-      occasionRepository: OccasionRepository(db),
+      metadataRepository: MeasurementMetadataRepository(db),
+      phaseRepository: PhaseRepository(db),
       syncService: SyncService(keyStore: keyStore, repository: repository),
       exportService: ExportService(repository: repository, sink: _NoopSink()),
       statusStream: () => const Stream.empty(),
@@ -153,6 +156,10 @@ void main() {
     await controller.refreshForTest();
 
     await pumpWith(tester, ThemeVariant.instrument);
+    await tester.scrollUntilVisible(find.text('MESSUNGEN'), 200);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.byType(MeasurementRow), 200);
+    await tester.pumpAndSettle();
     await tester.tap(find.byType(MeasurementRow));
     await tester.pumpAndSettle();
 
@@ -170,6 +177,37 @@ void main() {
     expect(find.byType(TrendChart), findsNothing);
   });
 
+  testWidgets(
+    'ein Tagfilter steuert Trefferzahl, Kennzahl und Liste gemeinsam',
+    (tester) async {
+      controller = await boot();
+      final now = DateTime.now();
+      await repository.importAll([
+        _rec(1, now.subtract(const Duration(hours: 2)), systolic: 110),
+        _rec(2, now.subtract(const Duration(hours: 1)), systolic: 150),
+      ]);
+      await controller.refreshForTest();
+      final tagId = await controller.createTag('Ruhe');
+      await controller.saveMeasurementMetadata(
+        deviceSequence: 1,
+        note: null,
+        tagIds: {tagId},
+      );
+      controller.setHistoryFilter(
+        HistoryFilter(tagIds: {tagId}, tags: MembershipFilter.selected),
+      );
+
+      await pumpWith(tester, ThemeVariant.instrument);
+
+      expect(find.text('1 von 2 Messungen'), findsOneWidget);
+      expect(find.textContaining('110'), findsWidgets);
+      expect(find.textContaining('130'), findsNothing);
+      await tester.scrollUntilVisible(find.text('MESSUNGEN'), 200);
+      await tester.pumpAndSettle();
+      expect(find.byType(MeasurementRow), findsOneWidget);
+    },
+  );
+
   testWidgets('übertragene Messungen tragen einen Punkt', (tester) async {
     controller = await boot();
     await repository.importAll([_rec(1, DateTime.now())]);
@@ -177,6 +215,10 @@ void main() {
     await controller.exportOne(controller.measurements.first);
 
     await pumpWith(tester, ThemeVariant.instrument);
+
+    await tester.scrollUntilVisible(find.text('MESSUNGEN'), 200);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.byType(MeasurementRow), 200);
 
     expect(find.byKey(const ValueKey('exported-dot')), findsOneWidget);
   });

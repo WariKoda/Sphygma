@@ -66,7 +66,7 @@ class InMemoryPairingKeyStore extends PairingKeyStore {
 /// Produktion: Android Keystore ueber flutter_secure_storage.
 class SecureStoragePairingKeyStore extends PairingKeyStore {
   SecureStoragePairingKeyStore({FlutterSecureStorage? storage})
-      : _storage = storage ?? const FlutterSecureStorage();
+    : _storage = storage ?? const FlutterSecureStorage();
 
   static const String _storageKey = 'omron_pairing_key';
   final FlutterSecureStorage _storage;

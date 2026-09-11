@@ -24,8 +24,9 @@ import 'hem6232t_device.dart';
 
 /// Der Leer-Sentinel des Geraets: So liefert es einen nie benutzten
 /// Ringpuffer-Platz aus, und so erkennt [parseRecord] ihn wieder.
-final Uint8List emptyRecordBytes =
-    Uint8List.fromList(List.filled(Hem6232tDevice.recordByteSize, 0xff));
+final Uint8List emptyRecordBytes = Uint8List.fromList(
+  List.filled(Hem6232tDevice.recordByteSize, 0xff),
+);
 
 /// Wirft, wenn [length] Bytes ab [address] nicht vollstaendig innerhalb
 /// **eines** der beiden Record-Bereiche liegen. Ueber eine Slot-Grenze
@@ -80,8 +81,9 @@ class EepromWriter {
 
     while (offset < data.length) {
       final remaining = data.length - offset;
-      final chunkSize =
-          remaining < maxWriteDataLength ? remaining : maxWriteDataLength;
+      final chunkSize = remaining < maxWriteDataLength
+          ? remaining
+          : maxWriteDataLength;
       final chunk = Uint8List.sublistView(data, offset, offset + chunkSize);
 
       await _transport.writeCommand(

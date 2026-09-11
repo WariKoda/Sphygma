@@ -24,7 +24,11 @@ class TimeOfDayMinutes implements Comparable<TimeOfDayMinutes> {
       throw ArgumentError.value(hour, 'hour', 'muss zwischen 0 und 23 liegen');
     }
     if (minute < 0 || minute > 59) {
-      throw ArgumentError.value(minute, 'minute', 'muss zwischen 0 und 59 liegen');
+      throw ArgumentError.value(
+        minute,
+        'minute',
+        'muss zwischen 0 und 59 liegen',
+      );
     }
   }
 
@@ -87,7 +91,7 @@ class BandGrid {
   /// geleerte oder umsortierte Liste würde die Prüfung wertlos machen, und
   /// weil [fein] und [grob] statisch sind, wäre der Schaden global.
   BandGrid(List<BandBoundary> boundaries)
-      : boundaries = List.unmodifiable(boundaries) {
+    : boundaries = List.unmodifiable(boundaries) {
     if (this.boundaries.isEmpty) {
       throw ArgumentError.value(
         boundaries,

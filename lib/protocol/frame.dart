@@ -13,13 +13,27 @@ const int responseTypeEnd = 0x8f00;
 /// XOR ueber alle Bytes. Ein wohlgeformtes Frame ergibt 0.
 int xorChecksum(List<int> bytes) => bytes.fold(0, (acc, b) => acc ^ b);
 
-final Uint8List startTransmissionFrame = Uint8List.fromList(
-  [0x08, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x18],
-);
+final Uint8List startTransmissionFrame = Uint8List.fromList([
+  0x08,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x10,
+  0x00,
+  0x18,
+]);
 
-final Uint8List endTransmissionFrame = Uint8List.fromList(
-  [0x08, 0x0f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07],
-);
+final Uint8List endTransmissionFrame = Uint8List.fromList([
+  0x08,
+  0x0f,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x00,
+  0x07,
+]);
 
 /// Prueft, dass [address] in den 16-Bit-Adressraum des Geraets passt.
 /// Fail hard statt stiller Maskierung: eine zu grosse oder negative
@@ -125,7 +139,11 @@ Uint8List buildWriteEepromCommand({
 /// Spezifikation: docs/protocol/hem-6232t.md §3.5.
 Uint8List buildReadEepromCommand({required int address, required int length}) {
   if (length < 0 || length > 0xff) {
-    throw ArgumentError.value(length, 'length', 'muss zwischen 0 und 0xff liegen');
+    throw ArgumentError.value(
+      length,
+      'length',
+      'muss zwischen 0 und 0xff liegen',
+    );
   }
   _assertAddressInRange(address, length);
   final frame = Uint8List(8);
@@ -142,7 +160,11 @@ Uint8List buildReadEepromCommand({required int address, required int length}) {
 
 /// Eine geparste Antwort des Geraets: Typ, EEPROM-Adresse und Nutzdaten.
 class ResponseFrame {
-  ResponseFrame({required this.type, required this.address, required this.data});
+  ResponseFrame({
+    required this.type,
+    required this.address,
+    required this.data,
+  });
 
   final int type;
   final int address;

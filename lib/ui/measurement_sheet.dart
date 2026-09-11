@@ -9,11 +9,14 @@ import 'package:flutter/material.dart';
 import '../app/app_controller.dart';
 import '../app/feature_flags.dart';
 import '../db/app_database.dart';
+import '../db/measurement_repository.dart';
 import '../stats/esc_classification.dart';
 import 'format.dart';
 import 'theme/sphygma_theme.dart';
 import 'widgets/classification_scale.dart';
 import 'widgets/reading_headline.dart';
+import 'metadata/measurement_metadata_editor.dart';
+import 'phases/phase_selection_editor.dart';
 
 Future<void> showMeasurementSheet(
   BuildContext context, {
@@ -52,43 +55,57 @@ class MeasurementSheet extends StatelessWidget {
       builder: (context, _) {
         final m = _require(controller.measurements, measurementId);
         return SafeArea(
-          child: Padding(
-            padding: EdgeInsets.all(t.gapLarge),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ReadingHeadline(
-                  systolic: m.systolic,
-                  diastolic: m.diastolic,
-                  pulse: m.pulse,
-                  measuredAt: m.measuredAt,
-                ),
-                if (escClassificationEnabled) ...[
-                  SizedBox(height: t.gapLarge),
-                  ClassificationScale(
-                    category: classifyOffice(
-                      systolic: m.systolic,
-                      diastolic: m.diastolic,
-                    ),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.all(t.gapLarge),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ReadingHeadline(
+                    systolic: m.systolic,
+                    diastolic: m.diastolic,
+                    pulse: m.pulse,
+                    measuredAt: m.measuredAt,
                   ),
-                ],
-                if (m.movement || m.arrhythmia) ...[
+                  if (escClassificationEnabled) ...[
+                    SizedBox(height: t.gapLarge),
+                    ClassificationScale(
+                      category: classifyOffice(
+                        systolic: m.systolic,
+                        diastolic: m.diastolic,
+                      ),
+                    ),
+                  ],
+                  if (m.movement || m.arrhythmia) ...[
+                    SizedBox(height: t.gapLarge),
+                    if (m.movement)
+                      const _Flag(text: 'Bewegung während der Messung'),
+                    if (m.arrhythmia) const _Flag(text: 'Unregelmäßiger Puls'),
+                  ],
                   SizedBox(height: t.gapLarge),
-                  if (m.movement)
-                    const _Flag(text: 'Bewegung während der Messung'),
-                  if (m.arrhythmia) const _Flag(text: 'Unregelmäßiger Puls'),
+                  _Row(label: 'Messung Nr.', value: '${m.deviceSequence}'),
+                  _Row(label: 'Speicherplatz', value: 'Benutzer ${m.userSlot}'),
+                  _Row(
+                    label: 'Eingelesen',
+                    value: formatDayAndTime(m.importedAt),
+                  ),
+                  SizedBox(height: t.gapLarge),
+                  _HealthConnect(controller: controller, measurement: m),
+                  SizedBox(height: t.gapLarge),
+                  MeasurementMetadataEditor(
+                    controller: controller,
+                    deviceSequence: m.deviceSequence,
+                  ),
+                  if (controller.phasesEnabled) ...[
+                    SizedBox(height: t.gapLarge),
+                    PhaseSelectionEditor(
+                      controller: controller,
+                      deviceSequence: m.deviceSequence,
+                    ),
+                  ],
                 ],
-                SizedBox(height: t.gapLarge),
-                _Row(label: 'Messung Nr.', value: '${m.deviceSequence}'),
-                _Row(label: 'Speicherplatz', value: 'Benutzer ${m.userSlot}'),
-                _Row(
-                  label: 'Eingelesen',
-                  value: formatDayAndTime(m.importedAt),
-                ),
-                SizedBox(height: t.gapLarge),
-                _HealthConnect(controller: controller, measurement: m),
-              ],
+              ),
             ),
           ),
         );
@@ -170,6 +187,25 @@ class _HealthConnect extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
     final exported = measurement.exportedAt != null;
+    final state = controller.exportStates[measurement.id];
+    final canRetract =
+        exported ||
+        state == MeasurementExportState.pendingWrite ||
+        state == MeasurementExportState.pendingRetraction ||
+        state == MeasurementExportState.legacyUnknown;
+    final description = switch (state) {
+      MeasurementExportState.legacyUnknown =>
+        'Übertragungsstatus aus früherer Version unbekannt',
+      MeasurementExportState.pendingWrite =>
+        'Übertragung nicht vollständig bestätigt',
+      MeasurementExportState.pendingRetraction =>
+        'Entfernung noch nicht bestätigt',
+      MeasurementExportState.retracted => 'Aus Health Connect entfernt',
+      _ =>
+        exported
+            ? 'Übertragen am ${formatDayAndTime(measurement.exportedAt!)}'
+            : 'Noch nicht übertragen',
+    };
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -179,27 +215,22 @@ class _HealthConnect extends StatelessWidget {
           style: TextStyle(fontSize: 10, letterSpacing: 1.6, color: t.muted),
         ),
         SizedBox(height: t.gapSmall),
-        Text(
-          exported
-              ? 'Übertragen am ${formatDayAndTime(measurement.exportedAt!)}'
-              : 'Noch nicht übertragen',
-          style: TextStyle(fontSize: 13, color: t.onSurface),
-        ),
+        Text(description, style: TextStyle(fontSize: 13, color: t.onSurface)),
         SizedBox(height: t.gapSmall),
-        OutlinedButton(
-          onPressed: controller.busy
-              ? null
-              : () => _start(
-                  () => exported
-                      ? controller.retractOne(measurement)
-                      : controller.exportOne(measurement),
-                ),
-          child: Text(
-            exported
-                ? 'Aus Health Connect entfernen'
-                : 'Nach Health Connect übertragen',
+        if (!exported)
+          OutlinedButton(
+            onPressed: controller.busy || controller.intakeDecisionPending
+                ? null
+                : () => _start(() => controller.exportOne(measurement)),
+            child: const Text('Nach Health Connect übertragen'),
           ),
-        ),
+        if (canRetract)
+          OutlinedButton(
+            onPressed: controller.busy
+                ? null
+                : () => _start(() => controller.retractOne(measurement)),
+            child: const Text('Aus Health Connect entfernen'),
+          ),
       ],
     );
   }

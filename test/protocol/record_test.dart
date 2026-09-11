@@ -149,6 +149,45 @@ void main() {
     expect(record.pulse, 70);
   });
 
+  test('zivile Gerätezeit bleibt auch in einer DST-Lücke unverändert', () {
+    final bytes = Uint8List.fromList([
+      80,
+      95,
+      24,
+      70,
+      15,
+      226,
+      7,
+      128,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+    ]);
+
+    final civil = parseRecord(bytes)!.civilTime;
+
+    expect(
+      [civil.year, civil.month, civil.day, civil.hour, civil.minute],
+      [2024, 3, 31, 2, 30],
+    );
+    expect(civil.utcContainer, DateTime.utc(2024, 3, 31, 2, 30));
+  });
+
+  test('ungültige zivile Kalendertage werden nicht normalisiert', () {
+    const civil = DeviceCivilTime(
+      year: 2024,
+      month: 2,
+      day: 30,
+      hour: 8,
+      minute: 0,
+      second: 0,
+    );
+    expect(() => civil.utcContainer, throwsStateError);
+  });
+
   test('wirft ProtocolException bei falscher Record-Laenge', () {
     final tooShort = Uint8List.fromList(List.filled(13, 0));
 

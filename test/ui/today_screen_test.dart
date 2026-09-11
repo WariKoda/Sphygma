@@ -7,7 +7,8 @@ import 'package:sphygma/app/app_controller.dart';
 import 'package:sphygma/ble/pairing_key_store.dart';
 import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/db/measurement_repository.dart';
-import 'package:sphygma/db/occasion_repository.dart';
+import 'package:sphygma/db/measurement_metadata_repository.dart';
+import 'package:sphygma/db/phase_repository.dart';
 import 'package:sphygma/db/settings_repository.dart';
 import 'package:sphygma/protocol/readout.dart';
 import 'package:sphygma/protocol/record.dart';
@@ -18,6 +19,7 @@ import 'package:sphygma/ui/theme/sphygma_theme.dart';
 import 'package:sphygma/ui/theme/variants.dart';
 import 'package:sphygma/stats/measurement_week.dart';
 import 'package:sphygma/ui/today_screen.dart';
+import 'package:sphygma/ui/widgets/reading_headline.dart';
 
 class _NoopSink implements HealthSink {
   @override
@@ -52,7 +54,8 @@ void main() {
       settings: SettingsRepository(db),
       keyStore: keyStore,
       repository: repository,
-      occasionRepository: OccasionRepository(db),
+      metadataRepository: MeasurementMetadataRepository(db),
+      phaseRepository: PhaseRepository(db),
       syncService: SyncService(keyStore: keyStore, repository: repository),
       exportService: ExportService(repository: repository, sink: _NoopSink()),
       statusStream: () => const Stream.empty(),
@@ -120,6 +123,32 @@ void main() {
     expect(find.textContaining('Nicht gekoppelt'), findsOneWidget);
   });
 
+  testWidgets('ausgeschalteter Autosync erzeugt keine Warnkarte', (
+    tester,
+  ) async {
+    controller = await boot();
+    await repository.importAll([_rec(1, DateTime.now())]);
+    await controller.refreshForTest();
+
+    await pumpWith(tester, ThemeVariant.instrument);
+
+    expect(controller.autoSyncEnabled, isFalse);
+    expect(find.text('Kein automatischer Abgleich'), findsNothing);
+    expect(find.textContaining('128'), findsWidgets);
+  });
+
+  testWidgets(
+    'ohne Autosync verspricht der Leerzustand keinen automatischen Import',
+    (tester) async {
+      controller = await boot();
+
+      await pumpWith(tester, ThemeVariant.instrument);
+
+      expect(find.textContaining('holt die Messung von selbst'), findsNothing);
+      expect(find.textContaining('abgleichen'), findsOneWidget);
+    },
+  );
+
   testWidgets('bei falscher Uhr steht der Hinweis samt Anleitung da', (
     tester,
   ) async {
@@ -149,8 +178,38 @@ void main() {
 
     await pumpWith(tester, ThemeVariant.instrument);
 
-    // Die aelteste (120) darf nicht mehr dabei sein.
-    expect(find.textContaining('/87').evaluate().length, lessThanOrEqualTo(6));
+    final recent = find.byKey(const ValueKey('recent-measurements'));
+    await tester.scrollUntilVisible(recent, 250);
+    expect(
+      find.descendant(of: recent, matching: find.byType(InkWell)),
+      findsNWidgets(5),
+    );
+  });
+
+  testWidgets('Wochenraster und letzte Messungen sind unabhängig sichtbar', (
+    tester,
+  ) async {
+    controller = await boot();
+    final now = DateTime.now();
+    await repository.importAll([
+      _rec(1, now.subtract(const Duration(hours: 2))),
+      _rec(2, now.subtract(const Duration(hours: 1))),
+    ]);
+    await controller.refreshForTest();
+    await controller.setWeekPanelVisible(false);
+    await pumpWith(tester, ThemeVariant.instrument);
+
+    expect(find.text('DIESE WOCHE'), findsNothing);
+    await tester.scrollUntilVisible(find.text('LETZTE MESSUNGEN'), 250);
+    expect(find.text('LETZTE MESSUNGEN'), findsOneWidget);
+
+    await controller.setWeekPanelVisible(true);
+    await controller.setRecentMeasurementsVisible(false);
+    await tester.pump();
+    await tester.scrollUntilVisible(find.text('DIESE WOCHE'), 250);
+    expect(find.text('DIESE WOCHE'), findsOneWidget);
+    expect(find.text('LETZTE MESSUNGEN'), findsNothing);
+    expect(find.byType(BloodPressureValue), findsOneWidget);
   });
 
   testWidgets('zeigt die laufende Woche mit dem, was heute noch fehlt', (
@@ -184,6 +243,7 @@ void main() {
       ),
     );
 
+    await tester.scrollUntilVisible(find.text('DIESE WOCHE'), 250);
     expect(find.text('DIESE WOCHE'), findsOneWidget);
     expect(find.text('Mo'), findsOneWidget);
     expect(find.text('So'), findsOneWidget);
@@ -209,6 +269,7 @@ void main() {
     await controller.refreshForTest();
 
     await pumpWith(tester, ThemeVariant.instrument);
+    await tester.scrollUntilVisible(find.text('DIESE WOCHE'), 250);
     expect(find.text('DIESE WOCHE'), findsOneWidget);
 
     await controller.setWeekPanelVisible(false);
@@ -218,7 +279,8 @@ void main() {
     expect(find.text('Mo'), findsNothing);
     // Der letzte Wert und die letzten Tage bleiben.
     expect(find.textContaining('124'), findsWidgets);
-    expect(find.text('LETZTE TAGE'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('LETZTE MESSUNGEN'), 250);
+    expect(find.text('LETZTE MESSUNGEN'), findsOneWidget);
   });
 
   testWidgets('über Mitternacht wandert die Wochenansicht mit', (tester) async {
@@ -254,6 +316,10 @@ void main() {
           body: TodayScreen(controller: controller, clock: () => jetzt),
         ),
       ),
+    );
+    await tester.scrollUntilVisible(
+      find.text('Heute ist morgens und abends gemessen.'),
+      250,
     );
     expect(find.text('Heute ist morgens und abends gemessen.'), findsOneWidget);
 

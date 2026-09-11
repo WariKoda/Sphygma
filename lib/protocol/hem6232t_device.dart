@@ -2,8 +2,10 @@
 // Spezifikation: docs/protocol/hem-6232t.md §1-2. Aus omblepy und UBPM
 // gegenseitig bestaetigt (siehe dort, Spalte "Quelle").
 class Hem6232tDevice {
-  static const String parentServiceUuid = 'ecbe3980-c9a2-11e1-b1bd-0002a5d5c51b';
-  static const String unlockCharacteristicUuid = 'b305b680-aee7-11e1-a730-0002a5d5c51b';
+  static const String parentServiceUuid =
+      'ecbe3980-c9a2-11e1-b1bd-0002a5d5c51b';
+  static const String unlockCharacteristicUuid =
+      'b305b680-aee7-11e1-a730-0002a5d5c51b';
 
   static const List<String> txCharacteristicUuids = [
     'db5b55e0-aee7-11e1-965e-0002a5d5c51b',

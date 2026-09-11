@@ -3,6 +3,16 @@ import 'package:sphygma/ble/frame_mailbox.dart';
 
 void main() {
   group('FrameMailbox', () {
+    test('Sitzungsfehler verwirft gepufferte und spaetere Frames', () async {
+      final mailbox = FrameMailbox<int>();
+      final error = StateError('connection failed');
+      mailbox.deliver(1);
+      mailbox.fail(error);
+      mailbox.deliver(2);
+      await expectLater(mailbox.next(), throwsA(same(error)));
+      await expectLater(mailbox.next(), throwsA(same(error)));
+    });
+
     test(
       'liefert ein Element, das eintrifft, waehrend next() schon wartet',
       () async {

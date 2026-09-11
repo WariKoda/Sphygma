@@ -8,7 +8,8 @@ import 'package:sphygma/app/app_controller.dart';
 import 'package:sphygma/ble/pairing_key_store.dart';
 import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/db/measurement_repository.dart';
-import 'package:sphygma/db/occasion_repository.dart';
+import 'package:sphygma/db/measurement_metadata_repository.dart';
+import 'package:sphygma/db/phase_repository.dart';
 import 'package:sphygma/db/settings_repository.dart';
 import 'package:sphygma/protocol/readout.dart';
 import 'package:sphygma/protocol/record.dart';
@@ -79,7 +80,8 @@ void main() {
       settings: SettingsRepository(db),
       keyStore: keyStore,
       repository: repository,
-      occasionRepository: OccasionRepository(db),
+      metadataRepository: MeasurementMetadataRepository(db),
+      phaseRepository: PhaseRepository(db),
       syncService: SyncService(keyStore: keyStore, repository: repository),
       exportService: ExportService(
         repository: repository,
@@ -243,4 +245,61 @@ void main() {
 
     expect(find.byType(MeasurementSheet), findsOneWidget);
   });
+  testWidgets('unbestätigter Teilexport kann wiederholt und entfernt werden', (
+    tester,
+  ) async {
+    controller = await boot();
+    await repository.importAll([_rec(1, DateTime(2026, 9, 5, 8))]);
+    final id = await firstId();
+    await repository.beginExport(id);
+    await controller.refreshForTest();
+    await pumpWith(tester, ThemeVariant.instrument, id);
+    expect(
+      find.text('Übertragung nicht vollständig bestätigt'),
+      findsOneWidget,
+    );
+    expect(find.text('Nach Health Connect übertragen'), findsOneWidget);
+    expect(find.text('Aus Health Connect entfernen'), findsOneWidget);
+    await tester.tap(find.text('Aus Health Connect entfernen'));
+    await tester.pumpAndSettle();
+    expect(sink.removed, ['sphygma-slot1-seq1']);
+    expect(find.text('Aus Health Connect entfernt'), findsOneWidget);
+  });
+
+  testWidgets('fehlgeschlagene Rücknahme bleibt als solche sichtbar', (
+    tester,
+  ) async {
+    controller = await boot();
+    await repository.importAll([_rec(1, DateTime(2026, 9, 5, 8))]);
+    final id = await firstId();
+    await repository.beginRetraction([id]);
+    await controller.refreshForTest();
+    await pumpWith(tester, ThemeVariant.instrument, id);
+    expect(find.text('Entfernung noch nicht bestätigt'), findsOneWidget);
+    expect(find.text('Aus Health Connect entfernen'), findsOneWidget);
+  });
+  testWidgets(
+    'unbekannter Altstatus bietet ausdrücklichen Export und Rückzug',
+    (tester) async {
+      controller = await boot();
+      await repository.importAll([_rec(1, DateTime(2026, 9, 5, 8))]);
+      final id = await firstId();
+      await repository.beginExport(id);
+      await db.customStatement(
+        'UPDATE measurement_exports SET legacy_unknown = 1, withdrawn = 1 WHERE measurement_id = ?',
+        [id],
+      );
+      await controller.refreshForTest();
+      await pumpWith(tester, ThemeVariant.instrument, id);
+      expect(
+        find.text('Übertragungsstatus aus früherer Version unbekannt'),
+        findsOneWidget,
+      );
+      expect(find.text('Nach Health Connect übertragen'), findsOneWidget);
+      expect(find.text('Aus Health Connect entfernen'), findsOneWidget);
+      await tester.tap(find.text('Aus Health Connect entfernen'));
+      await tester.pumpAndSettle();
+      expect(sink.removed, ['sphygma-slot1-seq1']);
+    },
+  );
 }

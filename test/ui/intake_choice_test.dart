@@ -7,7 +7,8 @@ import 'package:sphygma/app/app_controller.dart';
 import 'package:sphygma/ble/pairing_key_store.dart';
 import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/db/measurement_repository.dart';
-import 'package:sphygma/db/occasion_repository.dart';
+import 'package:sphygma/db/measurement_metadata_repository.dart';
+import 'package:sphygma/db/phase_repository.dart';
 import 'package:sphygma/db/settings_repository.dart';
 import 'package:sphygma/protocol/readout.dart';
 import 'package:sphygma/protocol/record.dart';
@@ -50,7 +51,8 @@ void main() {
       settings: SettingsRepository(db),
       keyStore: keyStore,
       repository: repository,
-      occasionRepository: OccasionRepository(db),
+      metadataRepository: MeasurementMetadataRepository(db),
+      phaseRepository: PhaseRepository(db),
       syncService: SyncService(keyStore: keyStore, repository: repository),
       exportService: ExportService(repository: repository, sink: _NoopSink()),
       statusStream: () => const Stream.empty(),
@@ -81,8 +83,11 @@ void main() {
     // Aber: Die Messungstabelle bleibt reines Abbild des Geräts.
     final roh = await db.select(db.measurements).get();
     expect(roh, hasLength(5), reason: 'gelöscht wird nichts');
-    expect(await repository.highestSequenceFor(1), 5,
-        reason: 'der Abgleich kennt weiter die höchste Nummer');
+    expect(
+      await repository.highestSequenceFor(1),
+      5,
+      reason: 'der Abgleich kennt weiter die höchste Nummer',
+    );
   });
 
   test('„ab Datum" übersetzt einmal in eine Messungsnummer', () async {
@@ -112,7 +117,8 @@ void main() {
       settings: SettingsRepository(db),
       keyStore: InMemoryPairingKeyStore(),
       repository: repository,
-      occasionRepository: OccasionRepository(db),
+      metadataRepository: MeasurementMetadataRepository(db),
+      phaseRepository: PhaseRepository(db),
       syncService: SyncService(
         keyStore: InMemoryPairingKeyStore(),
         repository: repository,
@@ -134,7 +140,8 @@ void main() {
       settings: SettingsRepository(db),
       keyStore: InMemoryPairingKeyStore(),
       repository: repository,
-      occasionRepository: OccasionRepository(db),
+      metadataRepository: MeasurementMetadataRepository(db),
+      phaseRepository: PhaseRepository(db),
       syncService: SyncService(
         keyStore: InMemoryPairingKeyStore(),
         repository: repository,
@@ -207,7 +214,8 @@ void main() {
       settings: SettingsRepository(leer),
       keyStore: InMemoryPairingKeyStore(),
       repository: leeresRepo,
-      occasionRepository: OccasionRepository(leer),
+      metadataRepository: MeasurementMetadataRepository(leer),
+      phaseRepository: PhaseRepository(leer),
       syncService: SyncService(
         keyStore: InMemoryPairingKeyStore(),
         repository: leeresRepo,

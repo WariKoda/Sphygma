@@ -20,9 +20,9 @@ class ExportService {
   /// der Fehler wird durchgereicht.
   /// Überträgt offene Messungen.
   ///
-  /// [onlyNew] nimmt nur, was über der Marke des automatischen Exports liegt
-  /// — für den automatischen Weg. Von Hand wird alles Offene übertragen,
-  /// auch früher Zurückgezogenes: Wer den Knopf drückt, meint es so.
+  /// [onlyNew] respektiert ausdrückliche Rückzüge — für den automatischen Weg.
+  /// Von Hand wird alles Offene übertragen, auch früher Zurückgezogenes:
+  /// Wer den Knopf drückt, meint es so.
   Future<int> exportPending({
     required int userSlot,
     int? limit,
@@ -42,13 +42,14 @@ class ExportService {
     return exported;
   }
 
-  /// Entfernt alle von Sphygma exportierten Messungen des Slots wieder aus
-  /// der Senke und hebt die Markierung auf. Liefert die Anzahl.
+  /// Entfernt bestätigte und möglicherweise teilweise exportierte Messungen
+  /// des Slots. Erst die erfolgreiche Löschung bestätigt den Rückzug.
   Future<int> retractExported({required int userSlot}) async {
-    final exported = await repository.exported(userSlot);
+    final exported = await repository.retractable(userSlot);
+    await repository.beginRetraction(exported.map((m) => m.id).toList());
     var retracted = 0;
     for (final m in exported) {
-      await retractOne(m);
+      await _deleteAndConfirm(m);
       retracted++;
     }
     return retracted;
@@ -56,6 +57,7 @@ class ExportService {
 
   /// Exportiert genau diese Messung.
   Future<void> exportOne(Measurement m) async {
+    await repository.beginExport(m.id);
     await sink.writeBloodPressure(
       BloodPressureWrite(
         clientRecordId: clientRecordIdFor(m),
@@ -72,6 +74,11 @@ class ExportService {
 
   /// Entfernt genau diese Messung aus der Senke.
   Future<void> retractOne(Measurement m) async {
+    await repository.beginRetraction([m.id]);
+    await _deleteAndConfirm(m);
+  }
+
+  Future<void> _deleteAndConfirm(Measurement m) async {
     await sink.deleteBloodPressure(clientRecordIdFor(m));
     await repository.markUnexported([m.id]);
   }

@@ -434,7 +434,7 @@ Datensätze liefern.
 
 ### M4 — Persistenz
 
-drift-Schema: Messungen mit `(timestamp, userSlot)` als eindeutigem Schlüssel, Rohbytes des
+drift-Schema: Messungen mit `(userSlot, deviceSequence)` als eindeutigem Schlüssel, Rohbytes des
 Records zur Nachvollziehbarkeit, Importzeitpunkt, Flag für „nach Health Connect exportiert".
 Dedup beim Import. Migrationen von Anfang an.
 
@@ -547,111 +547,63 @@ Bewusst ausgeschlossen — jede Position mit Grund:
 
 ## 9. Vorgemerkt — Ideen, noch nicht geplant
 
-Notiert am 2026-09-06 auf Zuruf. Keine Zusage, kein Meilenstein: Was hier steht,
-ist noch nicht entworfen und noch nicht gegen die harten Projektregeln geprüft.
-Jede Zeile nennt, woran zu denken ist, bevor sie in einen Meilenstein wandert.
+Historische Ideensammlung seit 06.09.2026. Datierte Aktualisierungen nennen
+inzwischen beschlossene oder implementierte Teile; die übrigen Einträge bleiben
+offene Vorhaben. Der jeweilige Prüfstand ist gesondert verlinkt.
 
-### 9.1 Ergänzende Notizen zu Messungen
+### 9.1 Einzelmessungen, Tags und Phasen
 
-Freitext an einer Messung — „nach dem Sport", „Manschette zu locker",
-„Medikament vergessen". Der Kontext einer Messung geht sonst verloren, und
-gerade er entscheidet oft, ob ein Ausreißer einer ist.
+Entscheidung und Implementierung vom 11.09.2026: Eine gemeinsame Oberfläche mit
+Heute und Verlauf ersetzt die Konzeptwahl und den Messanlassprozess.
+Bemerkungen und mehrere frei anlegbare Tags gehören direkt zur Einzelmessung,
+verknüpft über `(userSlot, deviceSequence)` in eigenen Tabellen. Sie werden nicht
+nach Health Connect exportiert. Rohmessungen bleiben unverändert.
 
-* Eigene Tabelle, kein Feld an `Measurements`: **Die Messungstabelle bleibt
-  reines Abbild des Geräts.** Verknüpfung über `(userSlot, deviceSequence)`,
-  denselben Schlüssel wie `OccasionDecisions` und `PhaseAssignments`.
-* **Nicht** nach Health Connect. Dorthin gehen Messwerte, nichts sonst; ein
-  Freitext wäre keine Geräteaufzeichnung.
-* Jedes Konzept braucht einen Ort dafür — die Notiz ist eine
-  Funktion wie F1–F15 und darf nicht in einem Konzept fehlen.
-* Offen: Ob eine Notiz an der Rohmessung oder am Messanlass hängt. Beim
-  Konzept „Messanlass" sind das verschiedene Dinge.
+Phasen sind optional und slotgebunden. Alle passenden Zeitintervalle wirken
+zugleich; eine manuelle Auswahl ersetzt die gesamte automatische Auswahl, auch
+als explizit leere Menge. Zeitraum-, Tag- und Phasenfilter wirken gemeinsam auf
+Liste, Diagramm und Auswertung. Phasenvergleich bleibt außerhalb dieses Auftrags.
+
+Maßgeblich sind [Entwurf](docs/superpowers/specs/2026-09-11-messungen-phasen-messplan-design.md)
+und [Prüfstand](docs/reviews/2026-09-11-messplan-umsetzung.md).
 
 ### 9.2 Backup
 
-Die lokale DB ist Source of Truth. Geht das Telefon verloren, sind alle
-Messungen weg, die über die 100 Records im Gerätespeicher hinausgehen — und
-alles, was nur in der App existiert.
+Die lokale Datenbank bleibt maßgeblich. Auf ausdrücklichen Nutzerwunsch sind
+Android-Cloud-Backup und automatischer Gerätetransfer ausgeschlossen, einschließlich
+Einstellungen und Pairing-Schlüssel. Ein eigener Export mit Wiederherstellung ist
+später zu entwerfen und noch nicht implementiert.
 
-* Ein Backup, das nur Messwerte sichert, ist keines: Anlass-Entscheidungen,
-  Phasen, Phasenzuordnungen und künftige Notizen gehören dazu. Sie sind
-  Nutzerarbeit und aus dem Gerät nicht wiederherstellbar.
-* Die Datei enthält Gesundheitsdaten. Ablageort, Verschlüsselung und der
-  Hinweis darauf sind Teil der Aufgabe, nicht Beiwerk — `docs/PRIVACY.md`
-  zieht mit.
-* Beim Zurücklesen gilt derselbe Dedup-Schlüssel wie beim Gerät. Ein Import
-  darf nichts überschreiben, was neuer ist.
-* Offen: Format und ob der Weg über Androids eigene Sicherung sinnvoller ist
-  als ein eigener Export. Beides erst prüfen, nicht annehmen.
+Dieser muss auch Tags, Bemerkungen, Phasen, Planrevisionen, Zuordnungen und
+Exportzustände erhalten. Gesundheitsdaten erfordern ein bewusst gewähltes
+Ablage- und Schutzkonzept; `docs/PRIVACY.md` beschreibt den aktuellen Stand.
 
-### 9.3 Der Messauftrag und seine Erinnerungen
+### 9.3 Messplan und Erinnerungen
 
-Umgeschrieben 2026-09-08. Der Eintrag hieß vorher „Erinnerungen für
-regelmäßige Messungen" und dachte an einen Dauerwecker: zwei Zeitpunkte am Tag,
-unbefristet. Das trifft den häufigsten Anlass nicht.
+Entscheidung vom 11.09.2026, ersetzt den Entwurf vom 08.09.: Ein Messplan hat feste
+tägliche Zeiten und gilt bis zum manuellen Beenden. Ein offener Plan je Speicherplatz;
+Änderungen gelten für zukünftige Termine. Der globale Konfigurationsschalter blendet
+die Funktion vollständig aus und stoppt die dazugehörigen Erinnerungen.
 
-**Der Anlass ist meist ein Auftrag aus der Sprechstunde.** „Messen Sie zwei
-Wochen lang morgens und abends", „eine Woche lang dreimal täglich, und bringen
-Sie mir die Werte mit". Das ist kein Dauerzustand, sondern ein Vorhaben mit
-Anfang, Ende und einem Zweck — und der Zweck ist der Bericht (§9.5).
+Eine Messung erfüllt höchstens einen Termin, ein Termin erhält höchstens eine
+Messung. Automatisch zählt die nächstgelegene passende Messung im inklusiven
+Fenster von ±15 Minuten; bei Überschneidungen erfolgt keine Weiterverteilung an
+den zweitnächsten Termin. Manuelle Zuordnung und Ausschluss bleiben möglich.
+Es werden keine Messungen durch Abhaken erfunden.
 
-Ein Messplan ist damit ein **eigenes Objekt**, keine Einstellung:
+Android plant einzelne Alarme bevorzugt exakt, wenn der Sonderzugriff
+`SCHEDULE_EXACT_ALARM` verfügbar ist; sonst mit ungenauer Zustellung. **±15 Minuten
+ist eine Zuordnungsregel, keine Zustellgarantie.** Benachrichtigungsrechte,
+Kanalblockade und Planungsfehler sind getrennte sichtbare Zustände.
 
-* Zeiten je Tag (zwei, drei, auch vier), eine Laufzeit in Tagen oder Wochen,
-  und ein Ende, das eintritt statt zu verstreichen.
-* Er hat einen Fortschritt: wie viele der verlangten Messungen liegen vor. Das
-  Wochenraster auf „Heute" beantwortet diese Frage heute schon für die feste
-  Woche — ein Messplan wäre seine allgemeine Form.
-* Er endet mit einer Aussage, nicht mit Verstummen: „Zwei Wochen vorbei,
-  24 von 28 Messungen." Was danach kommt, ist der Bericht.
-* Nach demselben Grundsatz wie überall: **gespeichert wird nur die
-  Entscheidung** — der Plan. Ob eine Messung ihn erfüllt hat, wird aus dem
-  Bestand abgeleitet und nicht abgehakt.
+Der native Arbeitsstand wird aus Drift abgeleitet und quittiert. Neustart,
+App-Rückkehr, Rechte- sowie Zeitwechsel werden berücksichtigt. Unbekannte historische
+Zeitzonen werden als mehrdeutig gespeichert und nicht automatisch zugeordnet.
+Gerätezeiten werden nicht korrigiert; es gibt keine Offset-Einstellung.
 
-**Erst danach kommen die Erinnerungen.** Sie sind die Folge des Plans, nicht
-sein Zweck; ein Plan ohne Erinnerungen ist immer noch nützlich, eine Erinnerung
-ohne Plan ist ein Wecker.
-
-Was Android dabei zulässt, ist recherchiert und belegt in
-`docs/research/android-erinnerungen.md`. Die drei Punkte, die den Entwurf
-binden:
-
-* **Die bequeme Berechtigung ist uns verboten.** `USE_EXACT_ALARM` wird
-  automatisch gewährt, aber die Google-Play-Policy lässt sie nur für Wecker-,
-  Timer- und Kalender-Apps zu; eine Gesundheitserinnerung qualifiziert nicht,
-  und wer sie trotzdem deklariert, wird von der Veröffentlichung
-  ausgeschlossen. Bleibt `SCHEDULE_EXACT_ALARM` — die der Nutzer erteilen muss
-  und die bei einem Gerätewechsel verloren geht.
-* **Wir brauchen die Minutengenauigkeit aber gar nicht.**
-  `setAndAllowWhileIdle()` feuert auch im Ruhemodus, verlangt **keine**
-  Berechtigung und ist laut Quelltext auf etwa eine Viertelstunde genau. Für
-  „miss morgens" reicht das; die Tageszeit-Zuordnung einer Messung verschiebt
-  sich dadurch nicht. **Damit wird begonnen** — und ob es trägt, entscheidet
-  eine Messung am Gerät, keine Vermutung.
-* `SCHEDULE_EXACT_ALARM` hebt seit Android 14 den Standby-Bucket **nicht mehr**
-  an, löst das Standby-Problem also gerade nicht. Sie meldet ihren Entzug auch
-  nicht: Der zugehörige Rundfunk kommt nur bei der Erteilung, während beim
-  Entzug alle exakten Alarme gelöscht werden. Wer sie nutzt, muss beim
-  Zurückkehren in die App aktiv nachfragen.
-* Ausgeschlossen ist nur der Mittelweg, der Pünktlichkeit verspricht und keine
-  liefert. Eine Erinnerung, die auf eine Viertelstunde genau ist, darf man auch
-  so ankündigen.
-
-Dazu unverändert gültig:
-
-* Die Zeiten des Plans sollten zu den Tageszeit-Grenzen passen (§9.6). Solange
-  die Grenze fest bei 12:00 liegt, kann ein Plan „morgens, mittags, abends"
-  seine Mittagsmessung nicht sauber einordnen.
-* **Fehlende Berechtigung ist ein sichtbarer Zustand, kein stiller.** Wer
-  Erinnerungen eingerichtet hat und sie nicht bekommt, verlässt sich auf etwas,
-  das nicht da ist. `areNotificationsEnabled()` und `canScheduleExactAlarms()`
-  gehören abgefragt und ihr Ergebnis angezeigt — das ist Fail Hard in der
-  Oberfläche.
-* MDR: Eine reine Terminerinnerung dürfte unkritisch sein. Sobald sie begründet
-  wird („dein Wert war gestern hoch, miss nochmal"), ist es eine andere Frage —
-  dann gehört sie hinter dasselbe Flag wie die ESC-Klassifikation (§3.2).
-* Die Erinnerung darf nicht drängeln: sachlich, immer mit dem nächsten Schritt,
-  nie als Vorwurf.
+Technische Grenzen und noch ausstehende Geräteprüfungen stehen in
+[Android-Erinnerungen](docs/research/android-erinnerungen.md). Andere Erinnerungsarten,
+Snooze, Wochentagsvarianten und automatische Berichte sind nicht beauftragt.
 
 ### 9.4 Logo für die App
 
@@ -670,17 +622,13 @@ F-Droid-Metadaten und einen etwaigen Play-Eintrag.
 
 ### 9.5 Konfigurierbarer Bericht für die Praxis
 
-F5 aus dem Funktionsraster, bisher in **keinem** Konzept gebaut. Neu daran ist
+Ein Bericht für die Praxis ist bisher nicht gebaut. Neu daran ist
 das „konfigurierbar": Was im Bericht steht, wählt der Nutzer.
 
-* Jedes Konzept erzeugt ihn aus seiner eigenen Auswahl — „Messung und Filter"
-  aus einem Zeitraum, „Messanlass" aus einem Bereich zwischen zwei Anlässen,
-  „Phase" als Vergleich zweier Abschnitte. Der Bericht ist damit kein
-  gemeinsamer Bildschirm, sondern eine Ausgabe je Konzept auf einer
-  gemeinsamen Grundlage.
-* Der häufigste Auslöser ist ein abgeschlossener Messauftrag (§9.3). Ein
-  Messplan, der endet, und ein Bericht, den man mitnimmt, sind zwei Hälften
-  derselben Sache.
+* Grundlage wäre die gemeinsame Auswahl im Verlauf: Zeitraum, Tags und Phasen.
+  Anlassgruppen und ein eigener Phasenvergleich sind nicht mehr vorgesehen.
+* Ein beendeter Messplan könnte einen Bericht anstoßen; beide Funktionen sind
+  jedoch unabhängig. Der aktuelle Messplanauftrag umfasst keinen Bericht.
 * Wählbar sollten mindestens sein: Zeitraum, ob Einzelmessungen als Anhang
   mitgehen, ob Gerätekennzeichen (Bewegung, unregelmäßiger Puls) erscheinen
   und ob die Zeitprovenienz ausgewiesen wird.
@@ -707,9 +655,8 @@ in der Oberfläche unerreichbar.
 * **Tageszeit-Grenzen** — `BandGrid` nimmt seine Schnittpunkte als Parameter,
   aber außerhalb der Tests ruft niemand `grobMit` mit etwas anderem als 12:00.
   Wer im Schichtdienst arbeitet, hat einen anderen Morgen als der Rest, und ein
-  Messplan mit drei Zeiten am Tag (§9.3) braucht eine Mittagsgrenze, die es
-  heute nicht gibt. **Von beiden der dringendere Punkt**, weil er die
-  Auswertung verzerrt und nicht nur die Anzeige.
+  Wochenraster könnte von weiteren Tagesabschnitten profitieren. Der neue
+  Messplan ordnet direkt nach Uhrzeit zu und benötigt diese Bandgrenzen nicht.
 * **Zielbereich** — jede Aufrufstelle nimmt fest `TargetRange.heim` (135/85).
   Ein Arzt gibt durchaus ein individuelles Ziel vor („unter 130/80"), das wäre
   der echte Anwendungsfall. Aber: Ein frei nach oben verschiebbarer
@@ -717,7 +664,7 @@ in der Oberfläche unerreichbar.
   dem Bauen zu klären, ob ein einstellbares Ziel die App näher an eine
   Bewertung rückt — dieselbe Frage wie bei der ESC-Klassifikation (§3.2).
 * Beides sind Nutzerentscheidungen und gehören damit in `AppSettings`, wie
-  Speicherplatz, Gestaltung, Konzept und die Sichtbarkeit des Wochenrasters.
+  Speicherplatz, Gestaltung und die Sichtbarkeit des Wochenrasters.
 * Die Kommentare in `time_of_day_band.dart` behaupteten die Einstellbarkeit
   bereits als vorhanden. Das ist am 08.09. berichtigt worden — wer sie baut,
   zieht die Kommentare wieder mit.

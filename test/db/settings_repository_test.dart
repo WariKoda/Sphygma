@@ -55,4 +55,39 @@ void main() {
       },
     );
   });
+
+  group('phasesEnabled', () {
+    test('is disabled by default and persists an explicit choice', () async {
+      expect(await settings.phasesEnabled(), isFalse);
+
+      await settings.setPhasesEnabled(true);
+
+      expect(await SettingsRepository(db).phasesEnabled(), isTrue);
+    });
+
+    test('rejects an invalid stored boolean', () async {
+      await settings.setRawSetting('phases_enabled', 'sometimes');
+
+      expect(settings.phasesEnabled(), throwsStateError);
+    });
+  });
+
+  test(
+    'letzte Messungen sind standardmäßig sichtbar und persistierbar',
+    () async {
+      expect(await settings.recentMeasurementsVisible(), isTrue);
+      await settings.setRecentMeasurementsVisible(false);
+      expect(await SettingsRepository(db).recentMeasurementsVisible(), isFalse);
+    },
+  );
+
+  test('letzten Abgleich strikt als UTC-Zeitpunkt speichern', () async {
+    expect(await settings.lastSuccessfulSyncAt(), isNull);
+    final value = DateTime(2026, 9, 11, 14, 30);
+    await settings.setLastSuccessfulSyncAt(value);
+    expect(await SettingsRepository(db).lastSuccessfulSyncAt(), value.toUtc());
+
+    await settings.setRawSetting('last_successful_sync_at', '11.09.2026');
+    expect(settings.lastSuccessfulSyncAt(), throwsStateError);
+  });
 }

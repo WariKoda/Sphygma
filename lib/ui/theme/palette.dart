@@ -42,6 +42,7 @@ enum Palette {
     shadow: Color(0x266750A4),
     markierung: _vividScale,
   ),
+
   /// Nach Masataka Okabe und Kei Ito, „Color Universal Design".
   ///
   /// Die acht Farben sind so gewählt, dass sie auch bei den häufigen Formen

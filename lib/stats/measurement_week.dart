@@ -99,14 +99,14 @@ class MeasurementWeek {
 }
 
 Average? _mittel(List<Measurement> liste) => Average.of([
-      for (final m in liste)
-        Reading(
-          measuredAt: m.measuredAt,
-          systolic: m.systolic,
-          diastolic: m.diastolic,
-          pulse: m.pulse,
-        ),
-    ]);
+  for (final m in liste)
+    Reading(
+      measuredAt: m.measuredAt,
+      systolic: m.systolic,
+      diastolic: m.diastolic,
+      pulse: m.pulse,
+    ),
+]);
 
 /// Bildet Messwochen von Montag bis Sonntag, die jüngste zuerst.
 ///
@@ -134,8 +134,9 @@ List<MeasurementWeek> buildWeeks(
     );
   }
 
-  final raster =
-      schnitt == null ? BandGrid.grob : BandGrid.grobMit(schnitt: schnitt);
+  final raster = schnitt == null
+      ? BandGrid.grob
+      : BandGrid.grobMit(schnitt: schnitt);
 
   final nachWoche = <DateTime, List<Measurement>>{};
   for (final m in measurements) {
@@ -159,7 +160,11 @@ DateTime mondayOf(DateTime at) {
   // eine Stunde vor Mitternacht — also einen Tag zu früh. DateTime rechnet
   // einen überzähligen Tageswert selbst in den Vormonat um.
   final tag = DateTime(at.year, at.month, at.day);
-  return DateTime(tag.year, tag.month, tag.day - (tag.weekday - DateTime.monday));
+  return DateTime(
+    tag.year,
+    tag.month,
+    tag.day - (tag.weekday - DateTime.monday),
+  );
 }
 
 /// Der Montag der Vorwoche — dieselbe Kalenderarithmetik.
@@ -189,11 +194,7 @@ int weekSpan(DateTime firstMonday, DateTime lastMonday) {
   return zaehler;
 }
 
-MeasurementWeek _build(
-  DateTime montag,
-  List<Measurement> ms,
-  BandGrid raster,
-) {
+MeasurementWeek _build(DateTime montag, List<Measurement> ms, BandGrid raster) {
   ms.sort((a, b) => a.measuredAt.compareTo(b.measuredAt));
 
   final belegt = <int, Map<TimeBand, List<Measurement>>>{};

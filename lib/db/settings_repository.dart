@@ -2,9 +2,10 @@
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 
-import '../app/concept.dart';
 import '../ui/theme/variants.dart';
 import 'app_database.dart';
+
+enum IntakeState { awaitingReadout, awaitingChoice, complete }
 
 class SettingsRepository {
   SettingsRepository(this._db);
@@ -221,31 +222,6 @@ class SettingsRepository {
     await _nacheinander(() => setRawSetting(_typefaceKey, value.name));
   }
 
-  static const String _conceptKey = 'app_concept';
-
-  /// Das gewaehlte Konzept — die zweite Achse neben der Gestaltung. Wie dort
-  /// ist ein Standard richtig: Wer nichts waehlt, bekommt die gewachsene
-  /// Ordnung, nicht einen Fehler.
-  Future<AppConcept> concept() async {
-    final row = await (_db.select(
-      _db.appSettings,
-    )..where((s) => s.key.equals(_conceptKey))).getSingleOrNull();
-    if (row == null) return AppConcept.klassisch;
-    for (final c in allConcepts) {
-      if (c.name == row.value) return c;
-    }
-    // Wie bei der Gestaltung: nicht werfen, aber auch nicht lautlos. Ein
-    // entferntes Konzept darf die App nicht unbenutzbar machen.
-    debugPrint(
-      '[Sphygma] Unbekanntes Konzept "${row.value}" gespeichert, '
-      'nutze ${AppConcept.klassisch.name}.',
-    );
-    return AppConcept.klassisch;
-  }
-
-  Future<void> setConcept(AppConcept concept) =>
-      setRawSetting(_conceptKey, concept.name);
-
   static const String _weekPanelKey = 'week_panel_visible';
 
   /// Ob das Wochenraster auf „Heute" mitgezeichnet wird.
@@ -279,6 +255,85 @@ class SettingsRepository {
   Future<void> setWeekPanelVisible(bool visible) =>
       setRawSetting(_weekPanelKey, '$visible');
 
+  Future<bool> recentMeasurementsVisible() async {
+    final value = await _rawSetting('recent_measurements_visible');
+    return switch (value) {
+      null || 'true' => true,
+      'false' => false,
+      _ => throw StateError('Ungültige Letzte-Messungen-Einstellung: $value'),
+    };
+  }
+
+  Future<void> setRecentMeasurementsVisible(bool value) =>
+      setRawSetting('recent_measurements_visible', '$value');
+
+  Future<DateTime?> lastSuccessfulSyncAt() async {
+    final value = await _rawSetting('last_successful_sync_at');
+    if (value == null) return null;
+    final parsed = DateTime.tryParse(value);
+    if (parsed == null || !parsed.isUtc || !value.endsWith('Z')) {
+      throw StateError('Ungültiger Zeitpunkt des letzten Abgleichs: $value');
+    }
+    return parsed;
+  }
+
+  Future<void> setLastSuccessfulSyncAt(DateTime value) =>
+      setRawSetting('last_successful_sync_at', value.toUtc().toIso8601String());
+
+  Future<bool> phasesEnabled() async {
+    final value = await _rawSetting('phases_enabled');
+    return switch (value) {
+      null || 'false' => false,
+      'true' => true,
+      _ => throw StateError('Ungültige Phasen-Einstellung: $value'),
+    };
+  }
+
+  Future<void> setPhasesEnabled(bool value) =>
+      setRawSetting('phases_enabled', '$value');
+
+  Future<bool> autoSync() async {
+    final value = await _rawSetting('auto_sync');
+    return switch (value) {
+      null || 'false' => false,
+      'true' => true,
+      _ => throw StateError('Ungültige Autosync-Einstellung: $value'),
+    };
+  }
+
+  Future<void> setAutoSync(bool value) => setRawSetting('auto_sync', '$value');
+
+  Future<IntakeState> intakeState(int slot) async {
+    if (slot != 1 && slot != 2) throw ArgumentError.value(slot, 'slot');
+    final value = await _rawSetting('intake_state_$slot');
+    // Vor Einführung der Übernahmezustände gab es bereits bewusst genutzte
+    // Bestände. Eine fehlende Marke ändert deren bisherige Auswahl nicht.
+    if (value == null) return IntakeState.complete;
+    return IntakeState.values.firstWhere(
+      (state) => state.name == value,
+      orElse: () => throw StateError('Ungültiger Übernahmezustand: $value'),
+    );
+  }
+
+  Future<void> setIntakeState(int slot, IntakeState state) {
+    if (slot != 1 && slot != 2) throw ArgumentError.value(slot, 'slot');
+    return setRawSetting('intake_state_$slot', state.name);
+  }
+
+  Future<void> beginIntake() => _db.transaction(() async {
+    for (final slot in [1, 2]) {
+      await setIntakeState(slot, IntakeState.awaitingReadout);
+    }
+  });
+
+  Future<void> completeIntakeReadout() => _db.transaction(() async {
+    for (final slot in [1, 2]) {
+      if (await intakeState(slot) == IntakeState.awaitingReadout) {
+        await setIntakeState(slot, IntakeState.awaitingChoice);
+      }
+    }
+  });
+
   static const String _autoExportKey = 'auto_export';
 
   /// Ob neue Messungen von selbst nach Health Connect gehen.
@@ -287,9 +342,9 @@ class SettingsRepository {
   /// Gestaltung wird ein unlesbarer Wert gemeldet, aber nicht geworfen — eine
   /// kaputte Einstellung darf die App nicht unbenutzbar machen.
   Future<bool> autoExport() async {
-    final row = await (_db.select(_db.appSettings)
-          ..where((s) => s.key.equals(_autoExportKey)))
-        .getSingleOrNull();
+    final row = await (_db.select(
+      _db.appSettings,
+    )..where((s) => s.key.equals(_autoExportKey))).getSingleOrNull();
     if (row == null) return true;
     return switch (row.value) {
       'true' => true,

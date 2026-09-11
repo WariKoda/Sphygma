@@ -1,11 +1,11 @@
 // lib/ui/sphygma_app.dart
 // Die Gestaltung liegt als Scope über allem; kein Bildschirm holt sich Farben
-// woanders her. Wie die App organisiert ist, bestimmt dagegen das Konzept —
-// diese Hülle hält nur noch das Fenster und die Meldungen des Steuerungsteils.
+// woanders her. Diese Hülle hält das Fenster und die Meldungen des
+// Steuerungsteils.
 import 'package:flutter/material.dart';
 
 import '../app/app_controller.dart';
-import 'concepts/concept_home.dart';
+import 'app_home.dart';
 import 'theme/sphygma_theme.dart';
 
 class SphygmaApp extends StatelessWidget {
@@ -95,9 +95,6 @@ class _ShellState extends State<_Shell> {
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: widget.controller,
-    builder: (context, _) => conceptHome(
-      concept: widget.controller.concept,
-      controller: widget.controller,
-    ),
+    builder: (context, _) => AppHome(controller: widget.controller),
   );
 }

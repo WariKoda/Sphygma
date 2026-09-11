@@ -4,7 +4,8 @@ import 'package:sphygma/app/app_controller.dart';
 import 'package:sphygma/ble/pairing_key_store.dart';
 import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/db/measurement_repository.dart';
-import 'package:sphygma/db/occasion_repository.dart';
+import 'package:sphygma/db/measurement_metadata_repository.dart';
+import 'package:sphygma/db/phase_repository.dart';
 import 'package:sphygma/db/settings_repository.dart';
 import 'package:sphygma/sync/export_service.dart';
 import 'package:sphygma/sync/health_sink.dart';
@@ -31,7 +32,8 @@ void main() {
       settings: settings,
       keyStore: keyStore,
       repository: repository,
-      occasionRepository: OccasionRepository(db),
+      metadataRepository: MeasurementMetadataRepository(db),
+      phaseRepository: PhaseRepository(db),
       syncService: SyncService(keyStore: keyStore, repository: repository),
       exportService: ExportService(repository: repository, sink: _NoopSink()),
       statusStream: () => const Stream.empty(),

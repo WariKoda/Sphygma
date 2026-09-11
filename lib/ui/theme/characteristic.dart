@@ -96,7 +96,7 @@ enum Characteristic {
     erhebung: 8,
     nutztAkzent: true,
     categoryRole: CategoryRole.markierung,
-     statsLayout: StatsLayout.karten,
+    statsLayout: StatsLayout.karten,
   ),
   material(
     label: 'Material',
@@ -110,7 +110,7 @@ enum Characteristic {
     erhebung: 0,
     nutztAkzent: true,
     categoryRole: CategoryRole.markierung,
-     selectionStyle: SelectionStyle.chips,
+    selectionStyle: SelectionStyle.chips,
   ),
   luft(
     label: 'Luft',
@@ -151,7 +151,7 @@ enum Characteristic {
     erhebung: 0,
     nutztAkzent: true,
     categoryRole: CategoryRole.flaeche,
-     zoneDisplay: ZoneDisplay.flaeche,
+    zoneDisplay: ZoneDisplay.flaeche,
   );
 
   const Characteristic({

@@ -10,13 +10,14 @@ import '../ble/omron_session.dart';
 import '../ble/pairing_key_store.dart';
 import '../db/app_database.dart';
 import '../db/measurement_repository.dart';
-import '../db/occasion_repository.dart';
 import '../db/settings_repository.dart';
-import 'concept.dart';
 import '../protocol/exceptions.dart';
-import '../stats/occasion_grouping.dart';
+import '../stats/measurement_metadata.dart';
+import '../plan/plan_controller.dart';
+import '../stats/measurement_filter.dart';
 import '../stats/phase_grouping.dart';
 import '../stats/period.dart';
+import '../stats/time_plausibility.dart';
 import '../sync/export_service.dart';
 import '../sync/health_sink.dart';
 import '../sync/sync_service.dart';
@@ -28,17 +29,28 @@ class AppController extends ChangeNotifier {
     required this.settings,
     required this.keyStore,
     required this.repository,
-    required this.occasionRepository,
+    required this.metadataRepository,
+    required this.phaseRepository,
     required this.syncService,
     required this.exportService,
+    this.planController,
     Stream<OmronAdvertisedStatus> Function()? statusStream,
-  }) : _statusStream = statusStream ?? watchOmronStatus;
+    DateTime Function()? clock,
+  }) : _statusStream = statusStream ?? watchOmronStatus,
+       _clock = clock ?? DateTime.now {
+    planController?.addListener(_onPlanChanged);
+  }
 
   /// Quelle der Advertising-Meldungen. Injizierbar, damit der Autosync
   /// ohne Bluetooth getestet werden kann.
   final Stream<OmronAdvertisedStatus> Function() _statusStream;
+  final DateTime Function() _clock;
   StreamSubscription<OmronAdvertisedStatus>? _watch;
   bool _disposed = false;
+  Future<void> _watchTransitions = Future<void>.value();
+
+  /// Die gespeicherte Zustimmung ist unabhängig vom aktuellen Scan-Zustand.
+  bool autoSyncEnabled = false;
 
   /// Ob der Autosync gerade lauscht. False heisst: Es kommt nichts von
   /// selbst, der Sync auf Knopfdruck funktioniert aber weiter.
@@ -54,14 +66,12 @@ class AppController extends ChangeNotifier {
   final PairingKeyStore keyStore;
   final MeasurementRepository repository;
 
-  /// Die Entscheidungen des Nutzers zur Gruppierung und seine Phasen.
-  /// Beides gehört keinem einzelnen Konzept: „Messanlass" braucht die
-  /// Gruppierung, „Phase" die Lebensabschnitte, und beide arbeiten auf
-  /// demselben Bestand wie alle anderen.
-  final OccasionRepository occasionRepository;
+  final MetadataStore metadataRepository;
+  final PhaseStore phaseRepository;
 
   final SyncService syncService;
   final ExportService exportService;
+  final PlanController? planController;
 
   int? userSlot;
   bool paired = false;
@@ -69,6 +79,7 @@ class AppController extends ChangeNotifier {
   String? status;
   List<Measurement> measurements = const [];
   int pendingExport = 0;
+  Map<int, MeasurementExportState> exportStates = const {};
 
   /// Gewaehlter Zeitraum im Verlauf.
   Period period = Period.week;
@@ -87,13 +98,11 @@ class AppController extends ChangeNotifier {
     typeface: typeface,
   );
 
-  /// Die zweite Achse: wie die App geordnet ist. Frei mit der Gestaltung
-  /// kombinierbar — jedes Konzept trägt denselben Funktionsumfang.
-  AppConcept concept = AppConcept.klassisch;
-
   /// Ob das Wochenraster auf „Heute" erscheint. Wird in [init] aus der DB
   /// geladen.
   bool weekPanelVisible = true;
+  bool recentMeasurementsVisible = true;
+  DateTime? lastSuccessfulSyncAt;
 
   /// Ob neue Messungen von selbst nach Health Connect gehen.
   ///
@@ -112,24 +121,14 @@ class AppController extends ChangeNotifier {
   /// angezeigt.
   String? autoExportProblem;
 
-  /// Die Messanlässe des gewählten Speicherplatzes: Rohmessungen, die kurz
-  /// nacheinander entstanden sind, gehören zu einem Messen. Abgeleitet, nicht
-  /// gespeichert — nur die Entscheidungen des Nutzers liegen in der DB.
-  List<MeasurementOccasion> occasions = const [];
-
-  /// Die benannten Lebensabschnitte, neueste zuerst.
-  List<Phase> phases = const [];
-
-  /// Welche Messung zu welcher Phase gehört — abgeleitet aus Zeiträumen und
-  /// den Entscheidungen des Nutzers. Null, solange kein Speicherplatz
-  /// gewählt ist.
-  PhaseGrouping? phaseGrouping;
-
-  /// Anlässe, bei denen die Regel keine eindeutige Antwort gibt. Sie werden
-  /// nicht still zusammengefasst — eine zugedeckte Frage ist schlimmer als
-  /// eine unbeantwortete.
-  Iterable<MeasurementOccasion> get openOccasions =>
-      occasions.where((o) => o.state == OccasionState.zuPruefen);
+  bool phasesEnabled = false;
+  Map<int, MeasurementMetadata> metadataBySequence = const {};
+  List<MeasurementTag> tags = const [];
+  List<ScopedPhase> phases = const [];
+  Map<int, Set<int>> manualPhaseSelections = const {};
+  Map<int, Set<int>> phaseIdsBySequence = const {};
+  Map<int, TimestampVerdict> timestampVerdicts = const {};
+  HistoryFilter historyFilter = const HistoryFilter();
 
   /// Die neueste Messung, unabhaengig vom Zeitraum. Null heisst: noch
   /// keine Messung gespeichert - ein echter Zustand, kein Fehler.
@@ -137,16 +136,27 @@ class AppController extends ChangeNotifier {
 
   /// Messungen im gewaehlten Zeitraum, aelteste zuerst.
   List<Measurement> get measurementsInPeriod =>
-      filterByPeriod(measurements, period, DateTime.now());
+      filterByPeriod(measurements, period, _clock());
 
-  Future<void> setPeriod(Period value) async {
-    period = value;
+  List<Measurement> get filteredMeasurements => applyHistoryFilter(
+    measurementsInPeriod,
+    historyFilter,
+    tagIdsBySequence: {
+      for (final entry in metadataBySequence.entries)
+        entry.key: entry.value.tagIds,
+    },
+    phaseIdsBySequence: phaseIdsBySequence,
+  );
+
+  void setHistoryFilter(HistoryFilter value) {
+    historyFilter = value;
     notifyListeners();
   }
 
-  Future<void> setConcept(AppConcept value) async {
-    await settings.setConcept(value);
-    concept = value;
+  void resetHistoryFilter() => setHistoryFilter(const HistoryFilter());
+
+  Future<void> setPeriod(Period value) async {
+    period = value;
     notifyListeners();
   }
 
@@ -192,6 +202,14 @@ class AppController extends ChangeNotifier {
     await settings.setTypeface(value);
   }
 
+  Future<void> setAutoSync(bool value) async {
+    await settings.setAutoSync(value);
+    autoSyncEnabled = value;
+    _lastAutoSyncAttempt = null;
+    notifyListeners();
+    await _restartWatching();
+  }
+
   Future<void> setAutoExport(bool value) async {
     await settings.setAutoExport(value);
     autoExport = value;
@@ -202,6 +220,12 @@ class AppController extends ChangeNotifier {
   Future<void> setWeekPanelVisible(bool value) async {
     await settings.setWeekPanelVisible(value);
     weekPanelVisible = value;
+    notifyListeners();
+  }
+
+  Future<void> setRecentMeasurementsVisible(bool value) async {
+    await settings.setRecentMeasurementsVisible(value);
+    recentMeasurementsVisible = value;
     notifyListeners();
   }
 
@@ -225,14 +249,43 @@ class AppController extends ChangeNotifier {
     characteristic = await settings.characteristic();
     palette = await settings.palette();
     typeface = await settings.typeface();
-    concept = await settings.concept();
+    phasesEnabled = await settings.phasesEnabled();
     weekPanelVisible = await settings.weekPanelVisible();
+    recentMeasurementsVisible = await settings.recentMeasurementsVisible();
+    lastSuccessfulSyncAt = await settings.lastSuccessfulSyncAt();
     autoExport = await settings.autoExport();
+    autoSyncEnabled = await settings.autoSync();
     if (userSlot case final slot?) {
       intakeFloor = await repository.intakeFloor(slot);
     }
     await _refresh();
+    final plan = planController;
+    if (plan != null) {
+      await _planAction(() async {
+        if (userSlot case final slot?) await plan.setUserSlot(slot);
+        await plan.load();
+      });
+    }
     _startWatching();
+  }
+
+  void _onPlanChanged() {
+    if (!_disposed) notifyListeners();
+  }
+
+  Future<void> _planAction(Future<void> Function() action) async {
+    try {
+      await action();
+    } catch (error) {
+      // Der Messplan hält seinen Fehler sichtbar. Ein importierter Messwert
+      // bleibt erfolgreich importiert, und sein Export darf weiterlaufen.
+      debugPrint('[Sphygma] Messplan: $error');
+    }
+  }
+
+  Future<void> reconcilePlan() async {
+    final plan = planController;
+    if (plan != null) await _planAction(plan.reconcileReminders);
   }
 
   /// Lauscht auf das Advertising des Geraets und synchronisiert von
@@ -244,7 +297,9 @@ class AppController extends ChangeNotifier {
   /// Tastendruck. Verbunden wird nur, wenn es wirklich etwas zu holen
   /// gibt.
   void _startWatching() {
-    if (_watch != null || !paired) return;
+    if (_disposed || _watch != null || !paired || !autoSyncEnabled || busy) {
+      return;
+    }
     // Meldungen der Reihe nach abarbeiten. Das Geraet sendet mehrmals je
     // Sekunde; ohne diese Kette starten mehrere Meldungen ihre
     // DB-Abfrage, bevor die erste den Versuch vermerkt hat, und der Sync
@@ -271,7 +326,7 @@ class AppController extends ChangeNotifier {
         });
       }, onError: _onWatchError);
     } catch (e) {
-      debugPrint('[Sphygma] Lauschen konnte nicht beginnen: $e');
+      _onWatchError(e);
       return;
     }
     _watch = abo;
@@ -279,12 +334,13 @@ class AppController extends ChangeNotifier {
 
   Future<void> _onAdvertisedStatus(OmronAdvertisedStatus status) async {
     final slot = userSlot;
-    if (slot == null || busy) return;
+    if (slot == null || busy || !autoSyncEnabled) return;
 
     final onDevice = status.highestSequence(slot);
     if (onDevice == _lastAutoSyncAttempt) return;
 
     final known = await repository.highestSequenceFor(slot);
+    if (_disposed || !autoSyncEnabled || userSlot != slot || busy) return;
     if (!status.hasNewMeasurements(userSlot: slot, knownSequence: known)) {
       return;
     }
@@ -320,37 +376,51 @@ class AppController extends ChangeNotifier {
     _disposed = true;
     unawaited(_watch?.cancel());
     _watch = null;
+    planController?.removeListener(_onPlanChanged);
     super.dispose();
   }
 
-  Future<void> setUserSlot(int slot) async {
-    await settings.setUserSlot(slot);
-    userSlot = slot;
-    // Der Vermerk gilt je Slot: Slot 2 kann dieselbe Messungsnummer
-    // tragen wie Slot 1, und ohne Ruecksetzen bliebe sein Sync aus
-    // (Codex-Review 2026-09-04).
-    _lastAutoSyncAttempt = null;
-    // Auch die Aufnahmegrenze gilt je Slot. Ohne dieses Nachladen zeigte die
-    // Einstellung weiter die Grenze des vorigen Speicherplatzes — und
-    // behauptete damit etwas über Daten, die einem anderen Benutzer gehören
-    // (Codex-Gegenblick 2026-09-09).
-    intakeFloor = await repository.intakeFloor(slot);
-    await _refresh();
-  }
+  Future<void> setUserSlot(int slot) =>
+      _run('Wechsle Speicherplatz…', () async {
+        await settings.setUserSlot(slot);
+        userSlot = slot;
+        final plan = planController;
+        if (plan != null) await _planAction(() => plan.setUserSlot(slot));
+        historyFilter = const HistoryFilter();
+        // Eine gleiche Messungsnummer im anderen Slot ist ein eigener Bestand.
+        _lastAutoSyncAttempt = null;
+      }, restartScan: false);
 
   /// Die Aufnahmegrenze des gewählten Speicherplatzes, oder null.
   ///
   /// Alles unterhalb wird nie angezeigt und nie übertragen. Sie wird beim
   /// Koppeln gesetzt und ist jederzeit widerrufbar.
   int? intakeFloor;
+  IntakeState intakeState = IntakeState.complete;
+  bool get intakeDecisionPending => intakeState != IntakeState.complete;
+  bool get canChooseIntake => intakeState != IntakeState.awaitingReadout;
+
+  Future<void> _requireIntakeReady(int slot) async {
+    if (await settings.intakeState(slot) == IntakeState.awaitingReadout) {
+      throw StateError('Bitte das Gerät zuerst vollständig abgleichen.');
+    }
+  }
+
+  Future<void> _completeIntake(int slot, int? floor) async {
+    await repository.setIntakeFloor(slot, floor);
+    // Bei einem Abbruch zwischen diesen Schreibvorgängen bleibt der Export
+    // gesperrt; eine gesetzte Grenze allein ist noch keine fertige Auswahl.
+    await settings.setIntakeState(slot, IntakeState.complete);
+    final plan = planController;
+    if (plan != null) await _planAction(plan.refreshAfterSync);
+  }
 
   /// Übernimmt alles, was auf dem Gerät liegt — die Grenze fällt.
-  Future<void> takeAll() async {
+  Future<void> takeAll() => _run('Übernehme Auswahl…', () async {
     final slot = _slotOderWurf();
-    await repository.setIntakeFloor(slot, null);
-    intakeFloor = null;
-    await _refresh();
-  }
+    await _requireIntakeReady(slot);
+    await _completeIntake(slot, null);
+  });
 
   /// Übernimmt nur, was ab [ab] gemessen wurde.
   ///
@@ -358,27 +428,25 @@ class AppController extends ChangeNotifier {
   /// Geräteuhr geht nachweislich falsch, eine Grenze aus Zeitstempeln wäre
   /// nicht stabil. Gibt es ab dann nichts, gilt alles Bekannte als alt —
   /// dann liegt die Grenze über der höchsten Nummer.
-  Future<void> takeFrom(DateTime ab) async {
+  Future<void> takeFrom(DateTime ab) => _run('Übernehme Auswahl…', () async {
     final slot = _slotOderWurf();
-    final grenze =
+    await _requireIntakeReady(slot);
+    final floor =
         await repository.firstSequenceFrom(slot, ab) ??
         ((await repository.highestSequenceFor(slot) ?? 0) + 1);
-    await repository.setIntakeFloor(slot, grenze);
-    intakeFloor = grenze;
-    await _refresh();
-  }
+    await _completeIntake(slot, floor);
+  });
 
   /// Übernimmt nur, was ab jetzt dazukommt.
   ///
   /// Die Grenze liegt eine Nummer über der höchsten bekannten. Ohne jede
   /// Messung ist das 1 — dann fällt nichts weg, weil es nichts gibt.
-  Future<void> takeOnlyNew() async {
+  Future<void> takeOnlyNew() => _run('Übernehme Auswahl…', () async {
     final slot = _slotOderWurf();
-    final grenze = (await repository.highestSequenceFor(slot) ?? 0) + 1;
-    await repository.setIntakeFloor(slot, grenze);
-    intakeFloor = grenze;
-    await _refresh();
-  }
+    await _requireIntakeReady(slot);
+    final floor = (await repository.highestSequenceFor(slot) ?? 0) + 1;
+    await _completeIntake(slot, floor);
+  });
 
   /// Der gewählte Speicherplatz — oder ein Wurf.
   ///
@@ -396,6 +464,9 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> pair() => _run('Pairing…', () async {
+    _requireSlot();
+    await settings.beginIntake();
+    intakeState = IntakeState.awaitingReadout;
     await syncService.pair(log: _log);
     paired = true;
     status = 'Pairing erfolgreich.';
@@ -413,10 +484,24 @@ class AppController extends ChangeNotifier {
   /// überhaupt übernommen werden soll. Ohne diese Bremse gingen die
   /// Messungen eines Vorbesitzers in die Gesundheitsakte, bevor die Frage
   /// überhaupt gestellt wurde (Codex-Gegenblick 2026-09-09).
-  Future<void> sync({bool autoExport = true}) =>
-      _run('Verbinde…', () async {
+  Future<void> sync({bool autoExport = true}) => _run('Verbinde…', () async {
     try {
       final result = await syncService.sync(log: _log);
+      await settings.completeIntakeReadout();
+      final completedAt = _clock().toUtc();
+      // Der Import ist bereits dauerhaft gespeichert. Seine Planzuordnung
+      // darf nicht am anschließenden Speichern der Statusanzeige scheitern.
+      final plan = planController;
+      if (plan != null) await _planAction(plan.refreshAfterSync);
+      try {
+        await settings.setLastSuccessfulSyncAt(completedAt);
+      } catch (error) {
+        throw StateError(
+          'Geräteabgleich erfolgreich, Zeitpunkt konnte nicht gespeichert '
+          'werden: $error',
+        );
+      }
+      lastSuccessfulSyncAt = completedAt;
       // Ueber _log statt nur ueber [status]: Ein automatisch
       // ausgeloester Abgleich soll im Protokoll nachvollziehbar sein,
       // auch wenn niemand auf den Bildschirm geschaut hat.
@@ -425,7 +510,7 @@ class AppController extends ChangeNotifier {
             ? 'Keine neuen Messungen (${result.readFromDevice} gelesen).'
             : '${result.newlyStored} neue Messungen.',
       );
-        if (autoExport && result.newlyStored > 0) await _autoExport();
+      if (autoExport && result.newlyStored > 0) await _autoExport();
     } on NotPairedException {
       status = 'Noch nicht gepairt.';
       rethrow;
@@ -442,6 +527,7 @@ class AppController extends ChangeNotifier {
 
   Future<void> exportAll() => _run('Exportiere…', () async {
     final slot = _requireSlot();
+    await _requireExportReady(slot);
     final n = await exportService.exportPending(userSlot: slot);
     status = '$n Messungen nach Health Connect geschrieben.';
   });
@@ -453,6 +539,10 @@ class AppController extends ChangeNotifier {
   });
 
   Future<void> exportOne(Measurement m) => _run('Exportiere…', () async {
+    if (m.userSlot != _requireSlot()) {
+      throw StateError('Die Messung gehört zu einem anderen Speicherplatz.');
+    }
+    await _requireExportReady(m.userSlot);
     await exportService.exportOne(m);
     status = 'Messung nach Health Connect geschrieben.';
   });
@@ -461,6 +551,12 @@ class AppController extends ChangeNotifier {
     await exportService.retractOne(m);
     status = 'Messung aus Health Connect entfernt.';
   });
+
+  Future<void> _requireExportReady(int slot) async {
+    if (await settings.intakeState(slot) != IntakeState.complete) {
+      throw StateError('Bitte zuerst die Übernahme festlegen.');
+    }
+  }
 
   int _requireSlot() {
     final slot = userSlot;
@@ -473,38 +569,35 @@ class AppController extends ChangeNotifier {
   void _log(String message) {
     debugPrint('[Sphygma] $message');
     status = message;
-    notifyListeners();
+    if (!_disposed) notifyListeners();
   }
 
-  Future<void> _run(String initial, Future<void> Function() action) async {
-    if (busy) return;
+  Future<void> _run(
+    String initial,
+    Future<void> Function() action, {
+    bool restartScan = true,
+  }) async {
+    if (busy) throw StateError('Eine andere Aktion läuft bereits.');
     busy = true;
     status = initial;
     notifyListeners();
     try {
+      // Ein noch ausstehender Stop darf nicht den Scan dieser Aktion beenden.
+      await _watchTransitions;
       await action();
     } catch (e) {
       debugPrint('[Sphygma] Fehler: $e');
       status = 'Fehler: $e';
       rethrow;
     } finally {
-      busy = false;
-      await _refresh();
-      // **Nach jeder Aktion neu lauschen.**
-      //
-      // Ein Abgleich verbindet sich mit dem Gerät, und dafür startet
-      // `OmronSession.scan()` einen eigenen Scan — der ersetzt den Dauerscan
-      // des Autosyncs und wird danach beendet. Danach läuft **kein** Scan
-      // mehr: Das Abo steht zwar noch, bekommt aber nie wieder ein
-      // Advertising. Der erste Abgleich tötete so den Autosync, bis die App
-      // neu startete (am Gerät bemerkt, 2026-09-09).
-      // **Nicht abgewartet, aber in sich geordnet.**
-      //
-      // Das Abbestellen wartet auf die Plattform; würde die Aktion darauf
-      // warten, hinge jeder Aufruf, der nicht nebenher gepumpt wird. Die
-      // Reihenfolge — erst das alte Abo beenden, dann neu lauschen — hält
-      // `_restartWatching` intern ein.
-      unawaited(_restartWatching());
+      try {
+        await _refresh();
+      } finally {
+        busy = false;
+        if (!_disposed) notifyListeners();
+        // Plattform-Cancel läuft asynchron; alle Übergänge teilen eine Kette.
+        if (restartScan || _watch == null) unawaited(_restartWatching());
+      }
     }
   }
 
@@ -519,6 +612,11 @@ class AppController extends ChangeNotifier {
     if (!autoExport) return;
     final slot = userSlot;
     if (slot == null) return;
+    if (await settings.intakeState(slot) != IntakeState.complete) {
+      autoExportProblem =
+          'Bitte zuerst festlegen, welche Messungen übernommen werden.';
+      return;
+    }
 
     // **Nichts erzwingen.** Fehlen die Schreibrechte, öffnete der Export
     // einen Berechtigungsdialog — von selbst, während der Nutzer etwas
@@ -540,12 +638,6 @@ class AppController extends ChangeNotifier {
         onlyNew: true,
       );
       autoExportProblem = null;
-      // Die Marke nachziehen: Was jetzt draußen ist, geht nicht noch einmal
-      // von selbst hinaus, auch nicht nach einem Zurückziehen.
-      final hoechste = await repository.highestSequenceFor(slot);
-      if (hoechste != null) {
-        await repository.setAutoExportMark(slot, hoechste);
-      }
       if (anzahl > 0) _log('$anzahl an Health Connect übertragen.');
     } catch (e) {
       autoExportProblem = '$e';
@@ -553,28 +645,20 @@ class AppController extends ChangeNotifier {
     }
   }
 
-  /// Setzt das Lauschen neu auf.
-  ///
-  /// **Erst abbestellen, dann neu starten — und dazwischen warten.**
-  ///
-  /// Das Abbestellen läuft asynchron: `watchOmronStatus` beendet dabei in
-  /// seinem `finally` den Scan. Startete der neue Scan schon vorher, würde
-  /// dieses `finally` **ihn** stoppen — und der Autosync wäre wieder tot, nur
-  /// über eine Race statt über die Reihenfolge (Codex-Gegenblick 2026-09-09,
-  /// unmittelbar nach dem ersten Anlauf dieses Fixes).
-  Future<void> _restartWatching() async {
-    if (_disposed || !paired) return;
-    final alt = _watch;
-    _watch = null;
-    await alt?.cancel();
-    // Zwischen Abbestellen und Neustart kann die App beendet worden sein.
-    if (_disposed || !paired) return;
-    _startWatching();
-    // Zwischen Abbestellen und Neustart steht `autoSyncActive` auf falsch.
-    // Ohne diese Meldung bliebe die Anzeige dabei stehen — „Kein
-    // automatischer Abgleich", obwohl er läuft (Codex-Gegenblick
-    // 2026-09-09).
-    notifyListeners();
+  /// Serialisiert Start und Stop, auch wenn weitere Aktionen dazwischen enden.
+  Future<void> _restartWatching() {
+    final transition = _watchTransitions.then((_) async {
+      final previous = _watch;
+      _watch = null;
+      if (!_disposed) notifyListeners();
+      await previous?.cancel();
+      _startWatching();
+      if (!_disposed) notifyListeners();
+    });
+    _watchTransitions = transition.catchError((Object error) {
+      _onWatchError(error);
+    });
+    return _watchTransitions;
   }
 
   Future<void> _refresh() async {
@@ -582,120 +666,144 @@ class AppController extends ChangeNotifier {
     if (slot == null) {
       measurements = const [];
       pendingExport = 0;
+      exportStates = const {};
       clockLooksWrong = false;
-      occasions = const [];
+      metadataBySequence = const {};
+      tags = const [];
       phases = const [];
-      phaseGrouping = null;
+      manualPhaseSelections = const {};
+      phaseIdsBySequence = const {};
+      timestampVerdicts = const {};
+      historyFilter = const HistoryFilter();
+      intakeFloor = null;
+      intakeState = IntakeState.complete;
     } else {
+      intakeFloor = await repository.intakeFloor(slot);
+      intakeState = await settings.intakeState(slot);
       measurements = (await repository.allForSlot(slot)).reversed.toList();
       pendingExport = (await repository.pendingExport(slot)).length;
-      clockLooksWrong = _clockLooksWrong(measurements);
-      occasions = proposeOccasions(
-        measurements,
-        confirmedJoins: await occasionRepository.confirmedJoins(slot),
-        confirmedSplits: await occasionRepository.confirmedSplits(slot),
-      );
-      phases = await occasionRepository.phases();
-      phaseGrouping = groupByPhase(
-        measurements,
-        phases: phases,
-        assignments: await occasionRepository.phaseAssignments(slot),
-        now: DateTime.now(),
+      exportStates = await repository.exportStatesForSlot(slot);
+      final now = _clock();
+      timestampVerdicts = judgeTimestamps(measurements, now: now);
+      clockLooksWrong = deviceClockLooksWrong(measurements, now: now);
+      metadataBySequence = await metadataRepository.readSlot(slot);
+      tags = await metadataRepository.tags(slot);
+      phases = await phaseRepository.phases(slot);
+      manualPhaseSelections = await phaseRepository.selections(slot);
+      phaseIdsBySequence = Map.unmodifiable({
+        for (final measurement in measurements)
+          measurement.deviceSequence: resolvePhaseIds(
+            measuredAt: measurement.measuredAt,
+            timePlausible:
+                timestampVerdicts[measurement.deviceSequence]?.isPlausible ==
+                true,
+            phases: phases,
+            manualSelection: manualPhaseSelections[measurement.deviceSequence],
+          ),
+      });
+      final validTagIds = tags.map((tag) => tag.id).toSet();
+      final validPhaseIds = phases.map((phase) => phase.id).toSet();
+      final keptTags = historyFilter.tagIds.intersection(validTagIds);
+      final keptPhases = historyFilter.phaseIds.intersection(validPhaseIds);
+      historyFilter = historyFilter.copyWith(
+        tagIds: keptTags,
+        tags:
+            historyFilter.tags == MembershipFilter.selected && keptTags.isEmpty
+            ? MembershipFilter.unrestricted
+            : historyFilter.tags,
+        phaseIds: keptPhases,
+        phases:
+            !phasesEnabled ||
+                (historyFilter.phases == MembershipFilter.selected &&
+                    keptPhases.isEmpty)
+            ? MembershipFilter.unrestricted
+            : historyFilter.phases,
       );
     }
-    notifyListeners();
+    if (!_disposed) notifyListeners();
   }
 
   /// Der Nutzer entscheidet einen Grenzfall: Diese Messung gehört zum
   /// vorherigen Anlass.
-  Future<void> confirmJoin(int deviceSequence) async {
-    await occasionRepository.confirmJoin(
-      userSlot: _requireSlot(),
-      deviceSequence: deviceSequence,
-    );
-    await _refresh();
-  }
+  MeasurementKey measurementKey(int deviceSequence) =>
+      (userSlot: _requireSlot(), deviceSequence: deviceSequence);
 
   /// Der Nutzer entscheidet einen Grenzfall: Diese Messung ist ein eigener
   /// Anlass.
-  Future<void> confirmSplit(int deviceSequence) async {
-    await occasionRepository.confirmSplit(
-      userSlot: _requireSlot(),
-      deviceSequence: deviceSequence,
-    );
-    await _refresh();
-  }
-
-  /// Nimmt eine Entscheidung zurück — die Regel gilt wieder.
-  Future<void> clearOccasionDecision(int deviceSequence) async {
-    await occasionRepository.clearDecision(
-      userSlot: _requireSlot(),
-      deviceSequence: deviceSequence,
-    );
-    await _refresh();
-  }
-
-  /// Ordnet eine Messung ausdrücklich einer Phase zu — oder keiner.
-  Future<void> assignToPhase({
+  Future<void> saveMeasurementMetadata({
     required int deviceSequence,
-    required int? phaseId,
+    required String? note,
+    required Set<int> tagIds,
   }) async {
-    await occasionRepository.assignToPhase(
-      userSlot: _requireSlot(),
-      deviceSequence: deviceSequence,
-      phaseId: phaseId,
+    await metadataRepository.save(
+      measurementKey(deviceSequence),
+      note: note,
+      tagIds: tagIds,
     );
     await _refresh();
   }
 
-  /// Nimmt eine Zuordnung zurück — der Zeitraum entscheidet wieder.
-  Future<void> clearPhaseAssignment(int deviceSequence) async {
-    await occasionRepository.clearAssignment(
-      userSlot: _requireSlot(),
-      deviceSequence: deviceSequence,
-    );
+  /// Legt einen wiederverwendbaren Tag im aktiven Speicherplatz an.
+  Future<int> createTag(String name) async {
+    final id = await metadataRepository.createTag(_requireSlot(), name);
+    await _refresh();
+    return id;
+  }
+
+  /// Benennt einen Tag um; bestehende Zuordnungen bleiben erhalten.
+  Future<void> renameTag(int tagId, String name) async {
+    await metadataRepository.renameTag(tagId, name);
     await _refresh();
   }
 
-  Future<void> startPhase({
+  /// Löscht einen Tag und seine Zuordnungen, aber keine Messungen.
+  Future<void> deleteTag(int tagId) async {
+    await metadataRepository.deleteTag(tagId);
+    await _refresh();
+  }
+
+  Future<int> savePhase({
+    int? id,
     required String name,
-    required PhaseAnchor anchor,
-    DateTime? begin,
+    required DateTime begin,
+    required DateTime? end,
   }) async {
-    await occasionRepository.startPhase(
+    final result = await phaseRepository.savePhase(
+      id: id,
+      userSlot: _requireSlot(),
       name: name,
-      anchor: anchor,
       begin: begin,
+      end: end,
     );
     await _refresh();
+    return result;
   }
 
-  Future<void> endPhase(int id, {required DateTime at}) async {
-    await occasionRepository.endPhase(id, at: at);
+  Future<void> selectPhases(int deviceSequence, Set<int> phaseIds) async {
+    await phaseRepository.select(measurementKey(deviceSequence), phaseIds);
     await _refresh();
   }
 
   Future<void> deletePhase(int id) async {
-    await occasionRepository.deletePhase(id);
+    await phaseRepository.deletePhase(id);
     await _refresh();
   }
 
-  /// Geht die Geraeteuhr falsch?
-  ///
-  /// Massgeblich ist die **zuletzt gemessene** Messung, und das ist die mit
-  /// der hoechsten Geraetenummer - nicht die mit dem spaetesten Datum. Genau
-  /// darin liegt der Fall: Bei falscher Uhr traegt die frischeste Messung ein
-  /// altes Datum und stuende in einer nach Datum sortierten Liste weit hinten.
-  /// Die Anzeige sortiert nach Datum, diese Pruefung nach Zaehler.
-  static bool _clockLooksWrong(List<Measurement> all) {
-    if (all.isEmpty) return false;
-    var newest = all.first;
-    for (final m in all) {
-      if (m.deviceSequence > newest.deviceSequence) newest = m;
+  Future<void> useAutomaticPhases(int deviceSequence) async {
+    await phaseRepository.useAutomatic(measurementKey(deviceSequence));
+    await _refresh();
+  }
+
+  Future<void> setPhasesEnabled(bool value) async {
+    await settings.setPhasesEnabled(value);
+    phasesEnabled = value;
+    if (!value && historyFilter.phases != MembershipFilter.unrestricted) {
+      historyFilter = historyFilter.copyWith(
+        phaseIds: const {},
+        phases: MembershipFilter.unrestricted,
+      );
     }
-    final now = DateTime.now();
-    return newest.measuredAt.isAfter(now.add(const Duration(days: 1))) ||
-        newest.measuredAt.isBefore(now.subtract(const Duration(days: 365)));
+    notifyListeners();
   }
 
   /// Nur zur Anzeige: erklaert die Ausnahme aus dem BLE-Scan.

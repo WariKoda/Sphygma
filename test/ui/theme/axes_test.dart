@@ -167,7 +167,8 @@ void main() {
       expect(
         zerfallen.contains(c.label),
         isFalse,
-        reason: '${c.name} heißt „${c.label}" — das ist eine Gestaltung, '
+        reason:
+            '${c.name} heißt „${c.label}" — das ist eine Gestaltung, '
             'keine Form',
       );
     }

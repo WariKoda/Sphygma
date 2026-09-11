@@ -52,10 +52,12 @@ class ThisWeekPanel extends StatelessWidget {
 
   /// Was heute noch aussteht — sachlich, ohne Mahnung.
   static String openToday(MeasurementWeek week, DateTime now) {
-    final morgens =
-        week.fieldAt(weekday: now.weekday, band: TimeBand.morgens).isFilled;
-    final abends =
-        week.fieldAt(weekday: now.weekday, band: TimeBand.abends).isFilled;
+    final morgens = week
+        .fieldAt(weekday: now.weekday, band: TimeBand.morgens)
+        .isFilled;
+    final abends = week
+        .fieldAt(weekday: now.weekday, band: TimeBand.abends)
+        .isFilled;
 
     return switch ((morgens, abends)) {
       (true, true) => 'Heute ist morgens und abends gemessen.',

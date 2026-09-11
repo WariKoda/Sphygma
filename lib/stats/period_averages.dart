@@ -22,11 +22,11 @@ class PeriodAverages {
 
   static PeriodAverages of(List<Measurement> measurements) {
     Reading toReading(Measurement m) => Reading(
-          measuredAt: m.measuredAt,
-          systolic: m.systolic,
-          diastolic: m.diastolic,
-          pulse: m.pulse,
-        );
+      measuredAt: m.measuredAt,
+      systolic: m.systolic,
+      diastolic: m.diastolic,
+      pulse: m.pulse,
+    );
 
     final readings = measurements.map(toReading).toList();
     return PeriodAverages._(
@@ -53,7 +53,11 @@ class DayGroup {
 List<DayGroup> groupByDay(List<Measurement> measurements) {
   final byDay = <DateTime, List<Measurement>>{};
   for (final m in measurements) {
-    final day = DateTime(m.measuredAt.year, m.measuredAt.month, m.measuredAt.day);
+    final day = DateTime(
+      m.measuredAt.year,
+      m.measuredAt.month,
+      m.measuredAt.day,
+    );
     byDay.putIfAbsent(day, () => []).add(m);
   }
 

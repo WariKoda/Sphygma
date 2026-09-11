@@ -24,8 +24,8 @@ class FlutterBluePlusTransport implements BleTransport {
   FlutterBluePlusTransport({
     required List<BluetoothCharacteristic> txCharacteristics,
     required List<BluetoothCharacteristic> rxCharacteristics,
-  })  : _tx = txCharacteristics,
-        _rx = rxCharacteristics {
+  }) : _tx = txCharacteristics,
+       _rx = rxCharacteristics {
     if (_tx.length != txChannelCount) {
       throw ArgumentError.value(
         _tx.length,
@@ -57,18 +57,32 @@ class FlutterBluePlusTransport implements BleTransport {
   Future<void> enableNotifications() async {
     for (var channelIndex = 0; channelIndex < _rx.length; channelIndex++) {
       final characteristic = _rx[channelIndex];
-      await characteristic.setNotifyValue(true);
       _subscriptions.add(
-        characteristic.onValueReceived.listen((bytes) {
-          final frame = _reassembler.receive(
-            channelIndex,
-            Uint8List.fromList(bytes),
-          );
-          if (frame != null) {
-            _mailbox.deliver(frame);
-          }
-        }),
+        characteristic.onValueReceived.listen(
+          (bytes) {
+            try {
+              final frame = _reassembler.receive(
+                channelIndex,
+                Uint8List.fromList(bytes),
+              );
+              if (frame != null) _mailbox.deliver(frame);
+            } catch (error, stackTrace) {
+              _mailbox.fail(
+                ProtocolException(
+                  'Ungueltiges RX-Paket auf Kanal '
+                  '$channelIndex: $error',
+                ),
+                stackTrace,
+              );
+            }
+          },
+          onError: _mailbox.fail,
+          onDone: () => _mailbox.fail(
+            ProtocolException('RX-Kanal $channelIndex wurde geschlossen.'),
+          ),
+        ),
       );
+      await characteristic.setNotifyValue(true);
     }
   }
 
@@ -105,9 +119,9 @@ class FlutterBluePlusTransport implements BleTransport {
 
   @override
   Future<Uint8List> readResponse() => _mailbox.next().timeout(
-        responseTimeout,
-        onTimeout: () => throw ProtocolException(
-          'Keine Antwort vom Geraet binnen $responseTimeout.',
-        ),
-      );
+    responseTimeout,
+    onTimeout: () => throw ProtocolException(
+      'Keine Antwort vom Geraet binnen $responseTimeout.',
+    ),
+  );
 }
