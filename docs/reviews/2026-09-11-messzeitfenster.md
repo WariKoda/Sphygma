@@ -23,6 +23,7 @@ Leere oder überlappende Fenster werden abgelehnt. Abbrechen verwirft den Entwur
 - Formatierung und `git diff --check` sauber.
 
 Auf Installationsauftrag eine ARM64-Debug-APK mit Versionscode 2005 und
-`SPHYGMA_ESC=true` erfolgreich gebaut. Installation noch offen: Das Handy verlor
-vor dem Installationsversuch die WLAN-ADB-Verbindung; der bisherige Port ist
-nicht mehr erreichbar. Auf dem zuletzt geprüften Stand war Version 2004 installiert.
+`SPHYGMA_ESC=true` erfolgreich gebaut. Nach Wiederaktivierung von WLAN-Debugging
+per `adb install -r` erfolgreich als Update installiert. Paketmanager bestätigt
+Versionscode 2005; App-Start meldet `Status: ok`. Keine Deinstallation oder
+Datenlöschung. Eine vollständige manuelle Bedienprüfung bleibt offen.
