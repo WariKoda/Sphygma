@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../plan/plan_controller.dart';
 import '../theme/sphygma_theme.dart';
 import '../widgets/surface_panel.dart';
+import '../widgets/panel_header.dart';
 import 'plan_editor.dart';
 
 class PlanTodayCard extends StatelessWidget {
@@ -33,23 +34,22 @@ class PlanTodayCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const PanelHeader(title: 'Messplan heute', icon: Icons.event_note),
             Text(
-              'Messplan heute',
+              '$count von ${plan.todayOccurrences.length} Terminen zugeordnet',
               style: TextStyle(
                 color: theme.onSurface,
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            SizedBox(height: theme.gapSmall),
-            Text(
-              '$count von ${plan.todayOccurrences.length} Terminen zugeordnet',
-              style: TextStyle(color: theme.onSurface),
-            ),
-            if (next != null)
+            if (next != null) ...[
+              SizedBox(height: theme.gapSmall),
               Text(
                 'Nächster Termin: ${formatPlanMinute(next.minuteOfDay)} Uhr · ${next.localDate}',
-                style: TextStyle(color: theme.muted),
+                style: TextStyle(color: theme.muted, fontSize: 13),
               ),
+            ],
             if (onOpenPlan != null)
               TextButton(
                 onPressed: onOpenPlan,

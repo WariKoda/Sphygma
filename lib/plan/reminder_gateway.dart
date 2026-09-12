@@ -168,4 +168,5 @@ abstract interface class ReminderGateway {
   Future<ReminderReceipt> replace(ReminderSnapshot desired);
   Future<ReminderReceipt> inspect();
   Future<ReminderReceipt> requestAccess();
+  Future<ReminderReceipt> openAccessSettings();
 }

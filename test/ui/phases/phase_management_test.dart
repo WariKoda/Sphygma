@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sphygma/ui/phases/phase_management_screen.dart';
 import 'package:sphygma/ui/phases/phase_selection_editor.dart';
+import 'package:sphygma/ui/theme/material_theme.dart';
+import 'package:sphygma/ui/theme/sphygma_theme.dart';
+import 'package:sphygma/ui/theme/variants.dart';
 
 import '../a3_test_support.dart';
 
@@ -12,6 +16,35 @@ void main() {
     await harness.addMeasurement();
   });
   tearDown(() => harness.close());
+
+  Widget app(Widget child) {
+    final theme = themeFor(ThemeVariant.instrument);
+    return MaterialApp(
+      theme: materialThemeFor(theme),
+      builder: (context, child) =>
+          SphygmaThemeScope(theme: theme, child: child!),
+      home: child,
+    );
+  }
+
+  testWidgets('Phasendialog behält Eingaben während der Rückanimation', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      app(PhaseManagementScreen(controller: harness.controller)),
+    );
+
+    await tester.tap(find.text('Phase anlegen'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'Therapie');
+    await tester.tap(find.text('Speichern'));
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    await tester.pumpAndSettle();
+
+    expect(harness.controller.phases.single.name, 'Therapie');
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('supports multiple, empty and automatic phase selection', (
     tester,
@@ -29,6 +62,10 @@ void main() {
     );
     await tester.pumpWidget(
       MaterialApp(
+        builder: (context, child) => SphygmaThemeScope(
+          theme: themeFor(ThemeVariant.instrument),
+          child: child!,
+        ),
         home: Scaffold(
           body: PhaseSelectionEditor(
             controller: harness.controller,

@@ -5,6 +5,8 @@ import '../../plan/plan_controller.dart';
 import '../../plan/plan_models.dart';
 import '../format.dart';
 import '../theme/sphygma_theme.dart';
+import '../widgets/surface_panel.dart';
+import '../widgets/panel_header.dart';
 import 'plan_editor.dart';
 
 class OccurrenceAssignmentSheet extends StatefulWidget {
@@ -70,17 +72,13 @@ class _OccurrenceAssignmentSheetState extends State<OccurrenceAssignmentSheet> {
           child: ListView(
             padding: theme.listPadding,
             children: [
-              Text(
-                '${formatPlanMinute(occurrence.minuteOfDay)} Uhr · ${occurrence.localDate}',
-                style: TextStyle(
-                  color: theme.onSurface,
-                  fontWeight: FontWeight.w600,
+              SurfacePanel(
+                child: PanelHeader(
+                  title:
+                      '${formatPlanMinute(occurrence.minuteOfDay)} Uhr · ${occurrence.localDate}',
+                  icon: Icons.event_note,
+                  subtitle: 'Wähle eine vorhandene Messung für diesen Termin. Die Gerätezeit und Messwerte bleiben unverändert.',
                 ),
-              ),
-              SizedBox(height: theme.gapSmall),
-              Text(
-                'Wähle eine vorhandene Messung für diesen Termin. Die Gerätezeit und Messwerte bleiben unverändert.',
-                style: TextStyle(color: theme.muted),
               ),
               if (_error != null)
                 Semantics(
@@ -112,53 +110,72 @@ class _OccurrenceAssignmentSheetState extends State<OccurrenceAssignmentSheet> {
                   padding: EdgeInsets.symmetric(vertical: theme.gapLarge),
                   child: Text(
                     'Für diesen Speicherplatz sind noch keine Messungen gespeichert.',
-                    style: TextStyle(color: theme.onSurface),
+                    style: TextStyle(
+                      color: theme.onSurface,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
+              if (measurements.isNotEmpty)
+                const PanelHeader(
+                  title: 'Vorhandene Messungen',
+                  icon: Icons.assignment_outlined,
+                ),
               for (final measurement in measurements)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    '${measurement.systolic}/${measurement.diastolic} mmHg · Puls ${measurement.pulse}',
-                    style: TextStyle(color: theme.onSurface),
-                  ),
-                  subtitle: Text(
-                    '${formatDayAndTime(measurement.measuredAt)} · Messung ${measurement.deviceSequence}',
-                    style: TextStyle(color: theme.muted),
-                  ),
-                  trailing: PopupMenuButton<String>(
-                    tooltip: 'Zuordnung dieser Messung',
-                    enabled: !disabled,
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(
-                        value: 'automatic',
-                        child: Text('Automatisch zuordnen'),
+                SurfacePanel(
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      '${measurement.systolic}/${measurement.diastolic} mmHg · Puls ${measurement.pulse}',
+                      style: TextStyle(
+                        color: theme.onSurface,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
-                      PopupMenuItem(
-                        value: 'exclude',
-                        child: Text('Nicht automatisch zuordnen'),
+                    ),
+                    subtitle: Text(
+                      '${formatDayAndTime(measurement.measuredAt)} · Messung ${measurement.deviceSequence}',
+                      style: TextStyle(
+                        color: theme.muted,
+                        fontSize: 13,
+                        height: 1.4,
                       ),
-                    ],
-                    onSelected: (value) => _apply(() {
-                      final key = (
-                        userSlot: measurement.userSlot,
-                        deviceSequence: measurement.deviceSequence,
-                      );
-                      return value == 'automatic'
-                          ? plan.useAutomaticAssignment(key)
-                          : plan.assign(key, null);
-                    }),
-                  ),
-                  selected:
-                      assigned?.deviceSequence == measurement.deviceSequence,
-                  onTap: disabled
-                      ? null
-                      : () => _apply(
-                          () => plan.assign((
-                            userSlot: measurement.userSlot,
-                            deviceSequence: measurement.deviceSequence,
-                          ), occurrence.key),
+                    ),
+                    trailing: PopupMenuButton<String>(
+                      tooltip: 'Zuordnung dieser Messung',
+                      enabled: !disabled,
+                      itemBuilder: (_) => const [
+                        PopupMenuItem(
+                          value: 'automatic',
+                          child: Text('Automatisch zuordnen'),
                         ),
+                        PopupMenuItem(
+                          value: 'exclude',
+                          child: Text('Nicht automatisch zuordnen'),
+                        ),
+                      ],
+                      onSelected: (value) => _apply(() {
+                        final key = (
+                          userSlot: measurement.userSlot,
+                          deviceSequence: measurement.deviceSequence,
+                        );
+                        return value == 'automatic'
+                            ? plan.useAutomaticAssignment(key)
+                            : plan.assign(key, null);
+                      }),
+                    ),
+                    selected:
+                        assigned?.deviceSequence == measurement.deviceSequence,
+                    onTap: disabled
+                        ? null
+                        : () => _apply(
+                            () => plan.assign((
+                              userSlot: measurement.userSlot,
+                              deviceSequence: measurement.deviceSequence,
+                            ), occurrence.key),
+                          ),
+                  ),
                 ),
             ],
           ),

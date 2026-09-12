@@ -31,7 +31,7 @@ class WeekGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
 
-    return Column(
+    final grid = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
@@ -41,7 +41,7 @@ class WeekGrid extends StatelessWidget {
                 child: Center(
                   child: Text(
                     tag,
-                    style: TextStyle(fontSize: 11, color: t.muted),
+                    style: TextStyle(fontSize: 13, color: t.muted),
                   ),
                 ),
               ),
@@ -49,7 +49,7 @@ class WeekGrid extends StatelessWidget {
         ),
         SizedBox(height: t.gapSmall),
         for (final band in const [TimeBand.morgens, TimeBand.abends]) ...[
-          Text(band.label, style: TextStyle(fontSize: 11, color: t.muted)),
+          Text(band.label, style: TextStyle(fontSize: 13, color: t.muted)),
           SizedBox(height: t.gapSmall / 2),
           Row(
             children: [
@@ -65,6 +65,20 @@ class WeekGrid extends StatelessWidget {
           SizedBox(height: t.gapSmall),
         ],
       ],
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cellWidth = MediaQuery.textScalerOf(context).scale(16) * 2.1 + 4;
+        final minimumWidth = cellWidth * 7;
+        final width = constraints.maxWidth > minimumWidth
+            ? constraints.maxWidth
+            : minimumWidth;
+        if (constraints.maxWidth >= minimumWidth) return grid;
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(width: width, child: grid),
+        );
+      },
     );
   }
 }
@@ -86,7 +100,7 @@ class _Zelle extends StatelessWidget {
             '${_tagName(field.weekday)} ${field.band.label}: '
             'nicht gemessen',
         child: Container(
-          height: 34,
+          height: MediaQuery.textScalerOf(context).scale(16) + 32,
           margin: const EdgeInsets.all(1),
           decoration: BoxDecoration(
             border: Border.all(color: t.line),
@@ -110,7 +124,7 @@ class _Zelle extends StatelessWidget {
       child: InkWell(
         onTap: onTap == null ? null : () => onTap!(field),
         child: Container(
-          height: 34,
+          height: MediaQuery.textScalerOf(context).scale(16) + 32,
           margin: const EdgeInsets.all(1),
           alignment: Alignment.center,
           decoration: BoxDecoration(
@@ -123,7 +137,7 @@ class _Zelle extends StatelessWidget {
           child: Text(
             '${mittel.systolic}',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 16,
               color: t.onSurface,
               fontFeatures: const [FontFeature.tabularFigures()],
             ),

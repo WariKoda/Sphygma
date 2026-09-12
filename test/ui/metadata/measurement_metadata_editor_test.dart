@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sphygma/ui/metadata/measurement_metadata_editor.dart';
+import 'package:sphygma/ui/theme/sphygma_theme.dart';
+import 'package:sphygma/ui/theme/variants.dart';
 
 import '../a3_test_support.dart';
 
@@ -21,6 +23,10 @@ void main() {
     final before = harness.controller.measurements.single;
     await tester.pumpWidget(
       MaterialApp(
+        builder: (context, child) => SphygmaThemeScope(
+          theme: themeFor(ThemeVariant.instrument),
+          child: child!,
+        ),
         home: Scaffold(
           body: MeasurementMetadataEditor(
             controller: harness.controller,
@@ -50,6 +56,10 @@ void main() {
   testWidgets('cancel leaves metadata unchanged', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        builder: (context, child) => SphygmaThemeScope(
+          theme: themeFor(ThemeVariant.instrument),
+          child: child!,
+        ),
         home: Scaffold(
           body: MeasurementMetadataEditor(
             controller: harness.controller,

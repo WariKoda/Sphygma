@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sphygma/db/measurement_plan_repository.dart';
 import 'package:sphygma/plan/plan_controller.dart';
+import 'package:sphygma/plan/reminder_gateway.dart';
 import 'package:sphygma/protocol/readout.dart';
 import 'package:sphygma/protocol/record.dart';
 import 'package:sphygma/ui/plan/occurrence_assignment_sheet.dart';
@@ -52,6 +53,72 @@ void main() {
     ),
     home: Scaffold(body: child),
   );
+  for (final mode in [
+    ReminderMode.off,
+    ReminderMode.inexact,
+    ReminderMode.blocked,
+    ReminderMode.failed,
+  ]) {
+    testWidgets('Erinnerungshilfe $mode bietet wirksamen nächsten Schritt', (
+      tester,
+    ) async {
+      await tester.runAsync(() => plan.setEnabled(true));
+      if (mode != ReminderMode.off) {
+        await tester.runAsync(() => plan.saveTimes([480]));
+      }
+      plan.mode = mode;
+      await tester.pumpWidget(
+        wrap(
+          MeasurementPlanScreen(
+            planController: plan,
+            controller: harness.controller,
+          ),
+        ),
+      );
+      await tester.scrollUntilVisible(find.text('Was bedeutet das?'), 180);
+      await tester.ensureVisible(find.text('Was bedeutet das?'));
+      await tester.pumpAndSettle();
+      await tester.runAsync(() => tester.tap(find.text('Was bedeutet das?')));
+      await tester.pumpAndSettle();
+      final dialog = find.byType(AlertDialog);
+      final label = switch (mode) {
+        ReminderMode.off => 'Messplan anlegen',
+        ReminderMode.failed => 'Erneut einrichten',
+        _ => 'Berechtigungen prüfen',
+      };
+      final button = find.descendant(of: dialog, matching: find.text(label));
+      expect(button, findsOneWidget);
+      final accesses = gateway.accessRequests;
+      final snapshots = gateway.snapshots.length;
+      await tester.tap(button);
+      bool actionFinished() => switch (mode) {
+        ReminderMode.off => find.byType(PlanEditor).evaluate().isNotEmpty,
+        ReminderMode.failed =>
+          !plan.busy && gateway.snapshots.length > snapshots,
+        _ => !plan.busy && gateway.accessRequests > accesses,
+      };
+      final deadline = Stopwatch()..start();
+      while (!actionFinished() &&
+          deadline.elapsed < const Duration(seconds: 5)) {
+        await tester.pump();
+        // Dialoganimation läuft im Testtakt, SQLite antwortet im echten Isolat.
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 1)),
+        );
+      }
+      await tester.pumpAndSettle();
+      if (mode == ReminderMode.off) {
+        expect(find.byType(PlanEditor), findsOneWidget);
+      } else if (mode == ReminderMode.failed) {
+        expect(gateway.snapshots.length, greaterThan(snapshots));
+      } else {
+        expect(gateway.accessRequests, accesses + 1);
+        expect(gateway.calls, contains('openAccessSettings'));
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('ausgeschaltet zeigt weder Karte noch Einrichtung oder Prompt', (
     tester,
   ) async {
@@ -134,6 +201,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     for (final variant in allVariants) {
+      await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpWidget(
         wrap(
           MeasurementPlanScreen(
@@ -145,7 +213,18 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Exakte Erinnerungen'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('Erinnerungen aktiv'), 180);
+      expect(find.text('Erinnerungen aktiv'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('Was bedeutet das?'), 180);
+      await tester.ensureVisible(find.text('Was bedeutet das?'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Was bedeutet das?'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Uhrzeiten deines Messplans'), findsOneWidget);
+      await tester.tap(find.text('Verstanden'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('20:00 Uhr'), 180);
+      await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     }
   });
@@ -157,6 +236,69 @@ void main() {
       await tester.pumpWidget(wrap(PlanTodayCard(planController: plan)));
       expect(find.text('0 von 3 Terminen zugeordnet'), findsOneWidget);
       expect(find.textContaining('Nicht gemessen'), findsNothing);
+    },
+  );
+  testWidgets(
+    'offene Tagesliste zeigt erfüllte Termine und nachgeladene Messwerte',
+    (tester) async {
+      await tester.runAsync(() async {
+        await plan.setEnabled(true);
+        await plan.saveTimes([465, 720]);
+      });
+      await tester.pumpWidget(
+        wrap(
+          MeasurementPlanScreen(
+            planController: plan,
+            controller: harness.controller,
+          ),
+        ),
+      );
+      await tester.scrollUntilVisible(find.text('12:00 Uhr'), 180);
+      expect(find.text('07:45 Uhr'), findsOneWidget);
+      expect(find.text('Noch keine Messung zugeordnet'), findsNWidgets(2));
+      expect(find.byIcon(Icons.remove_circle_outline), findsNWidgets(2));
+      expect(find.byIcon(Icons.check_circle_outline), findsNothing);
+
+      final raw = Uint8List.fromList([
+        0x55,
+        0x6b,
+        0x18,
+        0x44,
+        0x0d,
+        0xe7,
+        0x0a,
+        0xa1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+      ]);
+      final record = parseRecord(raw)!;
+      // Beim Sync wird zuerst der Plan und erst danach die UI-Messungsliste geladen.
+      await tester.runAsync(() async {
+        await harness.measurements.importAll([
+          SlotRecord(userSlot: 1, record: record, rawBytes: raw),
+        ]);
+        await plan.refreshAfterSync();
+      });
+      await tester.pumpAndSettle();
+      expect(find.text('Zugeordnete Messung wird geladen…'), findsOneWidget);
+      await tester.runAsync(() => harness.controller.refreshForTest());
+      await tester.pumpAndSettle();
+      expect(find.text('Zugeordnete Messung wird geladen…'), findsNothing);
+      expect(
+        find.textContaining('${record.systolic}/${record.diastolic} mmHg'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Puls ${record.pulse} bpm'), findsOneWidget);
+      expect(find.text('07:45 Uhr'), findsOneWidget);
+      expect(find.text('12:00 Uhr'), findsOneWidget);
+      expect(find.text('Noch keine Messung zugeordnet'), findsOneWidget);
+      expect(find.byIcon(Icons.remove_circle_outline), findsOneWidget);
+      expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
+      expect(tester.takeException(), isNull);
     },
   );
   testWidgets('Zeitpicker lehnt doppelte Uhrzeit ab', (tester) async {
@@ -290,7 +432,7 @@ void main() {
         await plan.reconcileReminders();
       });
       await tester.pumpAndSettle();
-      expect(find.text('Exakte Erinnerungen'), findsOneWidget);
+      expect(find.text('Erinnerungen aktiv'), findsOneWidget);
     },
   );
 }

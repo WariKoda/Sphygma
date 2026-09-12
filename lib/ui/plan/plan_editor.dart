@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/sphygma_theme.dart';
 import '../widgets/surface_panel.dart';
+import '../widgets/panel_header.dart';
 
 String formatPlanMinute(int minute) =>
     '${(minute ~/ 60).toString().padLeft(2, '0')}:${(minute % 60).toString().padLeft(2, '0')}';
@@ -100,24 +101,21 @@ class _PlanEditorState extends State<PlanEditor> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Jeden Tag zu diesen Zeiten',
-                    style: TextStyle(
-                      color: theme.onSurface,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  SizedBox(height: theme.gapSmall),
-                  Text(
-                    'Der Messplan läuft, bis du ihn beendest. Änderungen gelten für zukünftige Termine.',
-                    style: TextStyle(color: theme.muted),
+                  const PanelHeader(
+                    title: 'Jeden Tag zu diesen Zeiten',
+                    icon: Icons.schedule,
+                    subtitle: 'Der Messplan läuft, bis du ihn beendest. Änderungen gelten für zukünftige Termine.',
                   ),
                   for (final entry in _minutes.indexed)
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text(
                         '${formatPlanMinute(entry.$2)} Uhr',
-                        style: TextStyle(color: theme.onSurface),
+                        style: TextStyle(
+                          color: theme.onSurface,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       onTap: _saving ? null : () => _pick(entry.$1),
                       trailing: IconButton(

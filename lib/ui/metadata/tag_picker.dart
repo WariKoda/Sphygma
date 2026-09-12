@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../app/app_controller.dart';
+import '../widgets/name_dialog.dart';
+import '../widgets/section_header.dart';
 
 class TagPicker extends StatelessWidget {
   const TagPicker({
@@ -19,36 +21,18 @@ class TagPicker extends StatelessWidget {
   final bool enabled;
 
   Future<void> _create(BuildContext context) async {
-    final input = TextEditingController();
-    final name = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Neuen Tag anlegen'),
-        content: TextField(
-          controller: input,
-          maxLength: 40,
-          autofocus: true,
-          decoration: const InputDecoration(labelText: 'Name'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Abbrechen'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, input.text),
-            child: const Text('Anlegen'),
-          ),
-        ],
-      ),
+    final name = await showNameDialog(
+      context,
+      title: 'Neuen Tag anlegen',
+      actionLabel: 'Anlegen',
     );
-    input.dispose();
     if (name == null || !context.mounted) return;
     try {
       final id = await controller.createTag(name);
+      if (!context.mounted) return;
       onChanged({...selected, id});
     } catch (error) {
-      onError(error);
+      if (context.mounted) onError(error);
     }
   }
 
@@ -56,8 +40,7 @@ class TagPicker extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      const Text('Tags'),
-      const SizedBox(height: 8),
+      const SectionHeader(title: 'Tags', leadingGap: false),
       Wrap(
         spacing: 8,
         runSpacing: 4,

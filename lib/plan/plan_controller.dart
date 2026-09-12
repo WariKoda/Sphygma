@@ -350,14 +350,24 @@ class PlanController extends ChangeNotifier {
   });
 
   Future<void> requestAccess() => _run(() async {
+    await _requestAccess(_gateway.requestAccess);
+  });
+
+  Future<void> openAccessSettings() => _run(() async {
+    await _requestAccess(_gateway.openAccessSettings);
+  });
+
+  Future<void> _requestAccess(
+    Future<ReminderReceipt> Function() request,
+  ) async {
     if (!enabled) throw StateError('Der Messplan ist ausgeschaltet.');
     try {
-      await _consumeAccessReceipt(await _gateway.requestAccess());
+      await _consumeAccessReceipt(await request());
     } catch (failure) {
       throw _ReconcileFailure(failure);
     }
     await _reconcile(inspectFirst: false);
-  });
+  }
 
   Future<void> assign(MeasurementKey key, String? occurrenceKey) =>
       _run(() async {

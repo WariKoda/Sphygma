@@ -110,6 +110,13 @@ void main() {
         ),
       );
 
+  Future<void> tapVisible(WidgetTester tester, String label) async {
+    final target = find.text(label);
+    await tester.ensureVisible(target);
+    await tester.pumpAndSettle();
+    await tester.tap(target);
+  }
+
   setUp(() {
     db = AppDatabase(NativeDatabase.memory());
     repository = MeasurementRepository(db);
@@ -169,7 +176,7 @@ void main() {
     await pumpWith(tester, ThemeVariant.instrument, id);
     expect(find.text('Nach Health Connect übertragen'), findsOneWidget);
 
-    await tester.tap(find.text('Nach Health Connect übertragen'));
+    await tapVisible(tester, 'Nach Health Connect übertragen');
     await tester.pumpAndSettle();
 
     expect(sink.written, hasLength(1));
@@ -183,7 +190,7 @@ void main() {
     await controller.exportOne(controller.measurements.first);
 
     await pumpWith(tester, ThemeVariant.instrument, id);
-    await tester.tap(find.text('Aus Health Connect entfernen'));
+    await tapVisible(tester, 'Aus Health Connect entfernen');
     await tester.pumpAndSettle();
 
     expect(sink.removed, hasLength(1));
@@ -197,7 +204,7 @@ void main() {
     final id = await firstId();
 
     await pumpWith(tester, ThemeVariant.instrument, id);
-    await tester.tap(find.text('Nach Health Connect übertragen'));
+    await tapVisible(tester, 'Nach Health Connect übertragen');
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
@@ -260,7 +267,7 @@ void main() {
     );
     expect(find.text('Nach Health Connect übertragen'), findsOneWidget);
     expect(find.text('Aus Health Connect entfernen'), findsOneWidget);
-    await tester.tap(find.text('Aus Health Connect entfernen'));
+    await tapVisible(tester, 'Aus Health Connect entfernen');
     await tester.pumpAndSettle();
     expect(sink.removed, ['sphygma-slot1-seq1']);
     expect(find.text('Aus Health Connect entfernt'), findsOneWidget);
@@ -297,7 +304,7 @@ void main() {
       );
       expect(find.text('Nach Health Connect übertragen'), findsOneWidget);
       expect(find.text('Aus Health Connect entfernen'), findsOneWidget);
-      await tester.tap(find.text('Aus Health Connect entfernen'));
+      await tapVisible(tester, 'Aus Health Connect entfernen');
       await tester.pumpAndSettle();
       expect(sink.removed, ['sphygma-slot1-seq1']);
     },

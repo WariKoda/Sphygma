@@ -68,7 +68,7 @@ class StatTiles extends StatelessWidget {
 
     // Was der Inhalt braucht: die Zahl in der Schriftgröße, die der Nutzer
     // eingestellt hat.
-    final schrift = MediaQuery.textScalerOf(context).scale(15);
+    final schrift = MediaQuery.textScalerOf(context).scale(18);
     final noetig = _zeichenProWert * schrift * _breiteJeZeichen;
 
     return jeKarte >= noetig;
@@ -115,22 +115,40 @@ class _Zeile extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: t.gapSmall),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(stat.label, style: TextStyle(fontSize: 13, color: t.muted)),
-          Flexible(
-            child: Text(
-              stat.value,
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                fontSize: 13,
-                color: t.onSurface,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final label = Text(
+            stat.label,
+            style: TextStyle(fontSize: 14, color: t.muted),
+          );
+          final value = Text(
+            stat.value,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: t.headlineWeight,
+              color: t.onSurface,
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
-          ),
-        ],
+          );
+          if (constraints.maxWidth <
+              MediaQuery.textScalerOf(context).scale(320)) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                label,
+                SizedBox(height: t.gapSmall / 2),
+                value,
+              ],
+            );
+          }
+          return Row(
+            children: [
+              Expanded(child: label),
+              SizedBox(width: t.gapSmall),
+              Flexible(child: value),
+            ],
+          );
+        },
       ),
     );
   }
@@ -148,7 +166,7 @@ class _Karte extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(t.gapSmall),
       decoration: BoxDecoration(
-        color: t.panel(0),
+        color: t.panel(1),
         borderRadius: BorderRadius.circular(t.chipRadius),
       ),
       child: Column(
@@ -157,14 +175,14 @@ class _Karte extends StatelessWidget {
           Text(
             stat.value,
             style: TextStyle(
-              fontSize: 15,
+              fontSize: 18,
               fontWeight: t.headlineWeight,
               color: t.onSurface,
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
           SizedBox(height: t.gapSmall / 2),
-          Text(stat.label, style: TextStyle(fontSize: 10, color: t.muted)),
+          Text(stat.label, style: TextStyle(fontSize: 13, color: t.muted)),
         ],
       ),
     );

@@ -11,6 +11,8 @@ import 'history_screen.dart' show MeasurementRow;
 import 'widgets/today_vitals.dart';
 import 'widgets/at_day_change.dart';
 import 'widgets/surface_panel.dart';
+import 'widgets/panel_header.dart';
+import 'widgets/measurement_list_item.dart';
 import 'widgets/this_week_panel.dart';
 import 'plan/plan_today_card.dart';
 
@@ -108,13 +110,9 @@ class TodayScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'LETZTE MESSUNGEN',
-                      style: TextStyle(
-                        fontSize: 10,
-                        letterSpacing: 1.6,
-                        color: t.muted,
-                      ),
+                    const PanelHeader(
+                      title: 'Letzte Messungen',
+                      icon: Icons.history,
                     ),
                     for (final m
                         in controller.measurements.skip(1).take(_recentCount))
@@ -200,35 +198,13 @@ class _RecentRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = SphygmaTheme.of(context);
     final m = measurement;
-
-    return InkWell(
+    return MeasurementListItem(
+      measurement: m,
+      timestamp:
+          '${_two(m.measuredAt.day)}.${_two(m.measuredAt.month)}. '
+          '${_two(m.measuredAt.hour)}:${_two(m.measuredAt.minute)}',
       onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: t.rowSpacing(t.gapSmall + 2)),
-        decoration: t.rowDivider,
-        child: Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          spacing: t.gapSmall,
-          runSpacing: t.gapSmall / 2,
-          children: [
-            Text(
-              '${m.systolic}/${m.diastolic} · ${m.pulse}',
-              style: TextStyle(
-                fontSize: 13,
-                color: t.onSurface,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
-            Text(
-              '${_two(m.measuredAt.day)}.${_two(m.measuredAt.month)}. '
-              '${_two(m.measuredAt.hour)}:${_two(m.measuredAt.minute)}',
-              style: TextStyle(fontSize: 12, color: t.muted),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -272,6 +248,7 @@ class _TodayMeasurements extends StatelessWidget {
             children: [
               if (readings.isEmpty)
                 const Text('Keine Messungen für diesen Tag.'),
+              if (readings.isNotEmpty) const MeasurementTableHeader(),
               for (final m in readings)
                 MeasurementRow(controller: controller, measurement: m),
             ],

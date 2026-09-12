@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../stats/measurement_windows.dart';
 import '../theme/sphygma_theme.dart';
 import 'surface_panel.dart';
+import 'panel_header.dart';
+import 'section_header.dart';
 
 class MeasurementWindowsEditor extends StatefulWidget {
   const MeasurementWindowsEditor({
@@ -113,29 +115,40 @@ class _MeasurementWindowsEditorState extends State<MeasurementWindowsEditor> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Die Fenster gelten für Heute, Wochenraster und Verlauf. Messungen außerhalb bleiben in Listen und Gesamtauswertungen enthalten. Änderungen wirken rückwirkend nur auf die Anzeige; Messdaten und Erinnerungen bleiben unverändert.',
-                      style: TextStyle(color: t.onSurface),
+                    const PanelHeader(
+                      title: 'Zeitfenster',
+                      icon: Icons.schedule,
+                      subtitle: 'Die Fenster gelten für Heute, Wochenraster und Verlauf. Messungen außerhalb bleiben in Listen und Gesamtauswertungen enthalten. Änderungen wirken rückwirkend nur auf die Anzeige; Messdaten und Erinnerungen bleiben unverändert.',
                     ),
-                    SizedBox(height: t.gapSmall),
                     Text(
                       'Der Beginn zählt zum Fenster, das Ende nicht. Fenster dürfen über Mitternacht reichen.',
-                      style: TextStyle(color: t.muted),
+                      style: TextStyle(
+                        color: t.muted,
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
                     ),
-                    for (var index = 0; index < 4; index++)
+                    for (var index = 0; index < 4; index++) ...[
+                      if (index.isEven)
+                        SectionHeader(title: index == 0 ? 'Morgen' : 'Abend'),
                       ListTile(
                         key: Key(_keys[index]),
                         contentPadding: EdgeInsets.zero,
                         title: Text(
                           _labels[index],
-                          style: TextStyle(color: t.onSurface),
+                          style: TextStyle(color: t.muted, fontSize: 14),
                         ),
                         subtitle: Text(
                           '${(_minutes[index] ~/ 60).toString().padLeft(2, '0')}:${(_minutes[index] % 60).toString().padLeft(2, '0')} Uhr',
-                          style: TextStyle(color: t.muted),
+                          style: TextStyle(
+                            color: t.onSurface,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         onTap: _saving ? null : () => _pick(index),
                       ),
+                    ],
                     TextButton(
                       onPressed: _saving
                           ? null

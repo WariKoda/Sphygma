@@ -82,7 +82,8 @@ class ReminderPlugin(private val activity: MainActivity, messenger: BinaryMessen
             when (call.method) {
                 "replace" -> execute(result) { ReminderRuntime.scheduler(activity).replace(ReminderSnapshot.parse(call.arguments as Map<*, *>)) }
                 "inspect" -> execute(result) { ReminderRuntime.scheduler(activity).inspect() }
-                "requestAccess" -> requestAccess(result)
+                "requestAccess" -> requestAccess(result, settingsOnly = false)
+                "openAccessSettings" -> requestAccess(result, settingsOnly = true)
                 else -> result.notImplemented()
             }
         }
@@ -101,14 +102,18 @@ class ReminderPlugin(private val activity: MainActivity, messenger: BinaryMessen
             }
         }
     }
-    private fun requestAccess(result: MethodChannel.Result) {
+    private fun requestAccess(result: MethodChannel.Result, settingsOnly: Boolean) {
         if (accessResult != null) { result.error("request_pending", "Berechtigungsanfrage läuft bereits", null); return }
         accessResult = result
         try {
-            if (Build.VERSION.SDK_INT >= 33 && activity.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            val permission = AndroidReminderPorts(activity).permissions()
+            if (settingsOnly && (!permission.notificationsAllowed || permission.channelBlocked)) {
+                waitingForSettings = true
+                activity.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, activity.packageName))
+            } else if (Build.VERSION.SDK_INT >= 33 && activity.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 activity.requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQUEST_CODE)
             } else {
-                val permission = AndroidReminderPorts(activity).permissions()
                 if (!permission.notificationsAllowed || permission.channelBlocked) {
                     waitingForSettings = true
                     activity.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)

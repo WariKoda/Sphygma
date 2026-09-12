@@ -128,6 +128,9 @@ class _Gateway implements ReminderGateway {
 
   @override
   Future<ReminderReceipt> requestAccess() async => inspect();
+
+  @override
+  Future<ReminderReceipt> openAccessSettings() async => inspect();
 }
 
 void main() {

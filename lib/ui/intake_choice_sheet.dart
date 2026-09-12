@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import '../app/app_controller.dart';
 import 'theme/sphygma_theme.dart';
 import 'widgets/surface_panel.dart';
+import 'widgets/panel_header.dart';
 
 /// Fragt nach dem Koppeln, was übernommen werden soll.
 ///
@@ -83,15 +84,10 @@ class _IntakeChoiceState extends State<_IntakeChoice> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Was soll übernommen werden?',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: t.headlineWeight,
-                  color: t.onSurface,
-                ),
+              const PanelHeader(
+                title: 'Was soll übernommen werden?',
+                icon: Icons.download_outlined,
               ),
-              SizedBox(height: t.gapSmall),
               Text(
                 anzahl == 0
                     ? 'Auf dem Gerät steht bisher nichts.'

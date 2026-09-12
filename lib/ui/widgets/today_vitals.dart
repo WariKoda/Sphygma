@@ -10,6 +10,7 @@ import 'classification_scale.dart';
 import 'reading_headline.dart';
 import 'reading_panel.dart';
 import 'surface_panel.dart';
+import 'panel_header.dart';
 
 class TodayVitals extends StatelessWidget {
   const TodayVitals({
@@ -222,40 +223,15 @@ class _SectionHead extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = SphygmaTheme.of(context);
     final value = latest;
-    return Wrap(
-      spacing: t.gapSmall,
-      runSpacing: t.gapSmall / 2,
-      alignment: WrapAlignment.spaceBetween,
-      children: [
-        Wrap(
-          spacing: t.gapSmall,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            Icon(
-              title == 'Blutdruck'
-                  ? Icons.favorite_outline
-                  : Icons.monitor_heart_outlined,
-              size: 19,
-              color: t.onSurface,
-            ),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: t.onSurface,
-              ),
-            ),
-          ],
-        ),
-        if (value != null)
-          Text(
-            '${_date(value.measuredAt)} · ${_clock(value.measuredAt)}',
-            style: TextStyle(fontSize: 12, color: t.muted),
-          ),
-      ],
+    return PanelHeader(
+      title: title,
+      icon: title == 'Blutdruck'
+          ? Icons.favorite_outline
+          : Icons.monitor_heart_outlined,
+      subtitle: value == null
+          ? null
+          : '${_date(value.measuredAt)} · ${_clock(value.measuredAt)}',
     );
   }
 

@@ -23,6 +23,7 @@ class FakeReminderGateway implements ReminderGateway {
     rules: [],
   );
   int accessRequests = 0;
+  bool failAccess = false;
   bool fail = false;
   bool openPlan = false;
   bool omitConfirmation = false;
@@ -120,6 +121,15 @@ class FakeReminderGateway implements ReminderGateway {
   Future<ReminderReceipt> requestAccess() async {
     calls.add('requestAccess');
     accessRequests++;
+    if (failAccess) throw StateError('Zugriff fehlgeschlagen');
+    return accessReceipt ?? inspect();
+  }
+
+  @override
+  Future<ReminderReceipt> openAccessSettings() async {
+    calls.add('openAccessSettings');
+    accessRequests++;
+    if (failAccess) throw StateError('Zugriff fehlgeschlagen');
     return accessReceipt ?? inspect();
   }
 }
@@ -406,6 +416,42 @@ void main() {
 
     expect(controller.takeOpenPlanRequest(), isTrue);
     expect(controller.takeOpenPlanRequest(), isFalse);
+  });
+
+  test('openAccessSettings verarbeitet Beleg und gleicht danach ab', () async {
+    await plans.setFeatureEnabled(true);
+    await controller.load();
+    final generation = (await plans.desiredSnapshot()).generation;
+    gateway.accessReceipt = ReminderReceipt(
+      generation: generation,
+      appliedGeneration: generation,
+      mode: ReminderMode.inexact,
+      notificationsAllowed: true,
+      exactAllowed: false,
+      channelBlocked: false,
+      pendingOccurrenceKeys: const [],
+      occurrences: const [],
+      timeChanges: const [],
+      openPlanRequested: true,
+    );
+    gateway.calls.clear();
+
+    await controller.openAccessSettings();
+
+    expect(gateway.calls.first, 'openAccessSettings');
+    expect(gateway.calls, contains('replace'));
+    expect(controller.takeOpenPlanRequest(), isTrue);
+  });
+
+  test('openAccessSettings-Fehler entwertet den Native-Modus', () async {
+    await plans.setFeatureEnabled(true);
+    await controller.load();
+    gateway.failAccess = true;
+
+    await expectLater(controller.openAccessSettings(), throwsStateError);
+
+    expect(controller.mode, ReminderMode.failed);
+    expect(controller.error, contains('Zugriff fehlgeschlagen'));
   });
 
   test(

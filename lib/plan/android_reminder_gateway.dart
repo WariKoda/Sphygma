@@ -23,4 +23,6 @@ class AndroidReminderGateway implements ReminderGateway {
   Future<ReminderReceipt> inspect() => _invoke('inspect');
   @override
   Future<ReminderReceipt> requestAccess() => _invoke('requestAccess');
+  @override
+  Future<ReminderReceipt> openAccessSettings() => _invoke('openAccessSettings');
 }

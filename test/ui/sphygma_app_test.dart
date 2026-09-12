@@ -79,6 +79,18 @@ void main() {
     await db.close();
   });
 
+  testWidgets('Nachtpalette erreicht auch Material-Dialoge und Eingaben', (
+    tester,
+  ) async {
+    await tester.runAsync(() => controller.setPalette(Palette.nacht));
+    await tester.pumpWidget(SphygmaApp(controller: controller));
+    final context = tester.element(find.byType(TodayScreen));
+    final material = Theme.of(context);
+    expect(material.brightness, Brightness.dark);
+    expect(material.colorScheme.surface, controller.theme.panelBase);
+    expect(material.colorScheme.onSurface, controller.theme.onSurface);
+  });
+
   testWidgets('startet auf Heute', (tester) async {
     await tester.pumpWidget(SphygmaApp(controller: controller));
     await tester.pumpAndSettle();
@@ -155,7 +167,7 @@ void main() {
     expect(find.byIcon(Icons.settings), findsOneWidget);
     await tester.tap(find.byIcon(Icons.settings));
     await tester.pumpAndSettle();
-    expect(find.text('GESTALTUNG'), findsOneWidget);
+    expect(find.text('Gestaltung'), findsOneWidget);
     expect(find.text('KONZEPT'), findsNothing);
   });
 
@@ -172,7 +184,7 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.settings));
     await tester.pumpAndSettle();
-    expect(find.text('GESTALTUNG'), findsOneWidget);
+    expect(find.text('Gestaltung'), findsOneWidget);
 
     double radiusImBlatt() => tester
         .widgetList<Container>(find.byType(Container))

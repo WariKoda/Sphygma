@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/app_controller.dart';
+import '../widgets/panel_header.dart';
 
 class PhaseSelectionEditor extends StatefulWidget {
   const PhaseSelectionEditor({
@@ -56,7 +57,11 @@ class _PhaseSelectionEditorState extends State<PhaseSelectionEditor> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('Phasen'),
+        const PanelHeader(
+          title: 'Phasen',
+          icon: Icons.timeline_outlined,
+          subtitle: 'Automatische Zuordnung oder bewusste Auswahl',
+        ),
         for (final phase in widget.controller.phases)
           CheckboxListTile(
             value: _selected.contains(phase.id),
@@ -76,7 +81,10 @@ class _PhaseSelectionEditorState extends State<PhaseSelectionEditor> {
             _error!,
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
-        Row(
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          alignment: WrapAlignment.spaceBetween,
           children: [
             TextButton(
               onPressed: _saving
@@ -88,7 +96,6 @@ class _PhaseSelectionEditorState extends State<PhaseSelectionEditor> {
                     ),
               child: const Text('Automatisch zuordnen'),
             ),
-            const Spacer(),
             FilledButton(
               onPressed: _saving
                   ? null

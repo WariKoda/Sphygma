@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_controller.dart';
 import '../../db/app_database.dart';
+import '../theme/sphygma_theme.dart';
+import '../widgets/name_dialog.dart';
+import '../widgets/panel_header.dart';
+import '../widgets/surface_panel.dart';
 
 class TagManagementScreen extends StatefulWidget {
   const TagManagementScreen({super.key, required this.controller});
@@ -23,25 +27,12 @@ class _TagManagementScreenState extends State<TagManagementScreen> {
   }
 
   Future<void> _rename(BuildContext context, MeasurementTag tag) async {
-    final input = TextEditingController(text: tag.name);
-    final name = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Tag umbenennen'),
-        content: TextField(controller: input, maxLength: 40, autofocus: true),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Abbrechen'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, input.text),
-            child: const Text('Speichern'),
-          ),
-        ],
-      ),
+    final name = await showNameDialog(
+      context,
+      title: 'Tag umbenennen',
+      actionLabel: 'Speichern',
+      initialValue: tag.name,
     );
-    input.dispose();
     if (name != null) await controller.renameTag(tag.id, name);
   }
 
@@ -78,20 +69,44 @@ class _TagManagementScreenState extends State<TagManagementScreen> {
         });
         return const SizedBox.shrink();
       }
+      final t = SphygmaTheme.of(context);
       return Scaffold(
         appBar: AppBar(title: const Text('Tags verwalten')),
         body: controller.tags.isEmpty
-            ? const Center(child: Text('Noch keine Tags.'))
+            ? ListView(
+                padding: t.listPadding,
+                children: const [
+                  SurfacePanel(
+                    child: PanelHeader(
+                      title: 'Tags',
+                      icon: Icons.sell_outlined,
+                      subtitle: 'Noch keine Tags angelegt.',
+                    ),
+                  ),
+                ],
+              )
             : ListView(
+                padding: t.listPadding,
                 children: [
+                  const PanelHeader(
+                    title: 'Tags',
+                    icon: Icons.sell_outlined,
+                    subtitle: 'Antippen zum Umbenennen',
+                  ),
                   for (final tag in controller.tags)
-                    ListTile(
-                      title: Text(tag.name),
-                      onTap: () => _rename(context, tag),
-                      trailing: IconButton(
-                        tooltip: 'Tag löschen',
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: () => _delete(context, tag),
+                    Padding(
+                      padding: EdgeInsets.only(bottom: t.gapSmall),
+                      child: SurfacePanel(
+                        child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(tag.name),
+                          onTap: () => _rename(context, tag),
+                          trailing: IconButton(
+                            tooltip: 'Tag löschen',
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () => _delete(context, tag),
+                          ),
+                        ),
                       ),
                     ),
                 ],

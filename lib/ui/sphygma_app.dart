@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../app/app_controller.dart';
 import 'app_home.dart';
 import 'theme/sphygma_theme.dart';
+import 'theme/material_theme.dart';
 
 class SphygmaApp extends StatelessWidget {
   const SphygmaApp({super.key, required this.controller});
@@ -24,15 +25,7 @@ class SphygmaApp extends StatelessWidget {
         final theme = controller.theme;
         return MaterialApp(
           title: 'Sphygma',
-          theme: ThemeData(
-            colorSchemeSeed: theme.accent,
-            scaffoldBackgroundColor: theme.surface,
-            useMaterial3: true,
-            // Die Schriftachse kommt nur hier an: Ein Bildschirm, der seine
-            // Texte ohne Familie setzt, erbt sie aus ThemeData. Null heißt
-            // „die des Telefons" und ist der Standard.
-            fontFamily: theme.fontFamily,
-          ),
+          theme: materialThemeFor(theme),
           // Der Scope liegt über dem Navigator, nicht in `home`.
           //
           // Unter `home` wäre er nur ein Geschwister der geschobenen Routen:
