@@ -98,13 +98,15 @@ void main() {
               typeface: Typeface.system,
             ),
             child: Scaffold(
-              body: SizedBox(
-                width: breite,
-                child: StatTiles(
-                  stats: [
-                    for (var i = 0; i < anzahl; i++)
-                      Stat(label: 'Wert $i', value: '14$i/9$i · 8$i'),
-                  ],
+              body: SingleChildScrollView(
+                child: SizedBox(
+                  width: breite,
+                  child: StatTiles(
+                    stats: [
+                      for (var i = 0; i < anzahl; i++)
+                        Stat(label: 'Wert $i', value: '14$i/9$i · 8$i'),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -113,25 +115,30 @@ void main() {
       ),
     );
 
-    int karten() => tester.widgetList(find.byType(Expanded)).length;
+    bool nebeneinander() =>
+        (tester.getTopLeft(find.text('Wert 0')).dy -
+                tester.getTopLeft(find.text('Wert 1')).dy)
+            .abs() <
+        1;
 
     await zeige(anzahl: 2, breite: 400, schrift: 1.0);
-    expect(karten(), 2, reason: 'zwei Zahlen auf breitem Schirm: Karten');
+    expect(
+      nebeneinander(),
+      isTrue,
+      reason: 'zwei Zahlen auf breitem Schirm: Karten',
+    );
+    expect(tester.takeException(), isNull);
 
     await zeige(anzahl: 4, breite: 360, schrift: 2.0);
-    expect(
-      karten(),
-      0,
-      reason:
-          'vier Karten auf 360 Pixeln bei doppelter Schrift wären '
-          'schmaler als ihr Inhalt — dann sind Zeilen richtig',
-    );
+    expect(nebeneinander(), isFalse, reason: 'große Schrift braucht Zeilen');
+    expect(tester.takeException(), isNull);
 
     await zeige(anzahl: maxKarten + 1, breite: 1200, schrift: 1.0);
     expect(
-      karten(),
-      0,
-      reason: 'auch auf breitem Schirm sind fünf Karten kein Überblick mehr',
+      nebeneinander(),
+      isFalse,
+      reason: 'fünf Kennzahlen bleiben untereinander',
     );
+    expect(tester.takeException(), isNull);
   });
 }

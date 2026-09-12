@@ -8,13 +8,19 @@ import 'package:sphygma/ui/widgets/measurement_windows_editor.dart';
 void main() {
   Future<void> open(
     WidgetTester tester,
-    Future<void> Function(MeasurementWindows) save,
-  ) async {
+    Future<void> Function(MeasurementWindows) save, {
+    ThemeVariant variant = ThemeVariant.instrument,
+    double scale = 1,
+  }) async {
     await tester.pumpWidget(
       MaterialApp(
-        builder: (_, child) => SphygmaThemeScope(
-          theme: themeFor(ThemeVariant.instrument),
-          child: child!,
+        builder: (context, child) => SphygmaThemeScope(
+          theme: themeFor(variant),
+          child: MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: TextScaler.linear(scale)),
+            child: child!,
+          ),
         ),
         home: Builder(
           builder: (context) => Scaffold(
@@ -38,6 +44,7 @@ void main() {
   }
 
   Future<void> change(WidgetTester tester, String key, String hour) async {
+    await tester.scrollUntilVisible(find.byKey(Key(key)), 150);
     await tester.tap(find.byKey(Key(key)));
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.keyboard_outlined));
@@ -45,6 +52,41 @@ void main() {
     await tester.enterText(find.byType(TextField).first, hour);
     await tester.tap(find.text('Übernehmen'));
     await tester.pumpAndSettle();
+  }
+
+  for (final variant in allVariants) {
+    testWidgets(
+      'Fenster bei großer Schrift vollständig bedienbar (${variant.name})',
+      (tester) async {
+        tester.view.physicalSize = const Size(360, 800);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        MeasurementWindows? saved;
+        await open(
+          tester,
+          (value) async {
+            saved = value;
+          },
+          variant: variant,
+          scale: 2,
+        );
+        for (final key in [
+          'morning-start',
+          'morning-end',
+          'evening-start',
+          'evening-end',
+        ]) {
+          await tester.scrollUntilVisible(find.byKey(Key(key)), 150);
+          expect(tester.takeException(), isNull);
+        }
+        await tester.scrollUntilVisible(find.text('Speichern'), 150);
+        await tester.tap(find.text('Speichern'));
+        await tester.pumpAndSettle();
+        expect(saved!.encode(), MeasurementWindows.defaults.encode());
+        expect(find.text('Öffnen'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
   }
 
   testWidgets('Entwurf abbrechen verändert nichts', (tester) async {

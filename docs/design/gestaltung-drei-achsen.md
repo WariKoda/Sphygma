@@ -416,3 +416,35 @@ und letzte Tage lassen sich unabhängig ausblenden. Der Verlauf kombiniert Liste
 Blutdruck- und Pulskurve mit derselben gefilterten Auswahl; ein Kurvenpunkt öffnet
 die entsprechende Messung. Der optionale Messplan nutzt dieselben Oberflächen-
 und Schriftbausteine. Große Systemschrift bleibt Bestandteil der Widgetprüfungen.
+
+## Einheitliche Oberfläche — 12.09.2026
+
+Die Hierarchie der Blutdruck-/Pulskarten gilt nun für alle Produktionsansichten:
+`PanelHeader` gliedert Hauptkarten, `SectionHeader` Unterabschnitte. Heute,
+Verlauf, Einstellungen, Messplan, Filter, Messungsdetails sowie Tag-/Phasenverwaltung
+verwenden diese Bausteine. Kartenköpfe haben 18 Pixel, Unterüberschriften 15 Pixel;
+Messwerte, Einheiten und Zeitangaben sind räumlich getrennt.
+
+`MeasurementListItem` trägt dieselben Messungszeilen auf Heute und im Verlauf.
+Die Rasterform behält getrennte SYS-/DIA-Blöcke; die übrigen Formen zeigen den
+Bruch. Export- und Messhinweise bleiben vorhanden und sind beschriftet. Die
+Verlaufsliste bleibt virtualisiert. Ein lokales transparentes Material hält ihre
+Antipp-Effekte oberhalb der Kartenfläche sichtbar.
+
+`materialThemeFor` überträgt Palette, Schrift und Radien auch auf Dialoge,
+Detailblätter, Eingabefelder, Chips, Buttons, Navigation sowie Datums-/Zeitwahl.
+Dunkle Paletten erzeugen ein dunkles Material-Theme. Kleine Aktionsbeschriftungen
+verwenden die Haupttextfarbe, falls der Akzent auf der Fläche zu wenig Kontrast
+hat. Fehlerfarben bleiben semantische Material-Farben.
+
+Das Wochenmittel ist eine eigene Kennzahl oberhalb des Rasters. Rasterfelder
+wachsen mit der Schrift; bei Platzmangel ist das Raster horizontal scrollbar.
+Normale Breiten bleiben ohne zusätzliche Scrollfläche. Lange Einstellungszeilen,
+Filtermodi und Aktionsgruppen brechen um oder stehen untereinander. Datenmodell,
+Berechnung der Zeitfenster, Erinnerungen und Synchronisation wurden nicht geändert.
+
+Prüfung: Widgettests für alle sechs Formen bei 360 Pixeln und doppelter Schrift,
+einschließlich Filter-/Detailzugriff, Einstellungen, Terminlisten, Zeitfenstereditor
+und Wochenraster-Aktionen. Gerenderte Heute-Karten aller sechs Formen wurden mit
+`beispieldaten.json` und der eingebetteten Groteskschrift visuell geprüft. Die
+Sichtprüfung ersetzt keine Prüfung auf dem Telefon.

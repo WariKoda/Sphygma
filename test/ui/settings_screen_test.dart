@@ -95,6 +95,42 @@ void main() {
     await db.close();
   });
 
+  for (final variant in allVariants) {
+    testWidgets(
+      'alle Einstellungen bei 360px und großer Schrift erreichbar (${variant.name})',
+      (tester) async {
+        await boot();
+        tester.view.physicalSize = const Size(360, 800);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(
+          MaterialApp(
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context)
+                  .copyWith(textScaler: const TextScaler.linear(2)),
+              child: SphygmaThemeScope(theme: themeFor(variant), child: child!),
+            ),
+            home: SettingsScreen(controller: controller),
+          ),
+        );
+        expect(tester.takeException(), isNull);
+        await tester.scrollUntilVisible(find.text('Phasen verwenden'), 250);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        await tester.tap(find.text('Phasen verwenden'));
+        await tester.pumpAndSettle();
+        expect(controller.phasesEnabled, isTrue);
+        await tester.scrollUntilVisible(
+          find.byType(DropdownMenu<Typeface>),
+          250,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   group('in jeder Gestaltung', () {
     for (final v in allVariants) {
       testWidgets('baut ohne Fehler (${v.name})', (tester) async {
@@ -112,8 +148,8 @@ void main() {
 
     await pumpWith(tester, ThemeVariant.instrument);
 
-    expect(find.text('PHASEN'), findsOneWidget);
-    expect(find.text('GESTALTUNG'), findsOneWidget);
+    expect(find.text('Phasen'), findsOneWidget);
+    expect(find.text('Gestaltung'), findsOneWidget);
     expect(find.text('Phasen verwenden'), findsOneWidget);
   });
 
@@ -262,12 +298,12 @@ void main() {
     // zurück in die Zufälligkeit.
     double y(String titel) => tester.getTopLeft(find.text(titel)).dy;
     final reihe = [
-      'ABGLEICH',
-      'HEALTH CONNECT',
-      'GERÄT',
-      'ANSICHT',
-      'PHASEN',
-      'GESTALTUNG',
+      'Abgleich',
+      'Health Connect',
+      'Gerät',
+      'Ansicht',
+      'Phasen',
+      'Gestaltung',
     ];
     for (var i = 1; i < reihe.length; i++) {
       expect(

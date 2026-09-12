@@ -199,16 +199,16 @@ void main() {
     await controller.setWeekPanelVisible(false);
     await pumpWith(tester, ThemeVariant.instrument);
 
-    expect(find.text('DIESE WOCHE'), findsNothing);
-    await tester.scrollUntilVisible(find.text('LETZTE MESSUNGEN'), 250);
-    expect(find.text('LETZTE MESSUNGEN'), findsOneWidget);
+    expect(find.text('Diese Woche'), findsNothing);
+    await tester.scrollUntilVisible(find.text('Letzte Messungen'), 250);
+    expect(find.text('Letzte Messungen'), findsOneWidget);
 
     await controller.setWeekPanelVisible(true);
     await controller.setRecentMeasurementsVisible(false);
     await tester.pump();
-    await tester.scrollUntilVisible(find.text('DIESE WOCHE'), 250);
-    expect(find.text('DIESE WOCHE'), findsOneWidget);
-    expect(find.text('LETZTE MESSUNGEN'), findsNothing);
+    await tester.scrollUntilVisible(find.text('Diese Woche'), 250);
+    expect(find.text('Diese Woche'), findsOneWidget);
+    expect(find.text('Letzte Messungen'), findsNothing);
     expect(find.byType(BloodPressureValue), findsOneWidget);
   });
 
@@ -243,8 +243,8 @@ void main() {
       ),
     );
 
-    await tester.scrollUntilVisible(find.text('DIESE WOCHE'), 250);
-    expect(find.text('DIESE WOCHE'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Diese Woche'), 250);
+    expect(find.text('Diese Woche'), findsOneWidget);
     expect(find.text('Mo'), findsOneWidget);
     expect(find.text('So'), findsOneWidget);
     // Freitag morgens gemessen, abends noch nicht.
@@ -269,18 +269,18 @@ void main() {
     await controller.refreshForTest();
 
     await pumpWith(tester, ThemeVariant.instrument);
-    await tester.scrollUntilVisible(find.text('DIESE WOCHE'), 250);
-    expect(find.text('DIESE WOCHE'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Diese Woche'), 250);
+    expect(find.text('Diese Woche'), findsOneWidget);
 
     await controller.setWeekPanelVisible(false);
     await tester.pumpAndSettle();
 
-    expect(find.text('DIESE WOCHE'), findsNothing);
+    expect(find.text('Diese Woche'), findsNothing);
     expect(find.text('Mo'), findsNothing);
     // Der letzte Wert und die letzten Tage bleiben.
     expect(find.textContaining('124'), findsWidgets);
-    await tester.scrollUntilVisible(find.text('LETZTE MESSUNGEN'), 250);
-    expect(find.text('LETZTE MESSUNGEN'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Letzte Messungen'), 250);
+    expect(find.text('Letzte Messungen'), findsOneWidget);
   });
 
   testWidgets('über Mitternacht wandert die Wochenansicht mit', (tester) async {
@@ -328,6 +328,16 @@ void main() {
     await tester.pump(const Duration(minutes: 1));
     await tester.pump();
 
+    tester
+        .state<ScrollableState>(find.byType(Scrollable).first)
+        .position
+        .jumpTo(0);
+    await tester.pump();
+    await tester.scrollUntilVisible(
+      find.text('Heute fehlen noch beide Messungen.'),
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Heute fehlen noch beide Messungen.'), findsOneWidget);
   });
 }

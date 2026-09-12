@@ -15,6 +15,8 @@ import '../../stats/measurement_windows.dart';
 import '../../stats/time_of_day_band.dart';
 import '../theme/sphygma_theme.dart';
 import 'week_grid.dart';
+import 'panel_header.dart';
+import 'measurement_list_item.dart';
 
 class ThisWeekPanel extends StatelessWidget {
   const ThisWeekPanel({
@@ -80,7 +82,10 @@ class ThisWeekPanel extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _Ueberschrift(text: 'DIESE WOCHE'),
+          const PanelHeader(
+            title: 'Diese Woche',
+            icon: Icons.calendar_today_outlined,
+          ),
           Text(
             'In dieser Woche wurde noch nicht gemessen.',
             style: TextStyle(fontSize: 12, color: t.muted, height: 1.5),
@@ -92,39 +97,32 @@ class ThisWeekPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _Ueberschrift(text: 'DIESE WOCHE'),
-        WeekGrid(week: woche, onFieldTap: onFieldTap),
-        Text(
-          openToday(woche, now),
-          style: TextStyle(fontSize: 12, color: t.muted, height: 1.5),
+        const PanelHeader(
+          title: 'Diese Woche',
+          icon: Icons.calendar_today_outlined,
         ),
         if (woche.average case final a?) ...[
-          SizedBox(height: t.gapSmall / 2),
-          Text(
-            'Wochenwert ${a.systolic}/${a.diastolic} — ohne den ersten Tag, '
-            'so rechnet die Praxis.',
-            style: TextStyle(fontSize: 11, color: t.muted, height: 1.5),
+          Text('Wochenmittel', style: TextStyle(fontSize: 14, color: t.muted)),
+          SizedBox(height: t.gapSmall),
+          MeasurementValues(
+            systolic: a.systolic,
+            diastolic: a.diastolic,
+            pulse: a.pulse,
           ),
+          SizedBox(height: t.gapSmall),
+          Text(
+            'Ohne den ersten Tag.',
+            style: TextStyle(fontSize: 13, color: t.muted),
+          ),
+          SizedBox(height: t.gapLarge),
         ],
+        WeekGrid(week: woche, onFieldTap: onFieldTap),
+        SizedBox(height: t.gapSmall),
+        Text(
+          openToday(woche, now),
+          style: TextStyle(fontSize: 14, color: t.onSurface, height: 1.5),
+        ),
       ],
-    );
-  }
-}
-
-class _Ueberschrift extends StatelessWidget {
-  const _Ueberschrift({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = SphygmaTheme.of(context);
-    return Padding(
-      padding: EdgeInsets.only(bottom: t.gapSmall),
-      child: Text(
-        text,
-        style: TextStyle(fontSize: 10, letterSpacing: 1.6, color: t.muted),
-      ),
     );
   }
 }

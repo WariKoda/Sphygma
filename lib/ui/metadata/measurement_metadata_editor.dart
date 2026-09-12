@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_controller.dart';
 import 'tag_picker.dart';
+import '../widgets/panel_header.dart';
 
 class MeasurementMetadataEditor extends StatefulWidget {
   const MeasurementMetadataEditor({
@@ -71,6 +72,11 @@ class _MeasurementMetadataEditorState extends State<MeasurementMetadataEditor> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const PanelHeader(
+          title: 'Notiz und Tags',
+          icon: Icons.sell_outlined,
+          subtitle: 'Ergänzungen zu dieser Messung',
+        ),
         TextField(
           controller: _note,
           enabled: !_saving,
@@ -95,14 +101,15 @@ class _MeasurementMetadataEditorState extends State<MeasurementMetadataEditor> {
           ),
         ],
         const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
+        Wrap(
+          alignment: WrapAlignment.end,
+          spacing: 8,
+          runSpacing: 8,
           children: [
             TextButton(
               onPressed: _saving ? null : () => Navigator.of(context).pop(),
               child: const Text('Abbrechen'),
             ),
-            const SizedBox(width: 8),
             FilledButton(
               onPressed: _saving ? null : _save,
               child: Text(_saving ? 'Speichert…' : 'Speichern'),

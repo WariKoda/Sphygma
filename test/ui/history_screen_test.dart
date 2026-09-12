@@ -111,6 +111,36 @@ void main() {
     }
   });
 
+  for (final v in allVariants) {
+    testWidgets('Verlauf ${v.name} bei 360px und doppelter Schrift bedienbar', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1;
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      controller = await boot();
+      await repository.importAll([_rec(1, DateTime.now())]);
+      await controller.refreshForTest();
+      await pumpWith(tester, v);
+      expect(tester.takeException(), isNull);
+      await tester.scrollUntilVisible(find.text('Puls'), 200);
+      await tester.ensureVisible(find.text('Puls'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Puls'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await tester.scrollUntilVisible(find.byType(MeasurementRow), 250);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(MeasurementRow));
+      await tester.pumpAndSettle();
+      expect(find.byType(MeasurementSheet), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('der Zeitraumwechsel wirkt auf den Steuerungsteil', (
     tester,
   ) async {
@@ -140,7 +170,7 @@ void main() {
     // — und das ist bei einem größeren Bestand beliebig wenig.
     // Der Verlauf ist seit der Übernahme von Tageszeiten und Wochenwert
     // länger; die Messungen stehen unter beiden Blöcken.
-    await tester.scrollUntilVisible(find.text('MESSUNGEN'), 200);
+    await tester.scrollUntilVisible(find.text('Messungen'), 200);
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.byType(MeasurementRow).last, 200);
     await tester.pumpAndSettle();
@@ -156,7 +186,7 @@ void main() {
     await controller.refreshForTest();
 
     await pumpWith(tester, ThemeVariant.instrument);
-    await tester.scrollUntilVisible(find.text('MESSUNGEN'), 200);
+    await tester.scrollUntilVisible(find.text('Messungen'), 200);
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.byType(MeasurementRow), 200);
     await tester.pumpAndSettle();
@@ -202,7 +232,7 @@ void main() {
       expect(find.text('1 von 2 Messungen'), findsOneWidget);
       expect(find.textContaining('110'), findsWidgets);
       expect(find.textContaining('130'), findsNothing);
-      await tester.scrollUntilVisible(find.text('MESSUNGEN'), 200);
+      await tester.scrollUntilVisible(find.text('Messungen'), 200);
       await tester.pumpAndSettle();
       expect(find.byType(MeasurementRow), findsOneWidget);
     },
@@ -216,7 +246,7 @@ void main() {
 
     await pumpWith(tester, ThemeVariant.instrument);
 
-    await tester.scrollUntilVisible(find.text('MESSUNGEN'), 200);
+    await tester.scrollUntilVisible(find.text('Messungen'), 200);
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.byType(MeasurementRow), 200);
 
@@ -241,7 +271,7 @@ void main() {
     await controller.refreshForTest();
 
     await pumpWith(tester, ThemeVariant.instrument);
-    await tester.scrollUntilVisible(find.text('NACH TAGESZEIT'), 200);
+    await tester.scrollUntilVisible(find.text('Nach Tageszeit'), 200);
     await tester.pumpAndSettle();
 
     expect(find.text('Vormittags'), findsOneWidget);

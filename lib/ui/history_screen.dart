@@ -22,6 +22,9 @@ import 'widgets/surface_panel.dart';
 import 'widgets/stat_tiles.dart';
 import 'widgets/surface_sliver.dart';
 import 'widgets/trend_chart.dart';
+import 'widgets/panel_header.dart';
+import 'widgets/section_header.dart';
+import 'widgets/measurement_list_item.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key, required this.controller});
@@ -70,8 +73,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     child: SurfacePanel(
                       child: Column(
                         children: [
+                          const PanelHeader(
+                            title: 'Zeitraum und Filter',
+                            icon: Icons.filter_list,
+                          ),
                           _PeriodPicker(controller: controller),
-                          Row(
+                          Wrap(
+                            spacing: t.gapSmall,
+                            runSpacing: t.gapSmall,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               TextButton.icon(
                                 onPressed: () => showHistoryFilterSheet(
@@ -81,7 +91,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                 icon: const Icon(Icons.filter_list),
                                 label: const Text('Filter'),
                               ),
-                              const Spacer(),
                               Text(
                                 '${inPeriod.length} von ${beforeFilter.length} Messungen',
                               ),
@@ -119,6 +128,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            const PanelHeader(
+                              title: 'Entwicklung',
+                              icon: Icons.show_chart,
+                            ),
                             SegmentedButton<ChartMetric>(
                               segments: const [
                                 ButtonSegment(
@@ -163,7 +176,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   ),
                             ),
                             SizedBox(height: t.gapLarge),
-                            const _Section(title: 'MITTELWERTE'),
+                            const SectionHeader(
+                              title: 'Mittelwerte',
+                              leadingGap: false,
+                            ),
                             // Der Praxiswert der Messwoche: sieben Tage,
                             // morgens und abends, **ohne den ersten Tag** —
                             // so verlangt es die Leitlinie für die
@@ -183,7 +199,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   ),
                               ],
                             ),
-                            const _Section(title: 'NACH TAGESZEIT'),
+                            const SectionHeader(title: 'Nach Tageszeit'),
                             // Fünf Abschnitte statt zweier: Der Tagesverlauf
                             // ist eine eigene Aussage, die der Verlauf über
                             // Tage nicht gibt.
@@ -200,7 +216,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       sliver: SliverMainAxisGroup(
                         slivers: [
                           const SliverToBoxAdapter(
-                            child: _Section(title: 'MESSUNGEN'),
+                            child: PanelHeader(
+                              title: 'Messungen',
+                              icon: Icons.history,
+                            ),
+                          ),
+                          const SliverToBoxAdapter(
+                            child: MeasurementTableHeader(),
                           ),
                           SliverList(
                             delegate: SliverChildBuilderDelegate(
@@ -289,24 +311,6 @@ class _PeriodPicker extends StatelessWidget {
   }
 }
 
-class _Section extends StatelessWidget {
-  const _Section({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = SphygmaTheme.of(context);
-    return Padding(
-      padding: EdgeInsets.only(bottom: t.gapSmall),
-      child: Text(
-        title,
-        style: TextStyle(fontSize: 10, letterSpacing: 1.6, color: t.muted),
-      ),
-    );
-  }
-}
-
 class DayHeading extends StatelessWidget {
   const DayHeading({super.key, required this.day});
 
@@ -319,7 +323,11 @@ class DayHeading extends StatelessWidget {
       padding: EdgeInsets.only(top: t.gapLarge, bottom: t.gapSmall),
       child: Text(
         formatDay(day),
-        style: TextStyle(fontSize: 12, color: t.muted),
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: t.muted,
+        ),
       ),
     );
   }
@@ -337,54 +345,14 @@ class MeasurementRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = SphygmaTheme.of(context);
-    final m = measurement;
-
-    return InkWell(
+    return MeasurementListItem(
+      compact: true,
+      measurement: measurement,
+      timestamp: formatTime(measurement.measuredAt),
       onTap: () => showMeasurementSheet(
         context,
         controller: controller,
-        measurementId: m.id,
-      ),
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: t.rowGap),
-        decoration: t.rowDivider,
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                '${m.systolic}/${m.diastolic} · ${m.pulse}',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: t.onSurface,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-              ),
-            ),
-            if (m.movement || m.arrhythmia)
-              Padding(
-                padding: EdgeInsets.only(right: t.gapSmall),
-                child: Icon(Icons.info_outline, size: 14, color: t.muted),
-              ),
-            if (m.exportedAt != null)
-              Padding(
-                key: const ValueKey('exported-dot'),
-                padding: EdgeInsets.only(right: t.gapSmall),
-                child: Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: t.muted,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            Text(
-              formatTime(m.measuredAt),
-              style: TextStyle(fontSize: 13, color: t.muted),
-            ),
-          ],
-        ),
+        measurementId: measurement.id,
       ),
     );
   }
@@ -473,7 +441,7 @@ class _Aussage extends StatelessWidget {
       padding: EdgeInsets.only(top: t.gapSmall),
       child: Text(
         text,
-        style: TextStyle(fontSize: 11, color: t.muted, height: 1.5),
+        style: TextStyle(fontSize: 13, color: t.muted, height: 1.5),
       ),
     );
   }

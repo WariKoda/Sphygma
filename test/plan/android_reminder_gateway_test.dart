@@ -73,4 +73,29 @@ void main() {
       );
     }
   });
+  test('öffnet Berechtigungseinstellungen über eigenen Kanalaufruf', () async {
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      expect(call.method, 'openAccessSettings');
+      expect(call.arguments, isNull);
+      return {
+        'protocolVersion': 1,
+        'generation': 0,
+        'appliedGeneration': 0,
+        'mode': 'blocked',
+        'notificationsAllowed': false,
+        'exactAllowed': true,
+        'channelBlocked': false,
+        'openPlanRequested': false,
+        'pendingOccurrenceKeys': <String>[],
+        'retiredOccurrenceKeys': <String>[],
+        'error': null,
+        'occurrences': <Object?>[],
+        'timeChanges': <Object?>[],
+      };
+    });
+
+    final result = await AndroidReminderGateway().openAccessSettings();
+
+    expect(result.mode, ReminderMode.blocked);
+  });
 }

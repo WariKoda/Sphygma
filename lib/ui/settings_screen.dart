@@ -20,7 +20,7 @@ import 'theme/sphygma_theme.dart';
 import 'widgets/surface_panel.dart';
 import 'widgets/measurement_windows_editor.dart';
 import 'theme/variants.dart';
-import 'widgets/section_header.dart';
+import 'widgets/panel_header.dart';
 import 'intake_choice_sheet.dart';
 import 'metadata/tag_management_screen.dart';
 import 'widgets/setting_row.dart';
@@ -130,6 +130,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final plan = c.planController!;
     return _Karte(
       titel: 'Messplan',
+      icon: Icons.event_note,
       children: [
         SwitchListTile(
           key: const Key('measurement-plan-enabled'),
@@ -159,6 +160,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// Was von selbst passiert, und was man von Hand auslösen kann.
   Widget _abgleich(AppController c, SphygmaTheme t) => _Karte(
     titel: 'Abgleich',
+    icon: Icons.sync,
     children: [
       SwitchListTile(
         value: c.autoSyncEnabled,
@@ -170,7 +172,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(fontSize: 14, color: t.onSurface),
         ),
         contentPadding: EdgeInsets.zero,
-        dense: true,
       ),
       SettingRow(
         label: 'Automatischer Abgleich',
@@ -197,7 +198,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Die Meldung gehört zur Handlung, die sie erzeugt hat.
       if (c.status != null) ...[
         SizedBox(height: t.gapSmall),
-        Text(c.status!, style: TextStyle(fontSize: 12, color: t.muted)),
+        Text(c.status!, style: TextStyle(fontSize: 13, color: t.muted)),
       ],
     ],
   );
@@ -212,6 +213,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _healthConnect(AppController c) => _Karte(
     titel: 'Health Connect',
+    icon: Icons.favorite_border,
     children: [
       SettingRow(
         label: 'Übertragen',
@@ -232,7 +234,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
         contentPadding: EdgeInsets.zero,
-        dense: true,
       ),
       // Ein automatischer Vorgang meldet seinen Fehler nicht bei jeder
       // Messung — aber verschweigen darf er ihn auch nicht. Wer glaubt, seine
@@ -263,6 +264,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return _Karte(
       titel: 'Gerät',
+      icon: Icons.bluetooth,
       children: [
         SettingRow(
           label: 'RS7 Intelli IT',
@@ -311,7 +313,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SizedBox(height: t.gapSmall),
           Text(
             'Welcher Speicherplatz gehört dir am Gerät?',
-            style: TextStyle(fontSize: 12, color: t.muted),
+            style: TextStyle(fontSize: 13, color: t.muted),
           ),
           SizedBox(height: t.gapSmall),
           SegmentedButton<int>(
@@ -334,7 +336,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Text(
             'Zum Koppeln die Bluetooth-Taste am Gerät lange drücken, '
             'bis "-P-" blinkt.',
-            style: TextStyle(fontSize: 12, color: t.muted),
+            style: TextStyle(fontSize: 13, color: t.muted),
           ),
           SettingButton(
             label: 'Koppeln',
@@ -355,6 +357,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// einen Wert nimmt, sieht dort vierzehn leere Felder als Vorwurf.
   Widget _ansicht(AppController c) => _Karte(
     titel: 'Ansicht',
+    icon: Icons.tune,
     children: [
       _Erklaerung(
         text:
@@ -372,7 +375,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
         contentPadding: EdgeInsets.zero,
-        dense: true,
       ),
       SwitchListTile(
         value: c.recentMeasurementsVisible,
@@ -385,7 +387,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
         contentPadding: EdgeInsets.zero,
-        dense: true,
       ),
       SettingButton(
         label: 'Morgen und Abend',
@@ -413,6 +414,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _phasen(AppController c, SphygmaTheme t) => _Karte(
     titel: 'Phasen',
+    icon: Icons.timeline,
     children: [
       _Erklaerung(
         text:
@@ -427,7 +429,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(fontSize: 14, color: t.onSurface),
         ),
         contentPadding: EdgeInsets.zero,
-        dense: true,
       ),
     ],
   );
@@ -441,6 +442,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// nicht eine Liste fertiger Gestaltungen.
   Widget _gestaltung(AppController c, SphygmaTheme t) => _Karte(
     titel: 'Gestaltung',
+    icon: Icons.palette,
     children: [
       _Erklaerung(
         text:
@@ -478,9 +480,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 /// Die Überschrift trägt keinen Abstand nach oben — den bringt die Karte
 /// schon mit, und doppelt sähe er nach einer Lücke aus.
 class _Karte extends StatelessWidget {
-  const _Karte({required this.titel, required this.children});
+  const _Karte({
+    required this.titel,
+    required this.icon,
+    required this.children,
+  });
 
   final String titel;
+  final IconData icon;
   final List<Widget> children;
 
   @override
@@ -489,7 +496,7 @@ class _Karte extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionHeader(title: titel, leadingGap: false),
+          PanelHeader(title: titel, icon: icon),
           ...children,
         ],
       ),
@@ -611,7 +618,7 @@ class _Erklaerung extends StatelessWidget {
       padding: EdgeInsets.only(bottom: t.gapSmall),
       child: Text(
         text,
-        style: TextStyle(fontSize: 11, color: t.muted, height: 1.5),
+        style: TextStyle(fontSize: 13, color: t.muted, height: 1.5),
       ),
     );
   }

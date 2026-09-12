@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 
 import '../theme/sphygma_theme.dart';
+import 'panel_header.dart';
+import 'surface_panel.dart';
 
 class NoticeCard extends StatefulWidget {
   const NoticeCard({
@@ -30,42 +32,24 @@ class _NoticeCardState extends State<NoticeCard> {
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
 
-    return Container(
-      // Maße wie jede andere Fläche — nur der farbige Balken links
-      // unterscheidet den Hinweis vom gewöhnlichen Inhalt.
-      margin: EdgeInsets.only(bottom: t.gapSmall),
-      padding: EdgeInsets.all(t.panelPadding),
-      decoration: BoxDecoration(
-        border: Border(
-          left: BorderSide(color: t.categoryColors.values.last, width: 3),
-        ),
-        borderRadius: BorderRadius.circular(t.radius),
-        color: t.line.withValues(alpha: 0.35),
-      ),
+    return SurfacePanel(
+      highlighted: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            widget.title,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-              color: t.onSurface,
-            ),
-          ),
-          SizedBox(height: t.gapSmall / 2),
+          PanelHeader(title: widget.title, icon: Icons.info_outline),
           Text(
             widget.message,
-            style: TextStyle(fontSize: 12, color: t.onSurface),
+            style: TextStyle(fontSize: 14, color: t.onSurface),
           ),
           if (widget.details != null) ...[
             SizedBox(height: t.gapSmall / 2),
-            GestureDetector(
-              onTap: () => setState(() => _open = !_open),
+            TextButton(
+              onPressed: () => setState(() => _open = !_open),
               child: Text(
                 _open ? 'Anleitung ausblenden' : 'Anleitung anzeigen',
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 14,
                   color: t.accent,
                   decoration: TextDecoration.underline,
                 ),
@@ -75,7 +59,7 @@ class _NoticeCardState extends State<NoticeCard> {
               SizedBox(height: t.gapSmall),
               Text(
                 widget.details!,
-                style: TextStyle(fontSize: 12, color: t.muted, height: 1.5),
+                style: TextStyle(fontSize: 14, color: t.muted, height: 1.5),
               ),
             ],
           ],

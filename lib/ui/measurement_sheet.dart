@@ -14,7 +14,9 @@ import '../stats/esc_classification.dart';
 import 'format.dart';
 import 'theme/sphygma_theme.dart';
 import 'widgets/classification_scale.dart';
+import 'widgets/panel_header.dart';
 import 'widgets/reading_headline.dart';
+import 'widgets/surface_panel.dart';
 import 'metadata/measurement_metadata_editor.dart';
 import 'phases/phase_selection_editor.dart';
 
@@ -62,46 +64,85 @@ class MeasurementSheet extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ReadingHeadline(
-                    systolic: m.systolic,
-                    diastolic: m.diastolic,
-                    pulse: m.pulse,
-                    measuredAt: m.measuredAt,
-                  ),
-                  if (escClassificationEnabled) ...[
-                    SizedBox(height: t.gapLarge),
-                    ClassificationScale(
-                      category: classifyOffice(
-                        systolic: m.systolic,
-                        diastolic: m.diastolic,
-                      ),
+                  SurfacePanel(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const PanelHeader(
+                          title: 'Messwert',
+                          icon: Icons.monitor_heart_outlined,
+                        ),
+                        ReadingHeadline(
+                          systolic: m.systolic,
+                          diastolic: m.diastolic,
+                          pulse: m.pulse,
+                          measuredAt: m.measuredAt,
+                        ),
+                        if (escClassificationEnabled) ...[
+                          SizedBox(height: t.gapLarge),
+                          ClassificationScale(
+                            category: classifyOffice(
+                              systolic: m.systolic,
+                              diastolic: m.diastolic,
+                            ),
+                          ),
+                        ],
+                        if (m.movement || m.arrhythmia) ...[
+                          SizedBox(height: t.gapLarge),
+                          if (m.movement)
+                            const _Flag(text: 'Bewegung während der Messung'),
+                          if (m.arrhythmia)
+                            const _Flag(text: 'Unregelmäßiger Puls'),
+                        ],
+                      ],
                     ),
-                  ],
-                  if (m.movement || m.arrhythmia) ...[
-                    SizedBox(height: t.gapLarge),
-                    if (m.movement)
-                      const _Flag(text: 'Bewegung während der Messung'),
-                    if (m.arrhythmia) const _Flag(text: 'Unregelmäßiger Puls'),
-                  ],
-                  SizedBox(height: t.gapLarge),
-                  _Row(label: 'Messung Nr.', value: '${m.deviceSequence}'),
-                  _Row(label: 'Speicherplatz', value: 'Benutzer ${m.userSlot}'),
-                  _Row(
-                    label: 'Eingelesen',
-                    value: formatDayAndTime(m.importedAt),
                   ),
                   SizedBox(height: t.gapLarge),
-                  _HealthConnect(controller: controller, measurement: m),
+                  SurfacePanel(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const PanelHeader(
+                          title: 'Messungsdetails',
+                          icon: Icons.info_outline,
+                        ),
+                        SizedBox(height: t.gapSmall),
+                        _Row(
+                          label: 'Messung Nr.',
+                          value: '${m.deviceSequence}',
+                        ),
+                        _Row(
+                          label: 'Speicherplatz',
+                          value: 'Benutzer ${m.userSlot}',
+                        ),
+                        _Row(
+                          label: 'Eingelesen',
+                          value: formatDayAndTime(m.importedAt),
+                        ),
+                      ],
+                    ),
+                  ),
                   SizedBox(height: t.gapLarge),
-                  MeasurementMetadataEditor(
-                    controller: controller,
-                    deviceSequence: m.deviceSequence,
+                  SurfacePanel(
+                    child: _HealthConnect(
+                      controller: controller,
+                      measurement: m,
+                    ),
+                  ),
+                  SizedBox(height: t.gapLarge),
+                  SurfacePanel(
+                    child: MeasurementMetadataEditor(
+                      controller: controller,
+                      deviceSequence: m.deviceSequence,
+                    ),
                   ),
                   if (controller.phasesEnabled) ...[
                     SizedBox(height: t.gapLarge),
-                    PhaseSelectionEditor(
-                      controller: controller,
-                      deviceSequence: m.deviceSequence,
+                    SurfacePanel(
+                      child: PhaseSelectionEditor(
+                        controller: controller,
+                        deviceSequence: m.deviceSequence,
+                      ),
                     ),
                   ],
                 ],
@@ -155,8 +196,10 @@ class _Row extends StatelessWidget {
     final t = SphygmaTheme.of(context);
     return Padding(
       padding: EdgeInsets.symmetric(vertical: t.gapSmall),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Wrap(
+        spacing: t.gapLarge,
+        runSpacing: t.gapSmall / 2,
+        alignment: WrapAlignment.spaceBetween,
         children: [
           Text(label, style: TextStyle(fontSize: 13, color: t.muted)),
           Text(value, style: TextStyle(fontSize: 13, color: t.onSurface)),
@@ -210,9 +253,9 @@ class _HealthConnect extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'HEALTH CONNECT',
-          style: TextStyle(fontSize: 10, letterSpacing: 1.6, color: t.muted),
+        const PanelHeader(
+          title: 'Health Connect',
+          icon: Icons.health_and_safety_outlined,
         ),
         SizedBox(height: t.gapSmall),
         Text(description, style: TextStyle(fontSize: 13, color: t.onSurface)),
