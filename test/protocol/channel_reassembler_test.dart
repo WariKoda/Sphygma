@@ -3,9 +3,25 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sphygma/protocol/channel_reassembler.dart';
+import 'package:sphygma/protocol/exceptions.dart';
 
 void main() {
   group('ChannelReassembler', () {
+    for (final packet in <List<int>>[
+      [],
+      [0],
+      [65],
+      [8, 1],
+      [20, 1],
+    ]) {
+      test('verwirft ungueltigen Kanal 0: $packet', () {
+        expect(
+          () => ChannelReassembler().receive(0, Uint8List.fromList(packet)),
+          throwsA(isA<ProtocolException>()),
+        );
+      });
+    }
+
     test('ein Paket, das in einen Kanal passt, ist sofort vollstaendig', () {
       final reassembler = ChannelReassembler();
       // Byte 0 = Gesamtlaenge 10; ceil(10/16) = 1 Kanal noetig.

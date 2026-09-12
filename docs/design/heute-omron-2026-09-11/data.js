@@ -1,0 +1,1 @@
+const READINGS = [[528, "2026-09-01T07:26:00", 128, 92, 80, false, false, false], [529, "2026-09-01T07:28:00", 126, 86, 85, false, false, false], [530, "2026-09-01T20:40:00", 115, 84, 82, false, false, false], [531, "2026-09-01T20:42:00", 114, 85, 77, false, false, false]];

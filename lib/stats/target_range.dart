@@ -31,11 +31,17 @@ class TargetRange {
   TargetRange({required this.systolicLimit, required this.diastolicLimit}) {
     if (systolicLimit <= 0) {
       throw ArgumentError.value(
-          systolicLimit, 'systolicLimit', 'muss positiv sein');
+        systolicLimit,
+        'systolicLimit',
+        'muss positiv sein',
+      );
     }
     if (diastolicLimit <= 0) {
       throw ArgumentError.value(
-          diastolicLimit, 'diastolicLimit', 'muss positiv sein');
+        diastolicLimit,
+        'diastolicLimit',
+        'muss positiv sein',
+      );
     }
     if (diastolicLimit >= systolicLimit) {
       throw ArgumentError.value(
@@ -54,12 +60,16 @@ class TargetRange {
   }
 
   /// Die Schwellen der Selbstmessung: 135/85.
-  static final TargetRange heim =
-      TargetRange(systolicLimit: 135, diastolicLimit: 85);
+  static final TargetRange heim = TargetRange(
+    systolicLimit: 135,
+    diastolicLimit: 85,
+  );
 
   /// Die Schwellen der Sprechstunde: 140/90. Nicht für Heimwerte verwenden.
-  static final TargetRange praxis =
-      TargetRange(systolicLimit: 140, diastolicLimit: 90);
+  static final TargetRange praxis = TargetRange(
+    systolicLimit: 140,
+    diastolicLimit: 90,
+  );
 
   final int systolicLimit;
   final int diastolicLimit;

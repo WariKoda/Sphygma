@@ -4,6 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Projektzustand
 
+Stand 11.09.2026: Schema7, gemeinsame Navigation Heute/Verlauf und optionaler
+Messplan. Tags/Bemerkungen und Mehrfachphasen sind getrennte Messungsmetadaten;
+Konzeptwahl und Anlassprozess entfallen. Alte Tabellen bleiben für verlustfreie
+Upgrades erhalten. `lib/plan` steuert Zuordnung und Erinnerungen über ein natives
+Android-Modul in `android/.../sphygma/reminders`. Drift ist maßgeblich, der native
+Arbeitsstand wird daraus abgeleitet und quittiert. Begriffe: [CONTEXT.md](CONTEXT.md).
+Aktueller Prüfstand: [Umsetzungsreview](docs/reviews/2026-09-11-messplan-umsetzung.md).
+Die folgende Hardwarehistorie bestätigt nicht die neu ergänzten Erinnerungen.
+
+
 **M0–M6 sind implementiert und an echter Hardware validiert** (Fairphone 4, HEM-6232T,
 2026-09-03/04). **Der automatische Abgleich ist am Gerät bestätigt** (2026-09-05): Eine
 Messung ohne jeden Tastendruck löste den Sync aus, die Messung landete in der DB. M7 (Release) ist vorbereitet (`docs/RELEASE.md`), die Release-Entscheidungen
@@ -38,7 +48,7 @@ flutter run                                  # Gerät muss per adb verbunden sei
 flutter run --dart-define=SPHYGMA_ESC=true   # mit ESC-Klassifikation (Standard: aus)
 flutter run -t lib/spike_main.dart           # M1-Diagnose-App
 flutter run --pid-file /tmp/sphygma.pid      # dann: kill -USR1 (Hot Reload) / -USR2 (Restart)
-dart run build_runner build --delete-conflicting-outputs   # nach Änderungen am drift-Schema
+dart run build_runner build   # nach Änderungen am drift-Schema
 flutter build apk --release --split-per-abi  # Release, siehe docs/RELEASE.md
 flutter devices
 ```
@@ -70,7 +80,7 @@ vollständig ohne Hardware testbar. Wer BLE-Typen in die Protokollschicht zieht,
 Testbarkeit — genau deshalb liegt das Interface dazwischen.
 
 **Die lokale DB ist Source of Truth, Health Connect ist reine Export-Senke.** Von dort wird
-nie zurückgelesen. Dedup-Schlüssel ist `(Zeitstempel, User-Slot)`; nach außen wird er als
+nie zurückgelesen. Dedup-Schlüssel ist `(userSlot, deviceSequence)`; nach außen wird er als
 `clientRecordId` an Health Connect gegeben, das damit selbst dedupliziert.
 
 ## Harte Projektregeln

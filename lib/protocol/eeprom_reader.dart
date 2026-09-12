@@ -48,6 +48,12 @@ class EepromReader {
         );
       }
 
+      if (response.data.length != chunkSize) {
+        throw ProtocolException(
+          'Antwort ab 0x${address.toRadixString(16)} enthaelt '
+          '${response.data.length} Nutzbytes, angefordert waren $chunkSize.',
+        );
+      }
       result.add(response.data);
       address += chunkSize;
       remaining -= chunkSize;

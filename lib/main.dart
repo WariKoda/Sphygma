@@ -7,7 +7,11 @@ import 'app/app_controller.dart';
 import 'ble/pairing_key_store.dart';
 import 'db/app_database.dart';
 import 'db/measurement_repository.dart';
-import 'db/occasion_repository.dart';
+import 'db/measurement_plan_repository.dart';
+import 'plan/plan_controller.dart';
+import 'plan/android_reminder_gateway.dart';
+import 'db/measurement_metadata_repository.dart';
+import 'db/phase_repository.dart';
 import 'db/settings_repository.dart';
 import 'ui/theme/font_licenses.dart';
 import 'sync/export_service.dart';
@@ -24,10 +28,16 @@ Future<void> main() async {
   final measurements = MeasurementRepository(database);
   final keyStore = SecureStoragePairingKeyStore();
   final controller = AppController(
+    planController: PlanController(
+      repository: MeasurementPlanRepository(database),
+      measurements: measurements,
+      gateway: AndroidReminderGateway(),
+    ),
     settings: SettingsRepository(database),
     keyStore: keyStore,
     repository: measurements,
-    occasionRepository: OccasionRepository(database),
+    metadataRepository: MeasurementMetadataRepository(database),
+    phaseRepository: PhaseRepository(database),
     syncService: SyncService(keyStore: keyStore, repository: measurements),
     exportService: ExportService(
       repository: measurements,

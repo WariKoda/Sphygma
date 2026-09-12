@@ -77,7 +77,10 @@ void main() {
     // Source Serif 4 beginnt bei 200. Die Rolle „sehr leicht" darf keinen
     // Schnitt verlangen, den es nicht gibt — die Abbildung fängt das ab.
     final stil = typefaceStyleFor(Typeface.serif);
-    expect(stil.weightFor(WeightRole.sehrLeicht).value, greaterThanOrEqualTo(200));
+    expect(
+      stil.weightFor(WeightRole.sehrLeicht).value,
+      greaterThanOrEqualTo(200),
+    );
     expect(ui.FontWeight.w200.value, 200);
   });
 }

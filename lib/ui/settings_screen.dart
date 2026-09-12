@@ -8,7 +8,7 @@
 //
 // **Ein Abschnitt, eine Karte, und die Reihenfolge folgt der Häufigkeit.**
 // Abgleich und Übertragung kommen im Alltag vor; Kopplung und Speicherplatz
-// entscheidet man beim Einrichten; Ansicht, Konzept und Gestaltung stellt man
+// entscheidet man beim Einrichten; Ansicht, Phasen und Gestaltung stellt man
 // einmal ein und lässt sie. Was selten angefasst wird, steht unten — nicht,
 // weil es unwichtig wäre, sondern weil es sonst jedes Mal im Weg steht.
 import 'dart:async';
@@ -16,12 +16,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../app/app_controller.dart';
-import '../app/concept.dart';
 import 'theme/sphygma_theme.dart';
 import 'widgets/surface_panel.dart';
+import 'widgets/measurement_windows_editor.dart';
 import 'theme/variants.dart';
 import 'widgets/section_header.dart';
 import 'intake_choice_sheet.dart';
+import 'metadata/tag_management_screen.dart';
 import 'widgets/setting_row.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -116,7 +117,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _healthConnect(c),
             _geraet(c, t),
             _ansicht(c),
-            _konzept(c, t),
+            _phasen(c, t),
+            if (c.planController != null) _messplan(c, t),
             _gestaltung(c, t),
           ],
         ),
@@ -124,18 +126,68 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _messplan(AppController c, SphygmaTheme t) {
+    final plan = c.planController!;
+    return _Karte(
+      titel: 'Messplan',
+      children: [
+        SwitchListTile(
+          key: const Key('measurement-plan-enabled'),
+          contentPadding: EdgeInsets.zero,
+          title: Text(
+            'Messplan und Erinnerungen',
+            style: TextStyle(color: t.onSurface, fontSize: 14),
+          ),
+          subtitle: Text(
+            'Ausschalten beendet auch alle Erinnerungen.',
+            style: TextStyle(color: t.muted),
+          ),
+          value: plan.enabled,
+          onChanged: plan.busy
+              ? null
+              : (value) => _start(() => plan.setEnabled(value)),
+        ),
+        if (plan.error case final error?)
+          Text(
+            '${plan.enabled ? 'Messplan' : 'Abschalten der Erinnerungen nicht bestätigt'}: $error',
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+      ],
+    );
+  }
+
   /// Was von selbst passiert, und was man von Hand auslösen kann.
   Widget _abgleich(AppController c, SphygmaTheme t) => _Karte(
     titel: 'Abgleich',
     children: [
+      SwitchListTile(
+        value: c.autoSyncEnabled,
+        onChanged: c.busy
+            ? null
+            : (value) => _start(() => c.setAutoSync(value)),
+        title: Text(
+          'Messungen automatisch abgleichen',
+          style: TextStyle(fontSize: 14, color: t.onSurface),
+        ),
+        contentPadding: EdgeInsets.zero,
+        dense: true,
+      ),
       SettingRow(
         label: 'Automatischer Abgleich',
-        value: c.autoSyncActive ? 'wartet auf Messungen' : 'aus',
+        value: c.autoSyncActive
+            ? 'wartet auf Messungen'
+            : c.autoSyncEnabled
+            ? 'derzeit nicht aktiv'
+            : 'aus',
         dot: c.autoSyncActive,
       ),
       SettingRow(
         label: 'Gespeichert',
         value: '${c.measurements.length} Messungen',
+      ),
+      SettingRow(
+        label: 'Letzter erfolgreicher Abgleich',
+        value: _formatSync(c.lastSuccessfulSyncAt),
       ),
       SettingButton(
         label: 'Jetzt abgleichen',
@@ -150,6 +202,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ],
   );
 
+  String _formatSync(DateTime? value) {
+    if (value == null) return 'Noch nicht erfasst';
+    final local = value.toLocal();
+    String two(int number) => number.toString().padLeft(2, '0');
+    return '${two(local.day)}.${two(local.month)}.${local.year}, '
+        '${two(local.hour)}:${two(local.minute)}';
+  }
+
   Widget _healthConnect(AppController c) => _Karte(
     titel: 'Health Connect',
     children: [
@@ -161,7 +221,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       SwitchListTile(
         value: c.autoExport,
-        onChanged: c.setAutoExport,
+        onChanged: c.busy
+            ? null
+            : (value) => _start(() => c.setAutoExport(value)),
         title: Text(
           'Neue Messungen automatisch übertragen',
           style: TextStyle(
@@ -183,7 +245,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       SettingButton(
         label: 'Alle übertragen',
-        onPressed: c.busy || c.pendingExport == 0
+        onPressed: c.busy || c.intakeDecisionPending || c.pendingExport == 0
             ? null
             : () => _start(c.exportAll),
       ),
@@ -217,16 +279,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (c.userSlot != null)
           SettingRow(
             label: 'Übernommen',
-            value: c.intakeFloor == null
+            value: c.intakeDecisionPending
+                ? 'Auswahl noch offen'
+                : c.intakeFloor == null
                 ? 'alle Messungen'
                 : 'ab Messung Nr. ${c.intakeFloor}',
           ),
         if (c.userSlot != null)
           SettingButton(
-            label: 'Übernahme ändern',
-            onPressed: c.busy
+            label: c.intakeDecisionPending
+                ? 'Übernahme festlegen'
+                : 'Übernahme ändern',
+            onPressed: c.busy || !c.canChooseIntake
                 ? null
                 : () => showIntakeChoice(context, controller: c),
+          ),
+        if (c.intakeDecisionPending)
+          _Erklaerung(
+            text: c.canChooseIntake
+                ? 'Bitte die Übernahme festlegen. Bis dahin wird nichts automatisch übertragen.'
+                : 'Bitte zuerst vollständig abgleichen und anschließend die Übernahme festlegen.',
           ),
         if (c.paired && !_pairingOpen)
           SettingButton(
@@ -252,8 +324,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // keinen Wechsel auf das bereits ausgewählte einzige Segment.
             emptySelectionAllowed: true,
             selected: c.userSlot == null ? const <int>{} : {c.userSlot!},
-            onSelectionChanged: (sel) =>
-                sel.isEmpty ? null : c.setUserSlot(sel.first),
+            onSelectionChanged: c.busy
+                ? null
+                : (sel) {
+                    if (sel.isNotEmpty) _start(() => c.setUserSlot(sel.first));
+                  },
           ),
           SizedBox(height: t.gapSmall),
           Text(
@@ -299,38 +374,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
         contentPadding: EdgeInsets.zero,
         dense: true,
       ),
+      SwitchListTile(
+        value: c.recentMeasurementsVisible,
+        onChanged: c.setRecentMeasurementsVisible,
+        title: Text(
+          'Letzte Messungen auf „Heute"',
+          style: TextStyle(
+            fontSize: 14,
+            color: SphygmaTheme.of(context).onSurface,
+          ),
+        ),
+        contentPadding: EdgeInsets.zero,
+        dense: true,
+      ),
+      SettingButton(
+        label: 'Morgen und Abend',
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => MeasurementWindowsEditor(
+              initialValue: c.measurementWindows,
+              onSave: c.setMeasurementWindows,
+            ),
+          ),
+        ),
+      ),
+      SettingButton(
+        label: 'Tags verwalten',
+        onPressed: c.userSlot == null
+            ? null
+            : () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => TagManagementScreen(controller: c),
+                ),
+              ),
+      ),
     ],
   );
 
-  Widget _konzept(AppController c, SphygmaTheme t) => _Karte(
-    titel: 'Konzept',
+  Widget _phasen(AppController c, SphygmaTheme t) => _Karte(
+    titel: 'Phasen',
     children: [
       _Erklaerung(
         text:
-            'Andere Konzepte ordnen denselben Bestand neu. Keine '
-            'Messung wird dabei kopiert oder entfernt.',
+            'Phasen ordnen plausible Messzeiten Zeiträumen zu. Manuelle '
+            'Zuordnungen können mehrere oder ausdrücklich keine Phase enthalten.',
       ),
-      RadioGroup<AppConcept>(
-        groupValue: c.concept,
-        onChanged: (chosen) => chosen == null ? null : c.setConcept(chosen),
-        child: Column(
-          children: [
-            for (final k in allConcepts)
-              RadioListTile<AppConcept>(
-                value: k,
-                title: Text(
-                  k.label,
-                  style: TextStyle(fontSize: 14, color: t.onSurface),
-                ),
-                subtitle: Text(
-                  '${k.unit} · ${k.description}',
-                  style: TextStyle(fontSize: 11, color: t.muted),
-                ),
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-              ),
-          ],
+      SwitchListTile(
+        value: c.phasesEnabled,
+        onChanged: c.busy ? null : c.setPhasesEnabled,
+        title: Text(
+          'Phasen verwenden',
+          style: TextStyle(fontSize: 14, color: t.onSurface),
         ),
+        contentPadding: EdgeInsets.zero,
+        dense: true,
       ),
     ],
   );

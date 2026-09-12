@@ -20,9 +20,7 @@ const Duration _zukunftstoleranz = Duration(hours: 12);
 
 /// Das Urteil über einen einzelnen Zeitstempel.
 class TimestampVerdict {
-  const TimestampVerdict.plausible()
-      : isPlausible = true,
-        reason = null;
+  const TimestampVerdict.plausible() : isPlausible = true, reason = null;
 
   const TimestampVerdict.questionable(String this.reason) : isPlausible = false;
 

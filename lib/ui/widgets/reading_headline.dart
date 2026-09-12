@@ -42,16 +42,7 @@ class ReadingHeadline extends StatelessWidget {
           style: TextStyle(fontSize: 11, letterSpacing: 1.4, color: t.muted),
         ),
         SizedBox(height: t.gapSmall),
-        switch (t.readingLayout) {
-          ReadingLayout.bruch => _Bruch(
-            systolic: systolic,
-            diastolic: diastolic,
-          ),
-          ReadingLayout.bloecke => _Bloecke(
-            systolic: systolic,
-            diastolic: diastolic,
-          ),
-        },
+        BloodPressureValue(systolic: systolic, diastolic: diastolic),
         SizedBox(height: t.gapSmall / 2),
         Text(
           'mmHg · Puls $pulse',
@@ -60,6 +51,24 @@ class ReadingHeadline extends StatelessWidget {
       ],
     );
   }
+}
+
+class BloodPressureValue extends StatelessWidget {
+  const BloodPressureValue({
+    super.key,
+    required this.systolic,
+    required this.diastolic,
+  });
+
+  final int systolic;
+  final int diastolic;
+
+  @override
+  Widget build(BuildContext context) => switch (SphygmaTheme.of(context)
+      .readingLayout) {
+    ReadingLayout.bruch => _Bruch(systolic: systolic, diastolic: diastolic),
+    ReadingLayout.bloecke => _Bloecke(systolic: systolic, diastolic: diastolic),
+  };
 }
 
 /// „144/92" — der gewachsene Aufbau, und der Standard.
@@ -149,11 +158,7 @@ class _Block extends StatelessWidget {
         SizedBox(height: t.gapSmall / 2),
         Text(
           kuerzel,
-          style: TextStyle(
-            fontSize: 10,
-            letterSpacing: 1.6,
-            color: t.muted,
-          ),
+          style: TextStyle(fontSize: 10, letterSpacing: 1.6, color: t.muted),
         ),
       ],
     );

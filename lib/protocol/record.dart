@@ -6,6 +6,43 @@ import 'exceptions.dart';
 
 const int recordByteSize = 14;
 
+/// Zivile Kalenderangabe der Geräteuhr ohne Zeitzonen- oder Instantsemantik.
+class DeviceCivilTime {
+  const DeviceCivilTime({
+    required this.year,
+    required this.month,
+    required this.day,
+    required this.hour,
+    required this.minute,
+    required this.second,
+  });
+
+  factory DeviceCivilTime.fromDateTime(DateTime value) => DeviceCivilTime(
+    year: value.year,
+    month: value.month,
+    day: value.day,
+    hour: value.hour,
+    minute: value.minute,
+    second: value.second,
+  );
+
+  final int year, month, day, hour, minute, second;
+
+  /// Vergleichsbehälter für Kalenderkomponenten, ausdrücklich kein UTC-Instant.
+  DateTime get utcContainer {
+    final value = DateTime.utc(year, month, day, hour, minute, second);
+    if (value.year != year ||
+        value.month != month ||
+        value.day != day ||
+        value.hour != hour ||
+        value.minute != minute ||
+        value.second != second) {
+      throw StateError('Die Gerätezeit enthält ungültige Kalenderangaben.');
+    }
+    return value;
+  }
+}
+
 /// Eine einzelne Blutdruckmessung.
 ///
 /// Flag-Zuordnung an echter Hardware verifiziert (M1, 2026-09-03; siehe
@@ -20,12 +57,14 @@ class BloodPressureRecord {
     required this.arrhythmiaFlag,
     required this.movementFlag,
     required this.sequence,
-  });
+    DeviceCivilTime? civilTime,
+  }) : civilTime = civilTime ?? DeviceCivilTime.fromDateTime(timestamp);
 
   final int systolic;
   final int diastolic;
   final int pulse;
   final DateTime timestamp;
+  final DeviceCivilTime civilTime;
   final bool arrhythmiaFlag;
   final bool movementFlag;
 
@@ -85,6 +124,14 @@ BloodPressureRecord? parseRecord(Uint8List recordBytes) {
     diastolic: diastolic,
     pulse: pulse,
     timestamp: DateTime(year, month, day, hour, minute, second),
+    civilTime: DeviceCivilTime(
+      year: year,
+      month: month,
+      day: day,
+      hour: hour,
+      minute: minute,
+      second: second,
+    ),
     arrhythmiaFlag: arrhythmiaFlag,
     movementFlag: movementFlag,
     sequence: sequence,

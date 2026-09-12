@@ -78,9 +78,15 @@ class HealthConnectSink implements HealthSink, PermissionAwareSink {
     if (status != HealthConnectSdkStatus.sdkAvailable) {
       throw HealthConnectUnavailableException(status);
     }
-    final granted = await _health.hasPermissions(_types, permissions: _writeOnly);
+    final granted = await _health.hasPermissions(
+      _types,
+      permissions: _writeOnly,
+    );
     if (granted != true) {
-      final ok = await _health.requestAuthorization(_types, permissions: _writeOnly);
+      final ok = await _health.requestAuthorization(
+        _types,
+        permissions: _writeOnly,
+      );
       if (!ok) {
         throw HealthConnectPermissionDeniedException();
       }
@@ -112,9 +118,7 @@ class HealthConnectSink implements HealthSink, PermissionAwareSink {
         _types,
         permissions: _writeOnly,
       );
-      return granted == true
-          ? SinkReadiness.bereit
-          : SinkReadiness.keineRechte;
+      return granted == true ? SinkReadiness.bereit : SinkReadiness.keineRechte;
     } catch (_) {
       // Im Zweifel nicht schreiben: Der automatische Weg soll nichts
       // erzwingen. Der Knopf von Hand bleibt davon unberührt.

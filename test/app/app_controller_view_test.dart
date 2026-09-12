@@ -6,7 +6,8 @@ import 'package:sphygma/app/app_controller.dart';
 import 'package:sphygma/ble/pairing_key_store.dart';
 import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/db/measurement_repository.dart';
-import 'package:sphygma/db/occasion_repository.dart';
+import 'package:sphygma/db/measurement_metadata_repository.dart';
+import 'package:sphygma/db/phase_repository.dart';
 import 'package:sphygma/db/settings_repository.dart';
 import 'package:sphygma/protocol/readout.dart';
 import 'package:sphygma/protocol/record.dart';
@@ -23,8 +24,8 @@ class _NoopSink implements HealthSink {
   Future<void> deleteBloodPressure(String clientRecordId) async {}
 }
 
-SlotRecord _rec(int seq, DateTime at) => SlotRecord(
-  userSlot: 1,
+SlotRecord _rec(int seq, DateTime at, {int slot = 1}) => SlotRecord(
+  userSlot: slot,
   record: BloodPressureRecord(
     systolic: 120,
     diastolic: 80,
@@ -50,7 +51,8 @@ void main() {
       settings: SettingsRepository(db),
       keyStore: keyStore,
       repository: repository,
-      occasionRepository: OccasionRepository(db),
+      metadataRepository: MeasurementMetadataRepository(db),
+      phaseRepository: PhaseRepository(db),
       syncService: SyncService(keyStore: keyStore, repository: repository),
       exportService: ExportService(repository: repository, sink: _NoopSink()),
       statusStream: () => const Stream.empty(),
@@ -97,6 +99,48 @@ void main() {
   test('latest ist null, solange nichts gespeichert ist', () {
     expect(controller.latest, isNull);
     expect(controller.latest, isNull);
+  });
+
+  test(
+    'refresh resolves all overlapping phases and a manual empty set',
+    () async {
+      final now = DateTime.now();
+      await repository.importAll([_rec(1, now)]);
+      final first = await controller.savePhase(
+        name: 'Therapie',
+        begin: now.subtract(const Duration(days: 2)),
+        end: null,
+      );
+      final second = await controller.savePhase(
+        name: 'Urlaub',
+        begin: now.subtract(const Duration(days: 1)),
+        end: null,
+      );
+
+      expect(controller.phaseIdsBySequence[1], {first, second});
+
+      await controller.selectPhases(1, const {});
+
+      expect(controller.manualPhaseSelections[1], isEmpty);
+      expect(controller.phaseIdsBySequence[1], isEmpty);
+    },
+  );
+
+  test('slot switch replaces metadata and phase state', () async {
+    final now = DateTime.now();
+    await repository.importAll([_rec(1, now), _rec(1, now, slot: 2)]);
+    final tag = await controller.createTag('Nur Slot 1');
+    await controller.saveMeasurementMetadata(
+      deviceSequence: 1,
+      note: 'privat',
+      tagIds: {tag},
+    );
+
+    await controller.setUserSlot(2);
+
+    expect(controller.metadataBySequence, isEmpty);
+    expect(controller.tags, isEmpty);
+    expect(controller.measurements.single.userSlot, 2);
   });
 
   group('clockLooksWrong', () {

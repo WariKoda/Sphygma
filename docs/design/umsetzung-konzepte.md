@@ -154,3 +154,16 @@ Der Plan sagte „umschaltbar im Gerätebereich". Den gibt es nicht mehr: Seit d
 08.09. steht die gesamte Technik hinter dem Zahnrad oben rechts, eine Karte je
 Abschnitt, nach Häufigkeit geordnet. Konzept und Gestaltung stehen dort unten —
 man stellt sie einmal ein.
+
+## Neuer Bestandsabgleich — 11.09.2026
+
+Auf ausdrücklichen Nutzerwunsch ersetzt eine gemeinsame Messungsoberfläche die
+Konzeptwahl. Heute und Verlauf tragen Einzelmessungen, Tags, Bemerkungen und
+optionale Mehrfachphasen. Der Messanlassprozess und seine Bearbeitungsoberflächen
+sind entfernt. Historische Tabellen bleiben für verlustfreie Migration erhalten.
+
+Der optionale Messplan ergänzt einen Reiter und eine Heute-Karte; Abschalten
+entfernt die Funktion samt Erinnerungen. Eine gefilterte Auswahl bestimmt Liste,
+Kurve und Kennzahlen. Das [aktuelle Funktionsraster](funktionsraster.md) ersetzt die
+frühere Forderung nach mehreren funktionsgleichen Konzepten. Der Text oben bleibt
+als historische Entwurfsbegründung erhalten.

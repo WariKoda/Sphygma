@@ -51,32 +51,102 @@ class OmronScanResult {
 ///
 /// Der Aufrufer muss das Abo beenden - sonst laeuft der Scan weiter und
 /// kostet Akku.
-Stream<OmronAdvertisedStatus> watchOmronStatus({
-  Duration? removeIfGone,
-}) async* {
-  await FlutterBluePlus.startScan(
-    continuousUpdates: true,
-    // Ein Bruchteil der Advertising-Pakete genuegt: Das Geraet sendet
-    // mehrmals je Sekunde, wir wollen nur mitbekommen, dass sich etwas
-    // geaendert hat.
-    continuousDivisor: 8,
-    removeIfGone: removeIfGone,
-  );
-  try {
-    OmronAdvertisedStatus? last;
-    await for (final results in FlutterBluePlus.scanResults) {
-      for (final r in results) {
-        if (!isOmronAdvertisingName(r.advertisementData.advName)) continue;
-        final status = parseOmronStatus(r.advertisementData.manufacturerData);
-        if (status == null) continue;
-        if (last != null && status.sameAs(last)) continue;
-        last = status;
-        yield status;
+Stream<OmronAdvertisedStatus> watchOmronStatus({Duration? removeIfGone}) {
+  late final StreamController<OmronAdvertisedStatus> controller;
+  StreamSubscription<List<ScanResult>>? subscription;
+  Future<void>? starting;
+  Future<void>? stopping;
+  var cancelled = false;
+  var finishing = false;
+  OmronAdvertisedStatus? last;
+
+  Future<void> stop() => stopping ??= () async {
+    try {
+      await starting;
+    } finally {
+      try {
+        await subscription?.cancel();
+      } finally {
+        await FlutterBluePlus.stopScan();
       }
     }
-  } finally {
-    await FlutterBluePlus.stopScan();
+  }();
+
+  void close() {
+    // Aufraeumen ist bereits abgeschlossen. Das Schliessen darf denselben
+    // Stop nicht erneut als onCancel ausfuehren oder dessen Fehler verdoppeln.
+    controller.onCancel = null;
+    unawaited(controller.close());
   }
+
+  void finish([Object? error, StackTrace? stackTrace]) {
+    if (cancelled || finishing || controller.isClosed) return;
+    finishing = true;
+    void reportAndClose([Object? cleanupError, StackTrace? cleanupStack]) {
+      // Der Fehlerhandler darf sofort einen neuen Scan starten. Deshalb erst
+      // nach dem Stop melden, damit das alte Cleanup ihn nicht wieder beendet.
+      if (!cancelled) {
+        if (error != null) controller.addError(error, stackTrace);
+        if (cleanupError != null && !identical(error, cleanupError)) {
+          controller.addError(cleanupError, cleanupStack);
+        }
+      }
+      close();
+    }
+
+    unawaited(
+      stop().then(
+        (_) => reportAndClose(),
+        onError: (Object cleanupError, StackTrace cleanupStack) =>
+            reportAndClose(cleanupError, cleanupStack),
+      ),
+    );
+  }
+
+  Future<void> start() async {
+    await FlutterBluePlus.startScan(
+      continuousUpdates: true,
+      // Ein Bruchteil der mehrmals je Sekunde gesendeten Pakete genuegt.
+      continuousDivisor: 8,
+      removeIfGone: removeIfGone,
+    );
+    if (cancelled) return;
+    subscription = FlutterBluePlus.scanResults.listen(
+      (results) {
+        if (cancelled || stopping != null) return;
+        for (final r in results) {
+          if (!isOmronAdvertisingName(r.advertisementData.advName)) continue;
+          final status = parseOmronStatus(r.advertisementData.manufacturerData);
+          if (status == null || (last != null && status.sameAs(last!))) {
+            continue;
+          }
+          last = status;
+          controller.add(status);
+        }
+      },
+      onError: (Object error, StackTrace stackTrace) =>
+          finish(error, stackTrace),
+      onDone: finish,
+    );
+  }
+
+  controller = StreamController<OmronAdvertisedStatus>(
+    onListen: () {
+      starting = start();
+      unawaited(
+        starting!.catchError((Object error, StackTrace stackTrace) {
+          finish(error, stackTrace);
+        }),
+      );
+    },
+    // async* + await for wartet beim Cancel unter Umstaenden auf das naechste
+    // Advertising. Nach dem Readout ist der globale Scan aber schon gestoppt.
+    onCancel: () {
+      cancelled = true;
+      return stop();
+    },
+  );
+  return controller.stream;
 }
 
 class OmronSession {
@@ -113,16 +183,19 @@ class OmronSession {
           rxCharacteristics: chars.rx,
         );
         return OmronSession._(device, chars.unlock, transport);
-      } on FlutterBluePlusException catch (e) {
+      } catch (e) {
+        try {
+          await device.disconnect();
+        } catch (cleanupError) {
+          log?.call('Verbindung nach Fehler nicht geschlossen: $cleanupError');
+        }
         // Befund M1: android-code 133 (GATT_ERROR) kommt vor, wenn das Geraet
         // die vorige Verbindung gerade erst abbaut. Einmal wiederholen.
-        if (attempt == 1 && e.code == 133) {
+        if (attempt == 1 && e is FlutterBluePlusException && e.code == 133) {
           log?.call('GATT_ERROR 133 - verbinde einmal neu.');
-          await device.disconnect();
           await Future<void>.delayed(const Duration(seconds: 2));
           continue;
         }
-        await device.disconnect();
         rethrow;
       }
     }
@@ -151,33 +224,81 @@ class OmronSession {
     BluetoothDevice? match;
     OmronAdvertisedStatus? status;
 
-    await FlutterBluePlus.startScan(timeout: timeout);
-    final subscription = FlutterBluePlus.scanResults.listen((results) {
-      for (final r in results) {
-        seen.add(r.device.remoteId.str);
-        if (!isOmronAdvertisingName(r.advertisementData.advName)) continue;
+    final budget = timeout + const Duration(seconds: 5);
+    final elapsed = Stopwatch()..start();
+    Future<void> withinBudget(Future<void> operation) {
+      final remaining = budget - elapsed.elapsed;
+      return operation.timeout(
+        remaining.inMicroseconds > 0 ? remaining : Duration.zero,
+        onTimeout: () => throw TimeoutException(
+          'BLE-Scan oder Scan-Stop nicht binnen $budget abgeschlossen.',
+          budget,
+        ),
+      );
+    }
 
-        // Name und Herstellerdaten koennen in getrennten Paketen kommen -
-        // im Mitschnitt vom 2026-09-04 trug das Scan-Response nur den
-        // Namen, die Herstellerdaten steckten im Advertising davor. Wer
-        // beim ersten Treffer aufhoert, bekommt womoeglich nie einen
-        // Status. Deshalb: Geraet merken, Status nachtragen, sobald er
-        // auftaucht.
-        match ??= r.device;
-        status ??= parseOmronStatus(r.advertisementData.manufacturerData);
-
-        if (!waitForStatus || status != null) {
-          unawaited(FlutterBluePlus.stopScan());
-        }
-      }
-    });
+    StreamSubscription<List<ScanResult>>? subscription;
+    Timer? stopTimer;
+    Future<void>? requestedStop;
     try {
-      await FlutterBluePlus.isScanning
-          .where((scanning) => !scanning)
-          .first
-          .timeout(timeout + const Duration(seconds: 5));
+      // Der Plugin-Timer wartet stopScan nicht ab. Wir besitzen den Timer
+      // selbst, damit auch ein zeitgesteuerter Stopfehler beim Aufrufer landet.
+      await withinBudget(FlutterBluePlus.startScan());
+      final failure = Completer<void>();
+      void fail(Object error, StackTrace stackTrace) {
+        if (!failure.isCompleted) failure.completeError(error, stackTrace);
+      }
+
+      void requestStop() {
+        if (requestedStop != null) return;
+        requestedStop = FlutterBluePlus.stopScan();
+        unawaited(requestedStop!.catchError(fail));
+      }
+
+      subscription = FlutterBluePlus.scanResults.listen((results) {
+        for (final r in results) {
+          seen.add(r.device.remoteId.str);
+          if (!isOmronAdvertisingName(r.advertisementData.advName)) continue;
+
+          // Name und Herstellerdaten koennen in getrennten Paketen kommen -
+          // im Mitschnitt vom 2026-09-04 trug das Scan-Response nur den
+          // Namen, die Herstellerdaten steckten im Advertising davor. Wer
+          // beim ersten Treffer aufhoert, bekommt womoeglich nie einen
+          // Status. Deshalb: Geraet merken, Status nachtragen, sobald er
+          // auftaucht.
+          match ??= r.device;
+          status ??= parseOmronStatus(r.advertisementData.manufacturerData);
+
+          if (!waitForStatus || status != null) requestStop();
+        }
+      }, onError: fail);
+      stopTimer = Timer(timeout, requestStop);
+      await withinBudget(
+        Future.any<void>([
+          failure.future,
+          FlutterBluePlus.isScanning
+              .where((scanning) => !scanning)
+              .first
+              // Das Plugin stoppt bei einem Fehler auf einem separaten Stream.
+              // Dessen Stop kann vor dem Fehler in scanResults ankommen.
+              .then((_) => Future<void>.delayed(Duration.zero)),
+        ]),
+      );
+      // isScanning wird bereits vor der Plattformantwort falsch. Erst die
+      // bestaetigte Stop-Future erlaubt eine anschliessende Verbindung.
+      await withinBudget(requestedStop ??= FlutterBluePlus.stopScan());
+    } catch (_) {
+      try {
+        // Kein neues Zeitbudget: Eine haengende Bereinigung darf den
+        // urspruenglichen Timeout nicht durch unbegrenztes Warten verdecken.
+        await withinBudget(requestedStop ??= FlutterBluePlus.stopScan());
+      } catch (cleanupError) {
+        log?.call('Scan nach Fehler nicht gestoppt: $cleanupError');
+      }
+      rethrow;
     } finally {
-      await subscription.cancel();
+      stopTimer?.cancel();
+      await subscription?.cancel();
     }
 
     final device = match;
@@ -191,7 +312,8 @@ class OmronSession {
     BluetoothCharacteristic unlock,
     List<BluetoothCharacteristic> tx,
     List<BluetoothCharacteristic> rx,
-  }) _findCharacteristics(BluetoothDevice device) {
+  })
+  _findCharacteristics(BluetoothDevice device) {
     final parentUuid = Guid(Hem6232tDevice.parentServiceUuid);
     final parent = device.servicesList.firstWhere(
       (s) => s.uuid == parentUuid,

@@ -18,13 +18,17 @@ import 'widgets/surface_panel.dart';
 
 /// Fragt nach dem Koppeln, was übernommen werden soll.
 ///
-/// Kehrt zurück, sobald die Wahl steht. Wird das Blatt weggewischt, bleibt es
-/// bei „alles" — das ist der Zustand vor der Frage, und ein Abbruch darf keine
-/// Daten verbergen.
+/// Ein Abbruch lässt eine ausstehende Erstentscheidung offen. Der automatische
+/// Export bleibt dann bis zur Auswahl in den Einstellungen gesperrt.
 Future<void> showIntakeChoice(
   BuildContext context, {
   required AppController controller,
 }) {
+  if (!controller.canChooseIntake) {
+    throw StateError(
+      'Vor der Übernahme muss der erste Abgleich abgeschlossen sein.',
+    );
+  }
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -46,6 +50,12 @@ class _IntakeChoiceState extends State<_IntakeChoice> {
   bool _laeuft = false;
 
   Future<void> _waehle(Future<void> Function() wahl) async {
+    if (widget.controller.busy) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bitte den laufenden Abgleich abwarten.')),
+      );
+      return;
+    }
     setState(() => _laeuft = true);
     try {
       await wahl();
@@ -55,9 +65,8 @@ class _IntakeChoiceState extends State<_IntakeChoice> {
       // hielte der Nutzer die Wahl für getroffen.
       if (!mounted) rethrow;
       setState(() => _laeuft = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Wahl fehlgeschlagen: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Wahl fehlgeschlagen: $e')));
     }
   }
 
@@ -163,15 +172,9 @@ class _Wahl extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                titel,
-                style: TextStyle(fontSize: 15, color: t.onSurface),
-              ),
+              Text(titel, style: TextStyle(fontSize: 15, color: t.onSurface)),
               SizedBox(height: t.gapSmall / 3),
-              Text(
-                erklaerung,
-                style: TextStyle(fontSize: 12, color: t.muted),
-              ),
+              Text(erklaerung, style: TextStyle(fontSize: 12, color: t.muted)),
             ],
           ),
         ),

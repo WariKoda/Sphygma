@@ -81,7 +81,9 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
     // nichts - Hypothese: das Geraet bewirbt den Parent-Service nicht im
     // Advertising, er ist erst nach dem Verbinden per GATT sichtbar.
     // omblepy und UBPM filtern beim Scan ebenfalls nicht nach Service.
-    _appendLog('Ungefilterter Scan, 15 s. Jedes gesehene Geraet wird geloggt...');
+    _appendLog(
+      'Ungefilterter Scan, 15 s. Jedes gesehene Geraet wird geloggt...',
+    );
     final parentUuid = Guid(Hem6232tDevice.parentServiceUuid);
     final seen = <String>{};
     BluetoothDevice? match;
@@ -97,8 +99,10 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
           '  seen: $id  rssi=${r.rssi}  name="$name"  services=$services',
         );
         final byService = services.contains(parentUuid);
-        final byName = RegExp(r'blesmart|omron|hem', caseSensitive: false)
-            .hasMatch(name);
+        final byName = RegExp(
+          r'blesmart|omron|hem',
+          caseSensitive: false,
+        ).hasMatch(name);
         if (match == null && (byService || byName)) {
           match = r.device;
           _appendLog('  -> Kandidat (${byService ? 'Service' : 'Name'}): $id');
@@ -168,209 +172,213 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
   }
 
   Future<void> _runPairing() => _guarded(() async {
-        final device = await _scanAndConnect();
-        _device = device;
-        final chars = await _findCharacteristics(device);
+    final device = await _scanAndConnect();
+    _device = device;
+    final chars = await _findCharacteristics(device);
 
-        final hexKey =
-            _pairingKey.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-        _appendLog('Schreibe neuen Pairing-Key $hexKey...');
-        _appendLog(
-          'Geraet muss jetzt im Pairing-Modus sein ("-P-" blinkt im Display).',
-        );
-        await writeNewPairingKey(
-          unlockCharacteristic: chars.unlock,
-          key: _pairingKey,
-          rxChannel0: chars.rx.first,
-          log: _appendLog,
-        );
-        _appendLog('Pairing erfolgreich.');
-      });
+    final hexKey = _pairingKey
+        .map((b) => b.toRadixString(16).padLeft(2, '0'))
+        .join();
+    _appendLog('Schreibe neuen Pairing-Key $hexKey...');
+    _appendLog(
+      'Geraet muss jetzt im Pairing-Modus sein ("-P-" blinkt im Display).',
+    );
+    await writeNewPairingKey(
+      unlockCharacteristic: chars.unlock,
+      key: _pairingKey,
+      rxChannel0: chars.rx.first,
+      log: _appendLog,
+    );
+    _appendLog('Pairing erfolgreich.');
+  });
 
   Future<void> _runFullReadout() => _guarded(() async {
-        final device = await _scanAndConnect();
-        _device = device;
-        final chars = await _findCharacteristics(device);
+    final device = await _scanAndConnect();
+    _device = device;
+    final chars = await _findCharacteristics(device);
 
-        _appendLog('Entsperre mit dem in dieser App-Sitzung erzeugten Key...');
-        await unlockWithPairingKey(
-          unlockCharacteristic: chars.unlock,
-          key: _pairingKey,
+    _appendLog('Entsperre mit dem in dieser App-Sitzung erzeugten Key...');
+    await unlockWithPairingKey(
+      unlockCharacteristic: chars.unlock,
+      key: _pairingKey,
+    );
+
+    final transport = FlutterBluePlusTransport(
+      txCharacteristics: chars.tx,
+      rxCharacteristics: chars.rx,
+    );
+    await transport.enableNotifications();
+
+    _appendLog('Starte Uebertragung...');
+    await transport.writeCommand(startTransmissionFrame);
+    final startResponse = parseResponseFrame(await transport.readResponse());
+    if (startResponse.type != responseTypeStart) {
+      throw StateError(
+        'Unerwartete Startantwort: 0x${startResponse.type.toRadixString(16)}',
+      );
+    }
+
+    final reader = EepromReader(transport);
+    for (
+      var userIndex = 0;
+      userIndex < Hem6232tDevice.userStartAddresses.length;
+      userIndex++
+    ) {
+      _appendLog('Lese User ${userIndex + 1}...');
+      final bytes = await reader.readRange(
+        startAddress: Hem6232tDevice.userStartAddresses[userIndex],
+        totalLength:
+            Hem6232tDevice.recordsPerUser * Hem6232tDevice.recordByteSize,
+        blockSize: Hem6232tDevice.transmissionBlockSize,
+      );
+
+      var recordCount = 0;
+      for (
+        var offset = 0;
+        offset < bytes.length;
+        offset += Hem6232tDevice.recordByteSize
+      ) {
+        final raw = bytes.sublist(
+          offset,
+          offset + Hem6232tDevice.recordByteSize,
         );
-
-        final transport = FlutterBluePlusTransport(
-          txCharacteristics: chars.tx,
-          rxCharacteristics: chars.rx,
+        final record = parseRecord(raw);
+        if (record == null) continue;
+        recordCount++;
+        final hex = raw.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+        _appendLog(
+          '  User ${userIndex + 1}: ${record.timestamp} '
+          'sys=${record.systolic} dia=${record.diastolic} '
+          'bpm=${record.pulse} ihb(roh)=${record.arrhythmiaFlag} '
+          'mov(roh)=${record.movementFlag} raw=$hex',
         );
-        await transport.enableNotifications();
+      }
+      _appendLog('User ${userIndex + 1}: $recordCount Messungen.');
+    }
 
-        _appendLog('Starte Uebertragung...');
-        await transport.writeCommand(startTransmissionFrame);
-        final startResponse = parseResponseFrame(await transport.readResponse());
-        if (startResponse.type != responseTypeStart) {
-          throw StateError(
-            'Unerwartete Startantwort: 0x${startResponse.type.toRadixString(16)}',
-          );
-        }
-
-        final reader = EepromReader(transport);
-        for (var userIndex = 0;
-            userIndex < Hem6232tDevice.userStartAddresses.length;
-            userIndex++) {
-          _appendLog('Lese User ${userIndex + 1}...');
-          final bytes = await reader.readRange(
-            startAddress: Hem6232tDevice.userStartAddresses[userIndex],
-            totalLength:
-                Hem6232tDevice.recordsPerUser * Hem6232tDevice.recordByteSize,
-            blockSize: Hem6232tDevice.transmissionBlockSize,
-          );
-
-          var recordCount = 0;
-          for (var offset = 0;
-              offset < bytes.length;
-              offset += Hem6232tDevice.recordByteSize) {
-            final raw = bytes.sublist(
-              offset,
-              offset + Hem6232tDevice.recordByteSize,
-            );
-            final record = parseRecord(raw);
-            if (record == null) continue;
-            recordCount++;
-            final hex =
-                raw.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-            _appendLog(
-              '  User ${userIndex + 1}: ${record.timestamp} '
-              'sys=${record.systolic} dia=${record.diastolic} '
-              'bpm=${record.pulse} ihb(roh)=${record.arrhythmiaFlag} '
-              'mov(roh)=${record.movementFlag} raw=$hex',
-            );
-          }
-          _appendLog('User ${userIndex + 1}: $recordCount Messungen.');
-        }
-
-        _appendLog('Beende Uebertragung...');
-        await transport.writeCommand(endTransmissionFrame);
-        final endResponse = parseResponseFrame(await transport.readResponse());
-        if (endResponse.data.isNotEmpty && endResponse.data[0] != 0) {
-          _appendLog(
-            'WARNUNG: Geraet meldet Fehlercode ${endResponse.data[0]} bei Ende.',
-          );
-        }
-        await transport.disableNotifications();
-        _appendLog('Fertig.');
-      });
+    _appendLog('Beende Uebertragung...');
+    await transport.writeCommand(endTransmissionFrame);
+    final endResponse = parseResponseFrame(await transport.readResponse());
+    if (endResponse.data.isNotEmpty && endResponse.data[0] != 0) {
+      _appendLog(
+        'WARNUNG: Geraet meldet Fehlercode ${endResponse.data[0]} bei Ende.',
+      );
+    }
+    await transport.disableNotifications();
+    _appendLog('Fertig.');
+  });
 
   /// DIAGNOSE (M1, nur LESEN): Settings-Bereich 0x0260..0x02A4 dumpen und
   /// die Geraeteuhr nach omblepys (unbestaetigter) Deutung anzeigen.
   /// Es wird NICHTS geschrieben - Kalibrierdaten liegen vermutlich hier.
   Future<void> _runReadClock() => _guarded(() async {
-        final device = await _scanAndConnect();
-        _device = device;
-        final chars = await _findCharacteristics(device);
-        await unlockWithPairingKey(
-          unlockCharacteristic: chars.unlock,
-          key: _pairingKey,
-        );
-        final transport = FlutterBluePlusTransport(
-          txCharacteristics: chars.tx,
-          rxCharacteristics: chars.rx,
-        );
-        await transport.enableNotifications();
-        await transport.writeCommand(startTransmissionFrame);
-        final startRaw = await transport.readResponse();
-        parseResponseFrame(startRaw);
-        // DIAGNOSE: Traegt die Start-Antwort ("read device id") Geraetezustand,
-        // z. B. die Stellung des User-Schalters?
-        _appendLog(
-          'Start-Antwort (${startRaw.length} B): '
-          '${startRaw.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}',
-        );
+    final device = await _scanAndConnect();
+    _device = device;
+    final chars = await _findCharacteristics(device);
+    await unlockWithPairingKey(
+      unlockCharacteristic: chars.unlock,
+      key: _pairingKey,
+    );
+    final transport = FlutterBluePlusTransport(
+      txCharacteristics: chars.tx,
+      rxCharacteristics: chars.rx,
+    );
+    await transport.enableNotifications();
+    await transport.writeCommand(startTransmissionFrame);
+    final startRaw = await transport.readResponse();
+    parseResponseFrame(startRaw);
+    // DIAGNOSE: Traegt die Start-Antwort ("read device id") Geraetezustand,
+    // z. B. die Stellung des User-Schalters?
+    _appendLog(
+      'Start-Antwort (${startRaw.length} B): '
+      '${startRaw.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}',
+    );
 
-        // Befund M1: Ein 0x38-Byte-Read ab 0x0260 bleibt unbeantwortet, das
-        // Geraet trennt nach 60 s. omblepy liest den Settings-Bereich nur in
-        // zwei kleinen Abschnitten mit blockSize == Laenge - genau so hier.
-        const settingsBase = 0x0260;
-        final reader = EepromReader(transport);
-        final unread = await reader.readRange(
-          startAddress: settingsBase + 0x00,
-          totalLength: 8,
-          blockSize: 8,
-        );
-        _appendLog(
-          'Settings +0x00 (unread counter, 8 B): '
-          '${unread.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}',
-        );
-        final t = await reader.readRange(
-          startAddress: settingsBase + 0x14,
-          totalLength: 10,
-          blockSize: 10,
-        );
-        // omblepy hem-6232t.py, auskommentiert, "probably not correct":
-        // Slice [0x14:0x1e], darin Bytes [2:8] = month, year, hour, day,
-        // second, minute.
-        _appendLog(
-          'Uhr (omblepy-Deutung, unbestaetigt): '
-          '20${t[3]}-${t[2]}-${t[5]} ${t[4]}:${t[7]}:${t[6]}  '
-          'roh=${t.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}',
-        );
+    // Befund M1: Ein 0x38-Byte-Read ab 0x0260 bleibt unbeantwortet, das
+    // Geraet trennt nach 60 s. omblepy liest den Settings-Bereich nur in
+    // zwei kleinen Abschnitten mit blockSize == Laenge - genau so hier.
+    const settingsBase = 0x0260;
+    final reader = EepromReader(transport);
+    final unread = await reader.readRange(
+      startAddress: settingsBase + 0x00,
+      totalLength: 8,
+      blockSize: 8,
+    );
+    _appendLog(
+      'Settings +0x00 (unread counter, 8 B): '
+      '${unread.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}',
+    );
+    final t = await reader.readRange(
+      startAddress: settingsBase + 0x14,
+      totalLength: 10,
+      blockSize: 10,
+    );
+    // omblepy hem-6232t.py, auskommentiert, "probably not correct":
+    // Slice [0x14:0x1e], darin Bytes [2:8] = month, year, hour, day,
+    // second, minute.
+    _appendLog(
+      'Uhr (omblepy-Deutung, unbestaetigt): '
+      '20${t[3]}-${t[2]}-${t[5]} ${t[4]}:${t[7]}:${t[6]}  '
+      'roh=${t.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}',
+    );
 
-        await transport.writeCommand(endTransmissionFrame);
-        parseResponseFrame(await transport.readResponse());
-        await transport.disableNotifications();
-        _appendLog('Fertig (Uhr).');
-      });
+    await transport.writeCommand(endTransmissionFrame);
+    parseResponseFrame(await transport.readResponse());
+    await transport.disableNotifications();
+    _appendLog('Fertig (Uhr).');
+  });
 
   /// DIAGNOSE (M1, nur LESEN): den Settings-Bereich 0x0260..0x02A4 in
   /// 8-Byte-Schritten abtasten. Ziel: ein Byte finden, das mit der Stellung
   /// des User-Schalters kippt. Unbeantwortete Reads (10-s-Timeout) werden
   /// protokolliert und uebersprungen. Es wird NICHTS geschrieben.
   Future<void> _runProbeSettings() => _guarded(() async {
-        final device = await _scanAndConnect();
-        _device = device;
-        final chars = await _findCharacteristics(device);
-        await unlockWithPairingKey(
-          unlockCharacteristic: chars.unlock,
-          key: _pairingKey,
-        );
-        final transport = FlutterBluePlusTransport(
-          txCharacteristics: chars.tx,
-          rxCharacteristics: chars.rx,
-        );
-        await transport.enableNotifications();
-        await transport.writeCommand(startTransmissionFrame);
-        parseResponseFrame(await transport.readResponse());
+    final device = await _scanAndConnect();
+    _device = device;
+    final chars = await _findCharacteristics(device);
+    await unlockWithPairingKey(
+      unlockCharacteristic: chars.unlock,
+      key: _pairingKey,
+    );
+    final transport = FlutterBluePlusTransport(
+      txCharacteristics: chars.tx,
+      rxCharacteristics: chars.rx,
+    );
+    await transport.enableNotifications();
+    await transport.writeCommand(startTransmissionFrame);
+    parseResponseFrame(await transport.readResponse());
 
-        const base = 0x0260;
-        const end = 0x02a4;
-        final reader = EepromReader(transport);
-        for (var offset = 0; offset < end - base; offset += 8) {
-          final length = (end - base - offset).clamp(1, 8);
-          try {
-            final bytes = await reader.readRange(
-              startAddress: base + offset,
-              totalLength: length,
-              blockSize: length,
-            );
-            _appendLog(
-              'probe +0x${offset.toRadixString(16).padLeft(2, '0')}: '
-              '${bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}',
-            );
-          } on ProtocolException catch (e) {
-            _appendLog(
-              'probe +0x${offset.toRadixString(16).padLeft(2, '0')}: '
-              'UNBEANTWORTET ($e)',
-            );
-            if (!device.isConnected) break;
-          }
-        }
+    const base = 0x0260;
+    const end = 0x02a4;
+    final reader = EepromReader(transport);
+    for (var offset = 0; offset < end - base; offset += 8) {
+      final length = (end - base - offset).clamp(1, 8);
+      try {
+        final bytes = await reader.readRange(
+          startAddress: base + offset,
+          totalLength: length,
+          blockSize: length,
+        );
+        _appendLog(
+          'probe +0x${offset.toRadixString(16).padLeft(2, '0')}: '
+          '${bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ')}',
+        );
+      } on ProtocolException catch (e) {
+        _appendLog(
+          'probe +0x${offset.toRadixString(16).padLeft(2, '0')}: '
+          'UNBEANTWORTET ($e)',
+        );
+        if (!device.isConnected) break;
+      }
+    }
 
-        if (device.isConnected) {
-          await transport.writeCommand(endTransmissionFrame);
-          parseResponseFrame(await transport.readResponse());
-          await transport.disableNotifications();
-        }
-        _appendLog('Fertig (Probe).');
-      });
+    if (device.isConnected) {
+      await transport.writeCommand(endTransmissionFrame);
+      parseResponseFrame(await transport.readResponse());
+      await transport.disableNotifications();
+    }
+    _appendLog('Fertig (Probe).');
+  });
 
   // --- Produktionspfad (M3/M4) an Hardware validieren ---------------------
   // Eigener Key-Store (Android Keystore) und eigene DB - unabhaengig vom
@@ -379,26 +387,28 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
     keyStore: SecureStoragePairingKeyStore(),
     repository: MeasurementRepository(_database),
   );
-  late final AppDatabase _database = AppDatabase(driftDatabase(name: 'sphygma'));
+  late final AppDatabase _database = AppDatabase(
+    driftDatabase(name: 'sphygma'),
+  );
 
   Future<void> _runProductionPairing() => _guarded(() async {
-        _appendLog('[prod] Pairing ueber SyncService (Key -> Keystore)...');
-        await _syncService.pair(log: _appendLog);
-        _appendLog('[prod] Pairing erfolgreich, Key gespeichert.');
-      });
+    _appendLog('[prod] Pairing ueber SyncService (Key -> Keystore)...');
+    await _syncService.pair(log: _appendLog);
+    _appendLog('[prod] Pairing erfolgreich, Key gespeichert.');
+  });
 
   Future<void> _runProductionSync() => _guarded(() async {
-        _appendLog('[prod] Sync ueber SyncService (Readout -> DB)...');
-        final result = await _syncService.sync(log: _appendLog);
-        _appendLog(
-          '[prod] gelesen: ${result.readFromDevice}, neu gespeichert: '
-          '${result.newlyStored}',
-        );
-        for (final slot in [1, 2]) {
-          final rows = await _syncService.repository.allForSlot(slot);
-          _appendLog('[prod] DB Slot $slot: ${rows.length} Messungen');
-        }
-      });
+    _appendLog('[prod] Sync ueber SyncService (Readout -> DB)...');
+    final result = await _syncService.sync(log: _appendLog);
+    _appendLog(
+      '[prod] gelesen: ${result.readFromDevice}, neu gespeichert: '
+      '${result.newlyStored}',
+    );
+    for (final slot in [1, 2]) {
+      final rows = await _syncService.repository.allForSlot(slot);
+      _appendLog('[prod] DB Slot $slot: ${rows.length} Messungen');
+    }
+  });
 
   late final ExportService _exportService = ExportService(
     repository: _syncService.repository,
@@ -406,19 +416,19 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
   );
 
   Future<void> _runProductionExport() => _guarded(() async {
-        // Testlauf: bewusst nur EINE Messung, nicht die ganze Historie.
-        _appendLog('[prod] Export Slot 1 -> Health Connect (limit 1)...');
-        final n = await _exportService.exportPending(userSlot: 1, limit: 1);
-        _appendLog('[prod] exportiert: $n Messung(en)');
-        final left = await _syncService.repository.pendingExport(1);
-        _appendLog('[prod] noch unexportiert Slot 1: ${left.length}');
-      });
+    // Testlauf: bewusst nur EINE Messung, nicht die ganze Historie.
+    _appendLog('[prod] Export Slot 1 -> Health Connect (limit 1)...');
+    final n = await _exportService.exportPending(userSlot: 1, limit: 1);
+    _appendLog('[prod] exportiert: $n Messung(en)');
+    final left = await _syncService.repository.pendingExport(1);
+    _appendLog('[prod] noch unexportiert Slot 1: ${left.length}');
+  });
 
   Future<void> _runProductionRetract() => _guarded(() async {
-        _appendLog('[prod] Sphygma-Daten aus Health Connect entfernen...');
-        final n = await _exportService.retractExported(userSlot: 1);
-        _appendLog('[prod] entfernt: $n Messung(en)');
-      });
+    _appendLog('[prod] Sphygma-Daten aus Health Connect entfernen...');
+    final n = await _exportService.retractExported(userSlot: 1);
+    _appendLog('[prod] entfernt: $n Messung(en)');
+  });
 
   // --- SCHREIBTEST (Machbarkeitsprobe 2026-09-04) ------------------------
   // Frage: Nimmt das Geraet einen Schreibbefehl (0x01c0) in den
@@ -442,61 +452,58 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
   Future<void> _runEraseProbe({
     required int slotIndex,
     required int recordIndex,
-  }) =>
-      _guarded(() async {
-        final address = _recordAddress(slotIndex, recordIndex);
-        // Wirft, bevor irgendetwas gesendet wird, falls die Adresse nicht
-        // im Record-Bereich liegt.
-        assertInsideRecordArea(address, Hem6232tDevice.recordByteSize);
-        _appendLog(
-          '[erase] Ziel: Slot ${slotIndex + 1}, Platz $recordIndex, '
-          'Adresse 0x${address.toRadixString(16)}',
-        );
+  }) => _guarded(() async {
+    final address = _recordAddress(slotIndex, recordIndex);
+    // Wirft, bevor irgendetwas gesendet wird, falls die Adresse nicht
+    // im Record-Bereich liegt.
+    assertInsideRecordArea(address, Hem6232tDevice.recordByteSize);
+    _appendLog(
+      '[erase] Ziel: Slot ${slotIndex + 1}, Platz $recordIndex, '
+      'Adresse 0x${address.toRadixString(16)}',
+    );
 
-        final key = await _syncService.keyStore.load();
-        if (key == null) {
-          throw StateError(
-            'Kein gespeicherter Pairing-Key - zuerst "5. Prod-Pairing".',
-          );
-        }
+    final key = await _syncService.keyStore.load();
+    if (key == null) {
+      throw StateError(
+        'Kein gespeicherter Pairing-Key - zuerst "5. Prod-Pairing".',
+      );
+    }
 
-        final session = await OmronSession.open(log: _appendLog);
-        try {
-          final transport = await session.unlock(key);
-          await startTransmission(transport);
+    final session = await OmronSession.open(log: _appendLog);
+    try {
+      final transport = await session.unlock(key);
+      await startTransmission(transport);
 
-          final reader = EepromReader(transport);
-          final before = await reader.readRange(
-            startAddress: address,
-            totalLength: Hem6232tDevice.recordByteSize,
-            blockSize: Hem6232tDevice.recordByteSize,
-          );
-          _appendLog('[erase] vorher:  ${_hexBytes(before)}');
+      final reader = EepromReader(transport);
+      final before = await reader.readRange(
+        startAddress: address,
+        totalLength: Hem6232tDevice.recordByteSize,
+        blockSize: Hem6232tDevice.recordByteSize,
+      );
+      _appendLog('[erase] vorher:  ${_hexBytes(before)}');
 
-          await EepromWriter(transport).writeRecordArea(
-            startAddress: address,
-            data: emptyRecordBytes,
-          );
-          _appendLog('[erase] Schreibbefehl bestaetigt.');
+      await EepromWriter(transport)
+          .writeRecordArea(startAddress: address, data: emptyRecordBytes);
+      _appendLog('[erase] Schreibbefehl bestaetigt.');
 
-          final after = await reader.readRange(
-            startAddress: address,
-            totalLength: Hem6232tDevice.recordByteSize,
-            blockSize: Hem6232tDevice.recordByteSize,
-          );
-          _appendLog('[erase] nachher: ${_hexBytes(after)}');
-          _appendLog(
-            after.every((b) => b == 0xff)
-                ? '[erase] ERGEBNIS: Platz ist geleert.'
-                : '[erase] ERGEBNIS: Platz NICHT geleert - Inhalt unveraendert '
-                    'oder teilweise geschrieben.',
-          );
+      final after = await reader.readRange(
+        startAddress: address,
+        totalLength: Hem6232tDevice.recordByteSize,
+        blockSize: Hem6232tDevice.recordByteSize,
+      );
+      _appendLog('[erase] nachher: ${_hexBytes(after)}');
+      _appendLog(
+        after.every((b) => b == 0xff)
+            ? '[erase] ERGEBNIS: Platz ist geleert.'
+            : '[erase] ERGEBNIS: Platz NICHT geleert - Inhalt unveraendert '
+                  'oder teilweise geschrieben.',
+      );
 
-          await endTransmission(transport);
-        } finally {
-          await session.close();
-        }
-      });
+      await endTransmission(transport);
+    } finally {
+      await session.close();
+    }
+  });
 
   /// NUR LESEN. Kontrolle nach dem Schreibtest: zeigt die Plaetze 94 bis 97
   /// von Slot 1. Hintergrund: In omblepy liegen Lese- und Schreibadresse
@@ -505,35 +512,35 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
   /// Speicher, hat der Schreibbefehl auf 0x0860 in Wahrheit 0x081C
   /// getroffen - das liegt in Slot 1, Platz 95.
   Future<void> _runVerifySlot1Tail() => _guarded(() async {
-        final key = await _syncService.keyStore.load();
-        if (key == null) {
-          throw StateError('Kein gespeicherter Pairing-Key.');
-        }
-        final session = await OmronSession.open(log: _appendLog);
-        try {
-          final transport = await session.unlock(key);
-          await startTransmission(transport);
-          final reader = EepromReader(transport);
+    final key = await _syncService.keyStore.load();
+    if (key == null) {
+      throw StateError('Kein gespeicherter Pairing-Key.');
+    }
+    final session = await OmronSession.open(log: _appendLog);
+    try {
+      final transport = await session.unlock(key);
+      await startTransmission(transport);
+      final reader = EepromReader(transport);
 
-          for (var index = 94; index <= 97; index++) {
-            final address = _recordAddress(0, index);
-            final bytes = await reader.readRange(
-              startAddress: address,
-              totalLength: Hem6232tDevice.recordByteSize,
-              blockSize: Hem6232tDevice.recordByteSize,
-            );
-            final allEmpty = bytes.every((b) => b == 0xff);
-            _appendLog(
-              '[check] Slot 1 Platz $index @0x${address.toRadixString(16)}: '
-              '${_hexBytes(bytes)}${allEmpty ? '  <-- LEER' : ''}',
-            );
-          }
+      for (var index = 94; index <= 97; index++) {
+        final address = _recordAddress(0, index);
+        final bytes = await reader.readRange(
+          startAddress: address,
+          totalLength: Hem6232tDevice.recordByteSize,
+          blockSize: Hem6232tDevice.recordByteSize,
+        );
+        final allEmpty = bytes.every((b) => b == 0xff);
+        _appendLog(
+          '[check] Slot 1 Platz $index @0x${address.toRadixString(16)}: '
+          '${_hexBytes(bytes)}${allEmpty ? '  <-- LEER' : ''}',
+        );
+      }
 
-          await endTransmission(transport);
-        } finally {
-          await session.close();
-        }
-      });
+      await endTransmission(transport);
+    } finally {
+      await session.close();
+    }
+  });
 
   /// NULLBYTE-PROBE. Klaert zwei offene Fragen auf einmal, ohne Risiko:
   ///
@@ -550,68 +557,64 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
   /// Ziel ist Slot 2 Platz 99. Auch die Versatz-Adresse faellt in einen
   /// unbenutzten Platz von Slot 2, es kann also nichts verlorengehen.
   Future<void> _runZeroWriteProbe() => _guarded(() async {
-        const offsetGuess = 0x44;
-        final target = _recordAddress(1, 99);
-        final shifted = target - offsetGuess;
-        assertInsideRecordArea(target, Hem6232tDevice.recordByteSize);
-        assertInsideRecordArea(shifted, Hem6232tDevice.recordByteSize);
+    const offsetGuess = 0x44;
+    final target = _recordAddress(1, 99);
+    final shifted = target - offsetGuess;
+    assertInsideRecordArea(target, Hem6232tDevice.recordByteSize);
+    assertInsideRecordArea(shifted, Hem6232tDevice.recordByteSize);
 
-        final key = await _syncService.keyStore.load();
-        if (key == null) {
-          throw StateError('Kein gespeicherter Pairing-Key.');
-        }
-        final zeros = Uint8List(Hem6232tDevice.recordByteSize);
+    final key = await _syncService.keyStore.load();
+    if (key == null) {
+      throw StateError('Kein gespeicherter Pairing-Key.');
+    }
+    final zeros = Uint8List(Hem6232tDevice.recordByteSize);
 
-        final session = await OmronSession.open(log: _appendLog);
-        try {
-          final transport = await session.unlock(key);
-          await startTransmission(transport);
-          final reader = EepromReader(transport);
+    final session = await OmronSession.open(log: _appendLog);
+    try {
+      final transport = await session.unlock(key);
+      await startTransmission(transport);
+      final reader = EepromReader(transport);
 
-          Future<Uint8List> read(int address) => reader.readRange(
-                startAddress: address,
-                totalLength: Hem6232tDevice.recordByteSize,
-                blockSize: Hem6232tDevice.recordByteSize,
-              );
+      Future<Uint8List> read(int address) => reader.readRange(
+        startAddress: address,
+        totalLength: Hem6232tDevice.recordByteSize,
+        blockSize: Hem6232tDevice.recordByteSize,
+      );
 
-          _appendLog(
-            '[zero] Ziel 0x${target.toRadixString(16)}, Versatz-Kandidat '
-            '0x${shifted.toRadixString(16)}',
-          );
-          _appendLog('[zero] Ziel vorher:    ${_hexBytes(await read(target))}');
-          _appendLog('[zero] Versatz vorher: ${_hexBytes(await read(shifted))}');
+      _appendLog(
+        '[zero] Ziel 0x${target.toRadixString(16)}, Versatz-Kandidat '
+        '0x${shifted.toRadixString(16)}',
+      );
+      _appendLog('[zero] Ziel vorher:    ${_hexBytes(await read(target))}');
+      _appendLog('[zero] Versatz vorher: ${_hexBytes(await read(shifted))}');
 
-          await EepromWriter(transport).writeRecordArea(
-            startAddress: target,
-            data: zeros,
-          );
-          _appendLog('[zero] 14 Nullbytes geschrieben, Befehl bestaetigt.');
+      await EepromWriter(transport)
+          .writeRecordArea(startAddress: target, data: zeros);
+      _appendLog('[zero] 14 Nullbytes geschrieben, Befehl bestaetigt.');
 
-          final targetAfter = await read(target);
-          final shiftedAfter = await read(shifted);
-          _appendLog('[zero] Ziel nachher:    ${_hexBytes(targetAfter)}');
-          _appendLog('[zero] Versatz nachher: ${_hexBytes(shiftedAfter)}');
+      final targetAfter = await read(target);
+      final shiftedAfter = await read(shifted);
+      _appendLog('[zero] Ziel nachher:    ${_hexBytes(targetAfter)}');
+      _appendLog('[zero] Versatz nachher: ${_hexBytes(shiftedAfter)}');
 
-          final targetChanged = targetAfter.any((b) => b != 0xff);
-          final shiftedChanged = shiftedAfter.any((b) => b != 0xff);
-          if (targetChanged) {
-            _appendLog('[zero] ERGEBNIS: Schreiben wirkt, Adresse stimmt.');
-          } else if (shiftedChanged) {
-            _appendLog(
-              '[zero] ERGEBNIS: Schreiben wirkt, aber um 0x44 versetzt.',
-            );
-          } else {
-            _appendLog(
-              '[zero] ERGEBNIS: keine Wirkung - der Record-Bereich ist '
-              'schreibgeschuetzt.',
-            );
-          }
+      final targetChanged = targetAfter.any((b) => b != 0xff);
+      final shiftedChanged = shiftedAfter.any((b) => b != 0xff);
+      if (targetChanged) {
+        _appendLog('[zero] ERGEBNIS: Schreiben wirkt, Adresse stimmt.');
+      } else if (shiftedChanged) {
+        _appendLog('[zero] ERGEBNIS: Schreiben wirkt, aber um 0x44 versetzt.');
+      } else {
+        _appendLog(
+          '[zero] ERGEBNIS: keine Wirkung - der Record-Bereich ist '
+          'schreibgeschuetzt.',
+        );
+      }
 
-          await endTransmission(transport);
-        } finally {
-          await session.close();
-        }
-      });
+      await endTransmission(transport);
+    } finally {
+      await session.close();
+    }
+  });
 
   /// NUR LESEN. Vollpruefung nach den Schreibversuchen: liest beide Slots
   /// vollstaendig, meldet jeden belegten und jeden leeren Platz, sucht
@@ -619,97 +622,99 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
   /// lokalen Datenbank. Eine Luecke oder ein fehlender Wert waere die
   /// Spur eines Schreibvorgangs.
   Future<void> _runFullMemoryAudit() => _guarded(() async {
-        final key = await _syncService.keyStore.load();
-        if (key == null) {
-          throw StateError('Kein gespeicherter Pairing-Key.');
+    final key = await _syncService.keyStore.load();
+    if (key == null) {
+      throw StateError('Kein gespeicherter Pairing-Key.');
+    }
+
+    final session = await OmronSession.open(log: _appendLog);
+    List<SlotRecord> records;
+    try {
+      final transport = await session.unlock(key);
+      records = await readAllRecords(transport);
+    } finally {
+      await session.close();
+    }
+    _appendLog('[audit] vom Geraet gelesen: ${records.length} Records');
+
+    for (final slot in [1, 2]) {
+      final onDevice = records.where((r) => r.userSlot == slot).toList()
+        ..sort((a, b) => a.record.sequence.compareTo(b.record.sequence));
+      if (onDevice.isEmpty) {
+        _appendLog('[audit] Slot $slot: keine Records auf dem Geraet');
+        continue;
+      }
+      final first = onDevice.first.record.sequence;
+      final last = onDevice.last.record.sequence;
+      final expected = last - first + 1;
+      _appendLog(
+        '[audit] Slot $slot: ${onDevice.length} Records, Nummern '
+        '$first..$last (lueckenlos waeren $expected)',
+      );
+
+      final present = onDevice.map((r) => r.record.sequence).toSet();
+      final missing = [
+        for (var n = first; n <= last; n++)
+          if (!present.contains(n)) n,
+      ];
+      _appendLog(
+        missing.isEmpty
+            ? '[audit] Slot $slot: keine Luecke in der Nummernfolge'
+            : '[audit] Slot $slot: LUECKE bei ${missing.join(', ')}',
+      );
+
+      // Gegen die Datenbank: jeder Geraete-Record muss dort mit
+      // denselben Werten stehen, und jeder DB-Eintrag im Nummernbereich
+      // des Geraets muss dort noch vorhanden sein.
+      final stored = await _syncService.repository.allForSlot(slot);
+      final bySequence = {for (final m in stored) m.deviceSequence: m};
+      var mismatches = 0;
+      for (final r in onDevice) {
+        final m = bySequence[r.record.sequence];
+        if (m == null) {
+          _appendLog(
+            '[audit] Slot $slot Nr ${r.record.sequence}: nur auf dem '
+            'Geraet, nicht in der DB (noch nicht synchronisiert)',
+          );
+          continue;
         }
-
-        final session = await OmronSession.open(log: _appendLog);
-        List<SlotRecord> records;
-        try {
-          final transport = await session.unlock(key);
-          records = await readAllRecords(transport);
-        } finally {
-          await session.close();
-        }
-        _appendLog('[audit] vom Geraet gelesen: ${records.length} Records');
-
-        for (final slot in [1, 2]) {
-          final onDevice = records.where((r) => r.userSlot == slot).toList()
-            ..sort((a, b) => a.record.sequence.compareTo(b.record.sequence));
-          if (onDevice.isEmpty) {
-            _appendLog('[audit] Slot $slot: keine Records auf dem Geraet');
-            continue;
-          }
-          final first = onDevice.first.record.sequence;
-          final last = onDevice.last.record.sequence;
-          final expected = last - first + 1;
+        if (m.systolic != r.record.systolic ||
+            m.diastolic != r.record.diastolic ||
+            m.pulse != r.record.pulse) {
+          mismatches++;
           _appendLog(
-            '[audit] Slot $slot: ${onDevice.length} Records, Nummern '
-            '$first..$last (lueckenlos waeren $expected)',
-          );
-
-          final present = onDevice.map((r) => r.record.sequence).toSet();
-          final missing = [
-            for (var n = first; n <= last; n++)
-              if (!present.contains(n)) n,
-          ];
-          _appendLog(
-            missing.isEmpty
-                ? '[audit] Slot $slot: keine Luecke in der Nummernfolge'
-                : '[audit] Slot $slot: LUECKE bei ${missing.join(', ')}',
-          );
-
-          // Gegen die Datenbank: jeder Geraete-Record muss dort mit
-          // denselben Werten stehen, und jeder DB-Eintrag im Nummernbereich
-          // des Geraets muss dort noch vorhanden sein.
-          final stored = await _syncService.repository.allForSlot(slot);
-          final bySequence = {for (final m in stored) m.deviceSequence: m};
-          var mismatches = 0;
-          for (final r in onDevice) {
-            final m = bySequence[r.record.sequence];
-            if (m == null) {
-              _appendLog(
-                '[audit] Slot $slot Nr ${r.record.sequence}: nur auf dem '
-                'Geraet, nicht in der DB (noch nicht synchronisiert)',
-              );
-              continue;
-            }
-            if (m.systolic != r.record.systolic ||
-                m.diastolic != r.record.diastolic ||
-                m.pulse != r.record.pulse) {
-              mismatches++;
-              _appendLog(
-                '[audit] Slot $slot Nr ${r.record.sequence}: WERTE WEICHEN AB '
-                '(Geraet ${r.record.systolic}/${r.record.diastolic}/'
-                '${r.record.pulse}, DB ${m.systolic}/${m.diastolic}/'
-                '${m.pulse})',
-              );
-            }
-          }
-          _appendLog(
-            mismatches == 0
-                ? '[audit] Slot $slot: alle Werte stimmen mit der DB ueberein'
-                : '[audit] Slot $slot: $mismatches abweichende Records',
-          );
-
-          final vanished = stored
-              .where((m) =>
-                  m.deviceSequence >= first &&
-                  m.deviceSequence <= last &&
-                  !present.contains(m.deviceSequence))
-              .map((m) => m.deviceSequence)
-              .toList();
-          _appendLog(
-            vanished.isEmpty
-                ? '[audit] Slot $slot: kein DB-Eintrag ist vom Geraet '
-                    'verschwunden'
-                : '[audit] Slot $slot: VERSCHWUNDEN vom Geraet: '
-                    '${vanished.join(', ')}',
+            '[audit] Slot $slot Nr ${r.record.sequence}: WERTE WEICHEN AB '
+            '(Geraet ${r.record.systolic}/${r.record.diastolic}/'
+            '${r.record.pulse}, DB ${m.systolic}/${m.diastolic}/'
+            '${m.pulse})',
           );
         }
-        _appendLog('[audit] Fertig.');
-      });
+      }
+      _appendLog(
+        mismatches == 0
+            ? '[audit] Slot $slot: alle Werte stimmen mit der DB ueberein'
+            : '[audit] Slot $slot: $mismatches abweichende Records',
+      );
+
+      final vanished = stored
+          .where(
+            (m) =>
+                m.deviceSequence >= first &&
+                m.deviceSequence <= last &&
+                !present.contains(m.deviceSequence),
+          )
+          .map((m) => m.deviceSequence)
+          .toList();
+      _appendLog(
+        vanished.isEmpty
+            ? '[audit] Slot $slot: kein DB-Eintrag ist vom Geraet '
+                  'verschwunden'
+            : '[audit] Slot $slot: VERSCHWUNDEN vom Geraet: '
+                  '${vanished.join(', ')}',
+      );
+    }
+    _appendLog('[audit] Fertig.');
+  });
 
   /// NUR LESEN. Zeigt fuer jeden der 100 Plaetze eines Slots, welche
   /// Messungsnummer dort steht oder ob er leer ist. Damit laesst sich eine
@@ -717,50 +722,50 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
   /// unterscheiden, ob sie vom Ringpuffer, von einer nie gespeicherten
   /// Messung oder von einem Schreibvorgang stammt.
   Future<void> _runSlotMap(int slotIndex) => _guarded(() async {
-        final key = await _syncService.keyStore.load();
-        if (key == null) {
-          throw StateError('Kein gespeicherter Pairing-Key.');
-        }
-        final session = await OmronSession.open(log: _appendLog);
-        try {
-          final transport = await session.unlock(key);
-          await startTransmission(transport);
+    final key = await _syncService.keyStore.load();
+    if (key == null) {
+      throw StateError('Kein gespeicherter Pairing-Key.');
+    }
+    final session = await OmronSession.open(log: _appendLog);
+    try {
+      final transport = await session.unlock(key);
+      await startTransmission(transport);
 
-          final bytes = await EepromReader(transport).readRange(
-            startAddress: Hem6232tDevice.userStartAddresses[slotIndex],
-            totalLength:
-                Hem6232tDevice.recordsPerUser * Hem6232tDevice.recordByteSize,
-            blockSize: Hem6232tDevice.transmissionBlockSize,
-          );
-          await endTransmission(transport);
+      final bytes = await EepromReader(transport).readRange(
+        startAddress: Hem6232tDevice.userStartAddresses[slotIndex],
+        totalLength:
+            Hem6232tDevice.recordsPerUser * Hem6232tDevice.recordByteSize,
+        blockSize: Hem6232tDevice.transmissionBlockSize,
+      );
+      await endTransmission(transport);
 
-          const size = Hem6232tDevice.recordByteSize;
-          final empty = <int>[];
-          final line = StringBuffer();
-          for (var index = 0; index < Hem6232tDevice.recordsPerUser; index++) {
-            final raw = bytes.sublist(index * size, (index + 1) * size);
-            if (raw.every((b) => b == 0xff)) {
-              empty.add(index);
-              line.write('$index:LEER  ');
-            } else {
-              final seq = (raw[9] << 16) | (raw[10] << 8) | raw[11];
-              line.write('$index:$seq  ');
-            }
-            if (index % 10 == 9) {
-              _appendLog('[map] ${line.toString().trimRight()}');
-              line.clear();
-            }
-          }
-          _appendLog(
-            empty.isEmpty
-                ? '[map] Slot ${slotIndex + 1}: kein leerer Platz'
-                : '[map] Slot ${slotIndex + 1}: leere Plaetze '
-                    '${empty.join(', ')}',
-          );
-        } finally {
-          await session.close();
+      const size = Hem6232tDevice.recordByteSize;
+      final empty = <int>[];
+      final line = StringBuffer();
+      for (var index = 0; index < Hem6232tDevice.recordsPerUser; index++) {
+        final raw = bytes.sublist(index * size, (index + 1) * size);
+        if (raw.every((b) => b == 0xff)) {
+          empty.add(index);
+          line.write('$index:LEER  ');
+        } else {
+          final seq = (raw[9] << 16) | (raw[10] << 8) | raw[11];
+          line.write('$index:$seq  ');
         }
-      });
+        if (index % 10 == 9) {
+          _appendLog('[map] ${line.toString().trimRight()}');
+          line.clear();
+        }
+      }
+      _appendLog(
+        empty.isEmpty
+            ? '[map] Slot ${slotIndex + 1}: kein leerer Platz'
+            : '[map] Slot ${slotIndex + 1}: leere Plaetze '
+                  '${empty.join(', ')}',
+      );
+    } finally {
+      await session.close();
+    }
+  });
 
   /// NUR LESEN. Gibt die Verwaltungsbytes des Settings-Bereichs roh aus
   /// und dazu die Deutung, die omblepy ihnen gibt.
@@ -775,46 +780,46 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
   /// betrachten. Erst daraus laesst sich sagen, welches Byte den
   /// Schreibzeiger traegt und ob es sich bewegt.
   Future<void> _runReadCounters() => _guarded(() async {
-        final key = await _syncService.keyStore.load();
-        if (key == null) {
-          throw StateError('Kein gespeicherter Pairing-Key.');
-        }
-        const settingsBase = 0x0260;
+    final key = await _syncService.keyStore.load();
+    if (key == null) {
+      throw StateError('Kein gespeicherter Pairing-Key.');
+    }
+    const settingsBase = 0x0260;
 
-        final session = await OmronSession.open(log: _appendLog);
-        try {
-          final transport = await session.unlock(key);
-          await startTransmission(transport);
-          final reader = EepromReader(transport);
+    final session = await OmronSession.open(log: _appendLog);
+    try {
+      final transport = await session.unlock(key);
+      await startTransmission(transport);
+      final reader = EepromReader(transport);
 
-          Future<Uint8List> window(int offset, int length) => reader.readRange(
-                startAddress: settingsBase + offset,
-                totalLength: length,
-                blockSize: length,
-              );
+      Future<Uint8List> window(int offset, int length) => reader.readRange(
+        startAddress: settingsBase + offset,
+        totalLength: length,
+        blockSize: length,
+      );
 
-          final w0 = await window(0x00, 8);
-          _appendLog('[cnt] +0x00: ${_hexBytes(w0)}');
-          _appendLog(
-            '[cnt]   Deutung [O]: letzter Platz U1=${w0[1]}, U2=${w0[3]}; '
-            'ungelesen U1=${w0[5]}, U2=${w0[7]}',
-          );
+      final w0 = await window(0x00, 8);
+      _appendLog('[cnt] +0x00: ${_hexBytes(w0)}');
+      _appendLog(
+        '[cnt]   Deutung [O]: letzter Platz U1=${w0[1]}, U2=${w0[3]}; '
+        'ungelesen U1=${w0[5]}, U2=${w0[7]}',
+      );
 
-          final w8 = await window(0x08, 8);
-          _appendLog('[cnt] +0x08: ${_hexBytes(w8)}');
-          _appendLog(
-            '[cnt]   Deutung [H]: hoechste Nummer U1='
-            '${(w8[0] << 8) | w8[1]}, U2=${(w8[4] << 8) | w8[5]}',
-          );
+      final w8 = await window(0x08, 8);
+      _appendLog('[cnt] +0x08: ${_hexBytes(w8)}');
+      _appendLog(
+        '[cnt]   Deutung [H]: hoechste Nummer U1='
+        '${(w8[0] << 8) | w8[1]}, U2=${(w8[4] << 8) | w8[5]}',
+      );
 
-          final w30 = await window(0x30, 8);
-          _appendLog('[cnt] +0x30: ${_hexBytes(w30)}');
+      final w30 = await window(0x30, 8);
+      _appendLog('[cnt] +0x30: ${_hexBytes(w30)}');
 
-          await endTransmission(transport);
-        } finally {
-          await session.close();
-        }
-      });
+      await endTransmission(transport);
+    } finally {
+      await session.close();
+    }
+  });
 
   /// NUR LESEN. Vollabzug des gesamten lesbaren Zustands, zeilenweise als
   /// Hex ins Log. Zweck: zwei Abzuege maschinell gegeneinander stellen und
@@ -826,80 +831,80 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
   ///
   /// Zeilenformat: `[dump] bereich adresse-hex bytes-hex`
   Future<void> _runFullDump() => _guarded(() async {
-        final key = await _syncService.keyStore.load();
-        if (key == null) {
-          throw StateError('Kein gespeicherter Pairing-Key.');
-        }
+    final key = await _syncService.keyStore.load();
+    if (key == null) {
+      throw StateError('Kein gespeicherter Pairing-Key.');
+    }
 
-        final session = await OmronSession.open(log: _appendLog);
+    final session = await OmronSession.open(log: _appendLog);
+    try {
+      final transport = await session.unlock(key);
+
+      // Start-Antwort selbst auswerten statt verwerfen: sie traegt die
+      // Geraete-ID und koennte Zustand enthalten.
+      await transport.writeCommand(startTransmissionFrame);
+      final startRaw = await transport.readResponse();
+      _appendLog('[dump] start 0000 ${_hexBytes(startRaw)}');
+
+      final reader = EepromReader(transport);
+
+      // Settings: nur die antwortenden Fenster, jedes einzeln, damit
+      // ein stummes Fenster die anderen nicht mitreisst.
+      const settingsBase = 0x0260;
+      const windows = <List<int>>[
+        [0x00, 8],
+        [0x08, 8],
+        [0x14, 10],
+        [0x20, 8],
+        [0x30, 8],
+        [0x38, 8],
+        [0x40, 4],
+      ];
+      for (final w in windows) {
+        final address = settingsBase + w[0];
+        final label = 'set ${address.toRadixString(16).padLeft(4, '0')}';
         try {
-          final transport = await session.unlock(key);
-
-          // Start-Antwort selbst auswerten statt verwerfen: sie traegt die
-          // Geraete-ID und koennte Zustand enthalten.
-          await transport.writeCommand(startTransmissionFrame);
-          final startRaw = await transport.readResponse();
-          _appendLog('[dump] start 0000 ${_hexBytes(startRaw)}');
-
-          final reader = EepromReader(transport);
-
-          // Settings: nur die antwortenden Fenster, jedes einzeln, damit
-          // ein stummes Fenster die anderen nicht mitreisst.
-          const settingsBase = 0x0260;
-          const windows = <List<int>>[
-            [0x00, 8],
-            [0x08, 8],
-            [0x14, 10],
-            [0x20, 8],
-            [0x30, 8],
-            [0x38, 8],
-            [0x40, 4],
-          ];
-          for (final w in windows) {
-            final address = settingsBase + w[0];
-            final label = 'set ${address.toRadixString(16).padLeft(4, '0')}';
-            try {
-              final bytes = await reader.readRange(
-                startAddress: address,
-                totalLength: w[1],
-                blockSize: w[1],
-              );
-              _appendLog('[dump] $label ${_hexBytes(bytes)}');
-            } on ProtocolException {
-              // Laut §8.1 bleibt die Verbindung nach einem stummen Fenster
-              // bestehen; also weiterlesen statt abbrechen.
-              _appendLog('[dump] $label KEINE-ANTWORT');
-            }
-          }
-
-          // Records: beide Slots vollstaendig, 14 Bytes je Zeile, damit
-          // eine Zeile genau einem Platz entspricht.
-          for (var slotIndex = 0; slotIndex < 2; slotIndex++) {
-            final base = Hem6232tDevice.userStartAddresses[slotIndex];
-            final bytes = await reader.readRange(
-              startAddress: base,
-              totalLength: Hem6232tDevice.recordsPerUser *
-                  Hem6232tDevice.recordByteSize,
-              blockSize: Hem6232tDevice.transmissionBlockSize,
-            );
-            const size = Hem6232tDevice.recordByteSize;
-            for (var i = 0; i < Hem6232tDevice.recordsPerUser; i++) {
-              final address = base + i * size;
-              _appendLog(
-                '[dump] rec${slotIndex + 1}-'
-                '${i.toString().padLeft(2, '0')} '
-                '${address.toRadixString(16).padLeft(4, '0')} '
-                '${_hexBytes(bytes.sublist(i * size, (i + 1) * size))}',
-              );
-            }
-          }
-
-          await endTransmission(transport);
-          _appendLog('[dump] ENDE');
-        } finally {
-          await session.close();
+          final bytes = await reader.readRange(
+            startAddress: address,
+            totalLength: w[1],
+            blockSize: w[1],
+          );
+          _appendLog('[dump] $label ${_hexBytes(bytes)}');
+        } on ProtocolException {
+          // Laut §8.1 bleibt die Verbindung nach einem stummen Fenster
+          // bestehen; also weiterlesen statt abbrechen.
+          _appendLog('[dump] $label KEINE-ANTWORT');
         }
-      });
+      }
+
+      // Records: beide Slots vollstaendig, 14 Bytes je Zeile, damit
+      // eine Zeile genau einem Platz entspricht.
+      for (var slotIndex = 0; slotIndex < 2; slotIndex++) {
+        final base = Hem6232tDevice.userStartAddresses[slotIndex];
+        final bytes = await reader.readRange(
+          startAddress: base,
+          totalLength:
+              Hem6232tDevice.recordsPerUser * Hem6232tDevice.recordByteSize,
+          blockSize: Hem6232tDevice.transmissionBlockSize,
+        );
+        const size = Hem6232tDevice.recordByteSize;
+        for (var i = 0; i < Hem6232tDevice.recordsPerUser; i++) {
+          final address = base + i * size;
+          _appendLog(
+            '[dump] rec${slotIndex + 1}-'
+            '${i.toString().padLeft(2, '0')} '
+            '${address.toRadixString(16).padLeft(4, '0')} '
+            '${_hexBytes(bytes.sublist(i * size, (i + 1) * size))}',
+          );
+        }
+      }
+
+      await endTransmission(transport);
+      _appendLog('[dump] ENDE');
+    } finally {
+      await session.close();
+    }
+  });
 
   /// VERSATZ-TEST. Der Mitschnitt der Hersteller-App (2026-09-04) zeigt,
   /// dass Lese- und Schreib-Adressraum um 0x44 auseinanderliegen: Sie liest
@@ -916,67 +921,73 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
   /// Beide sind unbenutzt (Slot 2 hat 14 Records), es kann nichts
   /// verlorengehen.
   Future<void> _runOffsetWriteProbe() => _guarded(() async {
-        const writeOffset = 0x44;
-        final readTarget = _recordAddress(1, 50);
-        final writeTarget = readTarget + writeOffset;
-        assertInsideRecordArea(readTarget, Hem6232tDevice.recordByteSize);
-        assertInsideRecordArea(writeTarget, Hem6232tDevice.recordByteSize);
+    const writeOffset = 0x44;
+    final readTarget = _recordAddress(1, 50);
+    final writeTarget = readTarget + writeOffset;
+    assertInsideRecordArea(readTarget, Hem6232tDevice.recordByteSize);
+    assertInsideRecordArea(writeTarget, Hem6232tDevice.recordByteSize);
 
-        final key = await _syncService.keyStore.load();
-        if (key == null) {
-          throw StateError('Kein gespeicherter Pairing-Key.');
-        }
-        // Erkennbares Muster statt 0x00/0xFF, damit ein Treffer eindeutig
-        // ist und sich nicht mit einem leeren Platz verwechseln laesst.
-        final pattern = Uint8List.fromList(
-          List.generate(Hem6232tDevice.recordByteSize, (i) => 0xa0 + i),
+    final key = await _syncService.keyStore.load();
+    if (key == null) {
+      throw StateError('Kein gespeicherter Pairing-Key.');
+    }
+    // Erkennbares Muster statt 0x00/0xFF, damit ein Treffer eindeutig
+    // ist und sich nicht mit einem leeren Platz verwechseln laesst.
+    final pattern = Uint8List.fromList(
+      List.generate(Hem6232tDevice.recordByteSize, (i) => 0xa0 + i),
+    );
+
+    final session = await OmronSession.open(log: _appendLog);
+    try {
+      final transport = await session.unlock(key);
+      await startTransmission(transport);
+      final reader = EepromReader(transport);
+
+      Future<Uint8List> read(int a) => reader.readRange(
+        startAddress: a,
+        totalLength: Hem6232tDevice.recordByteSize,
+        blockSize: Hem6232tDevice.recordByteSize,
+      );
+
+      _appendLog(
+        '[off] schreibe nach 0x${writeTarget.toRadixString(16)}, '
+        'erwarte Wirkung bei 0x${readTarget.toRadixString(16)}',
+      );
+      _appendLog(
+        '[off] Ziel vorher:      ${_hexBytes(await read(readTarget))}',
+      );
+      _appendLog(
+        '[off] Schreibadr. vorher: ${_hexBytes(await read(writeTarget))}',
+      );
+
+      await EepromWriter(transport)
+          .writeRecordArea(startAddress: writeTarget, data: pattern);
+      _appendLog('[off] Muster geschrieben, Befehl bestaetigt.');
+
+      final atRead = await read(readTarget);
+      final atWrite = await read(writeTarget);
+      _appendLog('[off] Ziel nachher:      ${_hexBytes(atRead)}');
+      _appendLog('[off] Schreibadr. nachher: ${_hexBytes(atWrite)}');
+
+      final hitRead = atRead[0] == 0xa0;
+      final hitWrite = atWrite[0] == 0xa0;
+      if (hitRead) {
+        _appendLog(
+          '[off] ERGEBNIS: Treffer bei Leseadresse - Versatz 0x44 gilt!',
         );
+      } else if (hitWrite) {
+        _appendLog(
+          '[off] ERGEBNIS: Treffer bei der Schreibadresse - kein Versatz.',
+        );
+      } else {
+        _appendLog('[off] ERGEBNIS: keine Wirkung an beiden Stellen.');
+      }
 
-        final session = await OmronSession.open(log: _appendLog);
-        try {
-          final transport = await session.unlock(key);
-          await startTransmission(transport);
-          final reader = EepromReader(transport);
-
-          Future<Uint8List> read(int a) => reader.readRange(
-                startAddress: a,
-                totalLength: Hem6232tDevice.recordByteSize,
-                blockSize: Hem6232tDevice.recordByteSize,
-              );
-
-          _appendLog(
-            '[off] schreibe nach 0x${writeTarget.toRadixString(16)}, '
-            'erwarte Wirkung bei 0x${readTarget.toRadixString(16)}',
-          );
-          _appendLog('[off] Ziel vorher:      ${_hexBytes(await read(readTarget))}');
-          _appendLog('[off] Schreibadr. vorher: ${_hexBytes(await read(writeTarget))}');
-
-          await EepromWriter(transport).writeRecordArea(
-            startAddress: writeTarget,
-            data: pattern,
-          );
-          _appendLog('[off] Muster geschrieben, Befehl bestaetigt.');
-
-          final atRead = await read(readTarget);
-          final atWrite = await read(writeTarget);
-          _appendLog('[off] Ziel nachher:      ${_hexBytes(atRead)}');
-          _appendLog('[off] Schreibadr. nachher: ${_hexBytes(atWrite)}');
-
-          final hitRead = atRead[0] == 0xa0;
-          final hitWrite = atWrite[0] == 0xa0;
-          if (hitRead) {
-            _appendLog('[off] ERGEBNIS: Treffer bei Leseadresse - Versatz 0x44 gilt!');
-          } else if (hitWrite) {
-            _appendLog('[off] ERGEBNIS: Treffer bei der Schreibadresse - kein Versatz.');
-          } else {
-            _appendLog('[off] ERGEBNIS: keine Wirkung an beiden Stellen.');
-          }
-
-          await endTransmission(transport);
-        } finally {
-          await session.close();
-        }
-      });
+      await endTransmission(transport);
+    } finally {
+      await session.close();
+    }
+  });
 
   /// NUR LESEN. Listet alle Services und Characteristics des Geraets mit
   /// UUID, Instanz-Id und Eigenschaften auf.
@@ -986,34 +997,34 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
   /// die in unserer Spezifikation nirgends vorkommen. Was dort liegt, ist
   /// unbekannt und koennte ein zweiter Datenweg sein.
   Future<void> _runGattDump() => _guarded(() async {
-        final device = await _scanAndConnect();
-        _device = device;
+    final device = await _scanAndConnect();
+    _device = device;
 
-        for (final service in device.servicesList) {
-          _appendLog('[gatt] Service ${service.uuid}');
-          for (final c in service.characteristics) {
-            final p = c.properties;
-            final flags = [
-              if (p.read) 'read',
-              if (p.write) 'write',
-              if (p.writeWithoutResponse) 'writeNoRsp',
-              if (p.notify) 'notify',
-              if (p.indicate) 'indicate',
-            ].join(',');
-            _appendLog(
-              '[gatt]   char ${c.uuid}  inst=0x'
-              '${c.instanceId.toRadixString(16).padLeft(4, '0')}  [$flags]',
-            );
-            for (final d in c.descriptors) {
-              _appendLog(
-                '[gatt]     desc ${d.uuid}  inst=0x'
-                '${d.instanceId.toRadixString(16).padLeft(4, '0')}',
-              );
-            }
-          }
+    for (final service in device.servicesList) {
+      _appendLog('[gatt] Service ${service.uuid}');
+      for (final c in service.characteristics) {
+        final p = c.properties;
+        final flags = [
+          if (p.read) 'read',
+          if (p.write) 'write',
+          if (p.writeWithoutResponse) 'writeNoRsp',
+          if (p.notify) 'notify',
+          if (p.indicate) 'indicate',
+        ].join(',');
+        _appendLog(
+          '[gatt]   char ${c.uuid}  inst=0x'
+          '${c.instanceId.toRadixString(16).padLeft(4, '0')}  [$flags]',
+        );
+        for (final d in c.descriptors) {
+          _appendLog(
+            '[gatt]     desc ${d.uuid}  inst=0x'
+            '${d.instanceId.toRadixString(16).padLeft(4, '0')}',
+          );
         }
-        _appendLog('[gatt] Fertig.');
-      });
+      }
+    }
+    _appendLog('[gatt] Fertig.');
+  });
 
   // --- GENORMTE DIENSTE (Befund 2026-09-04) -----------------------------
   // Das GATT-Verzeichnis zeigt neben dem proprietaeren Service mehrere
@@ -1063,101 +1074,105 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
   /// fragt nur die Anzahl ab. Der Loeschbefehl waere Befehl 2 und wird
   /// hier bewusst NICHT gesendet.
   Future<void> _runStandardServiceProbe() => _guarded(() async {
-        final device = await _scanAndConnect();
-        _device = device;
+    final device = await _scanAndConnect();
+    _device = device;
 
-        // 1. Uhrzeit lesen - beantwortet, ob die Geraeteuhr ueberhaupt
-        //    ueber den Normweg zugaenglich ist (§8.2 der Spezifikation
-        //    sagt bisher: Uhr-Bytes unbekannt).
-        final ct = _findChar(device, _cts, _ctsCurrentTime);
-        if (ct == null) {
-          _appendLog('[std] Current Time: Characteristic nicht gefunden');
-        } else {
-          try {
-            final v = await ct.read();
-            _appendLog('[std] Current Time roh: ${_hexBytes(Uint8List.fromList(v))}');
-            if (v.length >= 7) {
-              final year = v[0] | (v[1] << 8);
-              _appendLog(
-                '[std] Current Time gedeutet: $year-${v[2]}-${v[3]} '
-                '${v[4]}:${v[5]}:${v[6]}',
-              );
-            }
-          } catch (e) {
-            _appendLog('[std] Current Time lesen fehlgeschlagen: $e');
-          }
-        }
-
-        // 2. Blutdruck-Merkmale lesen (0x2A49) - zeigt, ob der Normdienst
-        //    ueberhaupt Inhalt hat.
-        final feature = _findChar(device, _bloodPressureService, '2a49');
-        if (feature != null) {
-          try {
-            final v = await feature.read();
-            _appendLog('[std] Blood Pressure Feature: ${_hexBytes(Uint8List.fromList(v))}');
-          } catch (e) {
-            _appendLog('[std] Blood Pressure Feature: $e');
-          }
-        }
-
-        // 3. Benutzerindex des User-Data-Dienstes (0x2A9A).
-        final userIndex = _findChar(device, _userDataService, '2a9a');
-        if (userIndex != null) {
-          try {
-            final v = await userIndex.read();
-            _appendLog('[std] User Index: ${_hexBytes(Uint8List.fromList(v))}');
-          } catch (e) {
-            _appendLog('[std] User Index: $e');
-          }
-        }
-
-        // 4. Record Access Control Point: nur die Anzahl abfragen.
-        final racp = _findChar(device, _racpService, _racpChar);
-        if (racp == null) {
-          _appendLog('[std] RACP nicht gefunden - Ende.');
-          return;
-        }
-        final answers = FrameMailbox<Uint8List>();
-        final sub = racp.onValueReceived
-            .listen((b) => answers.deliver(Uint8List.fromList(b)));
-        try {
-          await racp.setNotifyValue(true);
-          _appendLog('[std] RACP: Indications aktiviert, frage Anzahl ab...');
-          await racp.write(
-            Uint8List.fromList([0x04, 0x01]),
-            withoutResponse: false,
-          );
-          final answer =
-              await answers.next().timeout(const Duration(seconds: 10));
-          _appendLog('[std] RACP Antwort: ${_hexBytes(answer)}');
-          if (answer.length >= 4 && answer[0] == 0x05) {
-            final count = answer[2] | (answer[3] << 8);
-            _appendLog(
-              '[std] ERGEBNIS: Der RACP lebt und meldet $count Datensaetze. '
-              'Damit waere auch Befehl 2 (Delete stored records) verfuegbar.',
-            );
-          } else if (answer.isNotEmpty && answer[0] == 0x06) {
-            _appendLog(
-              '[std] ERGEBNIS: Response Code - das Geraet lehnt ab '
-              '(Byte 3 ist der Grund).',
-            );
-          } else {
-            _appendLog('[std] ERGEBNIS: unerwartete Antwort.');
-          }
-        } on TimeoutException {
+    // 1. Uhrzeit lesen - beantwortet, ob die Geraeteuhr ueberhaupt
+    //    ueber den Normweg zugaenglich ist (§8.2 der Spezifikation
+    //    sagt bisher: Uhr-Bytes unbekannt).
+    final ct = _findChar(device, _cts, _ctsCurrentTime);
+    if (ct == null) {
+      _appendLog('[std] Current Time: Characteristic nicht gefunden');
+    } else {
+      try {
+        final v = await ct.read();
+        _appendLog(
+          '[std] Current Time roh: ${_hexBytes(Uint8List.fromList(v))}',
+        );
+        if (v.length >= 7) {
+          final year = v[0] | (v[1] << 8);
           _appendLog(
-            '[std] ERGEBNIS: keine Antwort binnen 10 s - der RACP steht '
-            'wohl nur im Verzeichnis, ohne Funktion.',
+            '[std] Current Time gedeutet: $year-${v[2]}-${v[3]} '
+            '${v[4]}:${v[5]}:${v[6]}',
           );
-        } catch (e) {
-          _appendLog('[std] RACP Fehler: $e');
-        } finally {
-          await sub.cancel();
-          try {
-            await racp.setNotifyValue(false);
-          } catch (_) {}
         }
-      });
+      } catch (e) {
+        _appendLog('[std] Current Time lesen fehlgeschlagen: $e');
+      }
+    }
+
+    // 2. Blutdruck-Merkmale lesen (0x2A49) - zeigt, ob der Normdienst
+    //    ueberhaupt Inhalt hat.
+    final feature = _findChar(device, _bloodPressureService, '2a49');
+    if (feature != null) {
+      try {
+        final v = await feature.read();
+        _appendLog(
+          '[std] Blood Pressure Feature: ${_hexBytes(Uint8List.fromList(v))}',
+        );
+      } catch (e) {
+        _appendLog('[std] Blood Pressure Feature: $e');
+      }
+    }
+
+    // 3. Benutzerindex des User-Data-Dienstes (0x2A9A).
+    final userIndex = _findChar(device, _userDataService, '2a9a');
+    if (userIndex != null) {
+      try {
+        final v = await userIndex.read();
+        _appendLog('[std] User Index: ${_hexBytes(Uint8List.fromList(v))}');
+      } catch (e) {
+        _appendLog('[std] User Index: $e');
+      }
+    }
+
+    // 4. Record Access Control Point: nur die Anzahl abfragen.
+    final racp = _findChar(device, _racpService, _racpChar);
+    if (racp == null) {
+      _appendLog('[std] RACP nicht gefunden - Ende.');
+      return;
+    }
+    final answers = FrameMailbox<Uint8List>();
+    final sub = racp.onValueReceived.listen(
+      (b) => answers.deliver(Uint8List.fromList(b)),
+    );
+    try {
+      await racp.setNotifyValue(true);
+      _appendLog('[std] RACP: Indications aktiviert, frage Anzahl ab...');
+      await racp.write(
+        Uint8List.fromList([0x04, 0x01]),
+        withoutResponse: false,
+      );
+      final answer = await answers.next().timeout(const Duration(seconds: 10));
+      _appendLog('[std] RACP Antwort: ${_hexBytes(answer)}');
+      if (answer.length >= 4 && answer[0] == 0x05) {
+        final count = answer[2] | (answer[3] << 8);
+        _appendLog(
+          '[std] ERGEBNIS: Der RACP lebt und meldet $count Datensaetze. '
+          'Damit waere auch Befehl 2 (Delete stored records) verfuegbar.',
+        );
+      } else if (answer.isNotEmpty && answer[0] == 0x06) {
+        _appendLog(
+          '[std] ERGEBNIS: Response Code - das Geraet lehnt ab '
+          '(Byte 3 ist der Grund).',
+        );
+      } else {
+        _appendLog('[std] ERGEBNIS: unerwartete Antwort.');
+      }
+    } on TimeoutException {
+      _appendLog(
+        '[std] ERGEBNIS: keine Antwort binnen 10 s - der RACP steht '
+        'wohl nur im Verzeichnis, ohne Funktion.',
+      );
+    } catch (e) {
+      _appendLog('[std] RACP Fehler: $e');
+    } finally {
+      await sub.cancel();
+      try {
+        await racp.setNotifyValue(false);
+      } catch (_) {}
+    }
+  });
 
   /// NUR ABFRAGEND, mit vorherigem Entsperren. Zweiter Anlauf auf den
   /// Record Access Control Point.
@@ -1175,105 +1190,107 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
   /// Gesendet wird ausschliesslich Befehl 4. Der Loeschbefehl waere
   /// Befehl 2 und bleibt hier aussen vor.
   Future<void> _runRacpAfterUnlock() => _guarded(() async {
-        final key = await _syncService.keyStore.load();
-        if (key == null) {
-          throw StateError(
-            'Kein gespeicherter Pairing-Key - zuerst "5. Prod-Pairing".',
-          );
+    final key = await _syncService.keyStore.load();
+    if (key == null) {
+      throw StateError(
+        'Kein gespeicherter Pairing-Key - zuerst "5. Prod-Pairing".',
+      );
+    }
+
+    final session = await OmronSession.open(log: _appendLog);
+    try {
+      final device = session.device;
+      final transport = await session.unlock(key);
+      _appendLog('[racp] entsperrt.');
+
+      final racp = _findChar(device, _racpService, _racpChar);
+      if (racp == null) {
+        _appendLog('[racp] Characteristic nicht gefunden - Ende.');
+        return;
+      }
+
+      final answers = FrameMailbox<Uint8List>();
+      final sub = racp.onValueReceived.listen(
+        (b) => answers.deliver(Uint8List.fromList(b)),
+      );
+      try {
+        await racp.setNotifyValue(true);
+
+        Future<void> ask(String stufe) async {
+          try {
+            await racp.write(
+              Uint8List.fromList([0x04, 0x01]),
+              withoutResponse: false,
+            );
+            _appendLog('[racp] $stufe: Befehl 4 gesendet, warte...');
+            final a = await answers.next().timeout(const Duration(seconds: 8));
+            _appendLog('[racp] $stufe: Antwort ${_hexBytes(a)}');
+            if (a.length >= 4 && a[0] == 0x05) {
+              _appendLog(
+                '[racp] $stufe: ERGEBNIS - ${a[2] | (a[3] << 8)} '
+                'Datensaetze gemeldet. Die Schnittstelle lebt.',
+              );
+            } else if (a.isNotEmpty && a[0] == 0x06) {
+              _appendLog(
+                '[racp] $stufe: ERGEBNIS - Response Code, Grund '
+                '0x${a.length > 3 ? a[3].toRadixString(16) : "?"}',
+              );
+            }
+          } on TimeoutException {
+            _appendLog('[racp] $stufe: keine Antwort binnen 8 s.');
+          } catch (e) {
+            _appendLog('[racp] $stufe: Schreibfehler $e');
+          }
         }
 
-        final session = await OmronSession.open(log: _appendLog);
-        try {
-          final device = session.device;
-          final transport = await session.unlock(key);
-          _appendLog('[racp] entsperrt.');
+        await ask('Stufe 1 (nur entsperrt)');
 
-          final racp = _findChar(device, _racpService, _racpChar);
-          if (racp == null) {
-            _appendLog('[racp] Characteristic nicht gefunden - Ende.');
-            return;
-          }
+        // Stufe 2: innerhalb einer offenen Uebertragungsklammer.
+        await startTransmission(transport);
+        _appendLog('[racp] Uebertragung gestartet.');
+        await ask('Stufe 2 (in offener Klammer)');
+        await endTransmission(transport);
 
-          final answers = FrameMailbox<Uint8List>();
-          final sub = racp.onValueReceived
-              .listen((b) => answers.deliver(Uint8List.fromList(b)));
+        // Stufe 3: auf Messwerte des Normdienstes lauschen.
+        final bpm = _findChar(device, _bloodPressureService, '2a35');
+        if (bpm == null) {
+          _appendLog('[racp] Messwert-Characteristic nicht gefunden.');
+        } else {
+          final bpAnswers = FrameMailbox<Uint8List>();
+          final bpSub = bpm.onValueReceived.listen(
+            (b) => bpAnswers.deliver(Uint8List.fromList(b)),
+          );
           try {
-            await racp.setNotifyValue(true);
-
-            Future<void> ask(String stufe) async {
-              try {
-                await racp.write(
-                  Uint8List.fromList([0x04, 0x01]),
-                  withoutResponse: false,
-                );
-                _appendLog('[racp] $stufe: Befehl 4 gesendet, warte...');
-                final a =
-                    await answers.next().timeout(const Duration(seconds: 8));
-                _appendLog('[racp] $stufe: Antwort ${_hexBytes(a)}');
-                if (a.length >= 4 && a[0] == 0x05) {
-                  _appendLog(
-                    '[racp] $stufe: ERGEBNIS - ${a[2] | (a[3] << 8)} '
-                    'Datensaetze gemeldet. Die Schnittstelle lebt.',
-                  );
-                } else if (a.isNotEmpty && a[0] == 0x06) {
-                  _appendLog(
-                    '[racp] $stufe: ERGEBNIS - Response Code, Grund '
-                    '0x${a.length > 3 ? a[3].toRadixString(16) : "?"}',
-                  );
-                }
-              } on TimeoutException {
-                _appendLog('[racp] $stufe: keine Antwort binnen 8 s.');
-              } catch (e) {
-                _appendLog('[racp] $stufe: Schreibfehler $e');
-              }
-            }
-
-            await ask('Stufe 1 (nur entsperrt)');
-
-            // Stufe 2: innerhalb einer offenen Uebertragungsklammer.
-            await startTransmission(transport);
-            _appendLog('[racp] Uebertragung gestartet.');
-            await ask('Stufe 2 (in offener Klammer)');
-            await endTransmission(transport);
-
-            // Stufe 3: auf Messwerte des Normdienstes lauschen.
-            final bpm = _findChar(device, _bloodPressureService, '2a35');
-            if (bpm == null) {
-              _appendLog('[racp] Messwert-Characteristic nicht gefunden.');
-            } else {
-              final bpAnswers = FrameMailbox<Uint8List>();
-              final bpSub = bpm.onValueReceived
-                  .listen((b) => bpAnswers.deliver(Uint8List.fromList(b)));
-              try {
-                await bpm.setNotifyValue(true);
-                _appendLog(
-                  '[racp] Stufe 3: lausche 8 s auf den Blutdruck-Normdienst...',
-                );
-                final a =
-                    await bpAnswers.next().timeout(const Duration(seconds: 8));
-                _appendLog('[racp] Stufe 3: Messwert ${_hexBytes(a)}');
-              } on TimeoutException {
-                _appendLog(
-                  '[racp] Stufe 3: nichts empfangen - der Normdienst sendet '
-                  'von sich aus nichts.',
-                );
-              } finally {
-                await bpSub.cancel();
-                try {
-                  await bpm.setNotifyValue(false);
-                } catch (_) {}
-              }
-            }
+            await bpm.setNotifyValue(true);
+            _appendLog(
+              '[racp] Stufe 3: lausche 8 s auf den Blutdruck-Normdienst...',
+            );
+            final a = await bpAnswers.next().timeout(
+              const Duration(seconds: 8),
+            );
+            _appendLog('[racp] Stufe 3: Messwert ${_hexBytes(a)}');
+          } on TimeoutException {
+            _appendLog(
+              '[racp] Stufe 3: nichts empfangen - der Normdienst sendet '
+              'von sich aus nichts.',
+            );
           } finally {
-            await sub.cancel();
+            await bpSub.cancel();
             try {
-              await racp.setNotifyValue(false);
+              await bpm.setNotifyValue(false);
             } catch (_) {}
           }
-        } finally {
-          await session.close();
         }
-      });
+      } finally {
+        await sub.cancel();
+        try {
+          await racp.setNotifyValue(false);
+        } catch (_) {}
+      }
+    } finally {
+      await session.close();
+    }
+  });
 
   /// NUR SCANNEN. Fragt das Geraet ohne Verbindung, ob es neue Messungen
   /// gibt - der erste Baustein des Autosync.
@@ -1282,34 +1299,32 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
   /// sie mit dem Hoechststand in der lokalen Datenbank. Es wird weder
   /// verbunden noch entsperrt noch gelesen.
   Future<void> _runAdvertisingCheck() => _guarded(() async {
-        _appendLog('[adv] Scan laeuft, Bluetooth-Taste druecken...');
-        final result = await OmronSession.scan(
-          waitForStatus: true,
-          log: _appendLog,
-        );
-        final status = result.status;
-        if (status == null) {
-          _appendLog(
-            '[adv] Geraet gefunden, aber ohne deutbare Herstellerdaten.',
-          );
-          return;
-        }
+    _appendLog('[adv] Scan laeuft, Bluetooth-Taste druecken...');
+    final result = await OmronSession.scan(
+      waitForStatus: true,
+      log: _appendLog,
+    );
+    final status = result.status;
+    if (status == null) {
+      _appendLog('[adv] Geraet gefunden, aber ohne deutbare Herstellerdaten.');
+      return;
+    }
 
-        for (final slot in [1, 2]) {
-          final known = await _syncService.repository.highestSequenceFor(slot);
-          final onDevice = status.highestSequence(slot);
-          final isNew = status.hasNewMeasurements(
-            userSlot: slot,
-            knownSequence: known,
-          );
-          _appendLog(
-            '[adv] Slot $slot: Geraet $onDevice (Platzzeiger '
-            '${status.writePointer(slot)}), DB ${known ?? "leer"} -> '
-            '${isNew ? "NEUE MESSUNGEN" : "nichts Neues"}'
-            '${isNew && known != null ? ", ${onDevice - known} Stueck" : ""}',
-          );
-        }
-      });
+    for (final slot in [1, 2]) {
+      final known = await _syncService.repository.highestSequenceFor(slot);
+      final onDevice = status.highestSequence(slot);
+      final isNew = status.hasNewMeasurements(
+        userSlot: slot,
+        knownSequence: known,
+      );
+      _appendLog(
+        '[adv] Slot $slot: Geraet $onDevice (Platzzeiger '
+        '${status.writePointer(slot)}), DB ${known ?? "leer"} -> '
+        '${isNew ? "NEUE MESSUNGEN" : "nichts Neues"}'
+        '${isNew && known != null ? ", ${onDevice - known} Stueck" : ""}',
+      );
+    }
+  });
 
   /// Dauerscan: lauscht auf das Advertising und meldet jede Aenderung.
   /// Nach einer Messung am Geraet sendet es von selbst (§2.1) - hier
@@ -1334,12 +1349,9 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
     // die DB-Abfragen mehrerer Meldungen parallel und die Ausgaben
     // koennen sich ueberholen.
     var pending = Future<void>.value();
-    _watch = watchOmronStatus().listen(
-      (status) {
-        pending = pending.then((_) => _reportStatus(status));
-      },
-      onError: (Object e) => _appendLog('[watch] Fehler: $e'),
-    );
+    _watch = watchOmronStatus().listen((status) {
+      pending = pending.then((_) => _reportStatus(status));
+    }, onError: (Object e) => _appendLog('[watch] Fehler: $e'));
     setState(() {});
   }
 
@@ -1413,8 +1425,9 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
               : Uint8List.fromList([0x02, 0x01]);
 
           final answers = FrameMailbox<Uint8List>();
-          final sub = target.onValueReceived
-              .listen((b) => answers.deliver(Uint8List.fromList(b)));
+          final sub = target.onValueReceived.listen(
+            (b) => answers.deliver(Uint8List.fromList(b)),
+          );
           try {
             await target.setNotifyValue(true);
             _appendLog('[$label] sende ${_hexBytes(payload)}...');
@@ -1456,86 +1469,85 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
   /// ACHTUNG: Legt bei Erfolg einen zusaetzlichen Benutzer auf dem Geraet
   /// an und versucht danach, dessen Daten zu loeschen.
   Future<void> _runUserRegisterChain() => _guarded(() async {
-        const consentCode = 1234;
-        final key = await _syncService.keyStore.load();
-        if (key == null) {
-          throw StateError('Kein gespeicherter Pairing-Key.');
-        }
-        final session = await OmronSession.open(log: _appendLog);
-        try {
-          await session.unlock(key);
-          final ucp = _findChar(session.device, _userDataService, '2a9f');
-          final userIndex = _findChar(session.device, _userDataService, '2a9a');
-          if (ucp == null) {
-            _appendLog('[reg] Characteristic nicht gefunden.');
-            return;
-          }
+    const consentCode = 1234;
+    final key = await _syncService.keyStore.load();
+    if (key == null) {
+      throw StateError('Kein gespeicherter Pairing-Key.');
+    }
+    final session = await OmronSession.open(log: _appendLog);
+    try {
+      await session.unlock(key);
+      final ucp = _findChar(session.device, _userDataService, '2a9f');
+      final userIndex = _findChar(session.device, _userDataService, '2a9a');
+      if (ucp == null) {
+        _appendLog('[reg] Characteristic nicht gefunden.');
+        return;
+      }
 
-          final answers = FrameMailbox<Uint8List>();
-          final sub = ucp.onValueReceived
-              .listen((b) => answers.deliver(Uint8List.fromList(b)));
+      final answers = FrameMailbox<Uint8List>();
+      final sub = ucp.onValueReceived.listen(
+        (b) => answers.deliver(Uint8List.fromList(b)),
+      );
+      try {
+        await ucp.setNotifyValue(true);
+
+        Future<Uint8List?> send(String was, List<int> bytes) async {
           try {
-            await ucp.setNotifyValue(true);
-
-            Future<Uint8List?> send(String was, List<int> bytes) async {
-              try {
-                await ucp.write(
-                  Uint8List.fromList(bytes),
-                  withoutResponse: false,
-                );
-                final a =
-                    await answers.next().timeout(const Duration(seconds: 8));
-                _appendLog('[reg] $was ${_hexBytes(Uint8List.fromList(bytes))}'
-                    ' -> ${_hexBytes(a)}');
-                return a;
-              } on TimeoutException {
-                _appendLog('[reg] $was -> keine Antwort');
-              } catch (e) {
-                _appendLog('[reg] $was -> Schreibfehler: $e');
-              }
-              return null;
-            }
-
-            // 1: Anlegen, mit Zugangscode als uint16 little-endian.
-            final reg = await send('anlegen', [
-              0x01,
-              consentCode & 0xff,
-              (consentCode >> 8) & 0xff,
-            ]);
-
-            // Der Benutzerindex steht danach in 0x2A9A.
-            var index = 0xff;
-            if (userIndex != null) {
-              final v = await userIndex.read();
-              if (v.isNotEmpty) index = v.first;
-              _appendLog('[reg] Benutzerindex jetzt: $index');
-            }
-            if (reg != null && reg.length > 3) {
-              _appendLog('[reg] Antwort traegt Zusatzbytes - moeglicher Index');
-            }
-
-            // 2: Zustimmen, mit Index und Zugangscode.
-            await send('zustimmen', [
-              0x02,
-              index,
-              consentCode & 0xff,
-              (consentCode >> 8) & 0xff,
-            ]);
-
-            // 3: Benutzerdaten loeschen.
-            await send('loeschen', [0x03]);
-
-            _appendLog('[reg] Fertig.');
-          } finally {
-            await sub.cancel();
-            try {
-              await ucp.setNotifyValue(false);
-            } catch (_) {}
+            await ucp.write(Uint8List.fromList(bytes), withoutResponse: false);
+            final a = await answers.next().timeout(const Duration(seconds: 8));
+            _appendLog(
+              '[reg] $was ${_hexBytes(Uint8List.fromList(bytes))}'
+              ' -> ${_hexBytes(a)}',
+            );
+            return a;
+          } on TimeoutException {
+            _appendLog('[reg] $was -> keine Antwort');
+          } catch (e) {
+            _appendLog('[reg] $was -> Schreibfehler: $e');
           }
-        } finally {
-          await session.close();
+          return null;
         }
-      });
+
+        // 1: Anlegen, mit Zugangscode als uint16 little-endian.
+        final reg = await send('anlegen', [
+          0x01,
+          consentCode & 0xff,
+          (consentCode >> 8) & 0xff,
+        ]);
+
+        // Der Benutzerindex steht danach in 0x2A9A.
+        var index = 0xff;
+        if (userIndex != null) {
+          final v = await userIndex.read();
+          if (v.isNotEmpty) index = v.first;
+          _appendLog('[reg] Benutzerindex jetzt: $index');
+        }
+        if (reg != null && reg.length > 3) {
+          _appendLog('[reg] Antwort traegt Zusatzbytes - moeglicher Index');
+        }
+
+        // 2: Zustimmen, mit Index und Zugangscode.
+        await send('zustimmen', [
+          0x02,
+          index,
+          consentCode & 0xff,
+          (consentCode >> 8) & 0xff,
+        ]);
+
+        // 3: Benutzerdaten loeschen.
+        await send('loeschen', [0x03]);
+
+        _appendLog('[reg] Fertig.');
+      } finally {
+        await sub.cancel();
+        try {
+          await ucp.setNotifyValue(false);
+        } catch (_) {}
+      }
+    } finally {
+      await session.close();
+    }
+  });
 
   /// Tastet die Befehlswerte des User Control Point (0x2A9F) ab.
   ///
@@ -1554,121 +1566,119 @@ class _ProtocolSpikeScreenState extends State<ProtocolSpikeScreen> {
   /// Loeschen von Benutzerdaten und das Loeschen eines Benutzers. Welche
   /// Zahl welchen Befehl traegt, ist vorher unbekannt.
   Future<void> _runUserControlPointScan() => _guarded(() async {
-        final key = await _syncService.keyStore.load();
-        if (key == null) {
-          throw StateError('Kein gespeicherter Pairing-Key.');
-        }
-        final session = await OmronSession.open(log: _appendLog);
-        try {
-          await session.unlock(key);
-          final ucp = _findChar(session.device, _userDataService, '2a9f');
-          if (ucp == null) {
-            _appendLog('[scan] Characteristic nicht gefunden.');
-            return;
-          }
+    final key = await _syncService.keyStore.load();
+    if (key == null) {
+      throw StateError('Kein gespeicherter Pairing-Key.');
+    }
+    final session = await OmronSession.open(log: _appendLog);
+    try {
+      await session.unlock(key);
+      final ucp = _findChar(session.device, _userDataService, '2a9f');
+      if (ucp == null) {
+        _appendLog('[scan] Characteristic nicht gefunden.');
+        return;
+      }
 
-          final answers = FrameMailbox<Uint8List>();
-          final sub = ucp.onValueReceived
-              .listen((b) => answers.deliver(Uint8List.fromList(b)));
+      final answers = FrameMailbox<Uint8List>();
+      final sub = ucp.onValueReceived.listen(
+        (b) => answers.deliver(Uint8List.fromList(b)),
+      );
+      try {
+        await ucp.setNotifyValue(true);
+        for (var op = 1; op <= 8; op++) {
           try {
-            await ucp.setNotifyValue(true);
-            for (var op = 1; op <= 8; op++) {
-              try {
-                await ucp.write(
-                  Uint8List.fromList([op]),
-                  withoutResponse: false,
-                );
-                final a =
-                    await answers.next().timeout(const Duration(seconds: 6));
-                final ergebnis = a.length > 2 ? a[2] : -1;
-                _appendLog(
-                  '[scan] Befehl $op -> ${_hexBytes(a)}'
-                  '${ergebnis == 0x04 ? "" : "   <-- ABWEICHEND"}',
-                );
-              } on TimeoutException {
-                _appendLog('[scan] Befehl $op -> keine Antwort');
-              } catch (e) {
-                _appendLog('[scan] Befehl $op -> Schreibfehler: $e');
-              }
-            }
+            await ucp.write(Uint8List.fromList([op]), withoutResponse: false);
+            final a = await answers.next().timeout(const Duration(seconds: 6));
+            final ergebnis = a.length > 2 ? a[2] : -1;
             _appendLog(
-              '[scan] Fertig. Abweichende Ergebniswerte sind die Kandidaten.',
+              '[scan] Befehl $op -> ${_hexBytes(a)}'
+              '${ergebnis == 0x04 ? "" : "   <-- ABWEICHEND"}',
             );
-          } finally {
-            await sub.cancel();
-            try {
-              await ucp.setNotifyValue(false);
-            } catch (_) {}
+          } on TimeoutException {
+            _appendLog('[scan] Befehl $op -> keine Antwort');
+          } catch (e) {
+            _appendLog('[scan] Befehl $op -> Schreibfehler: $e');
           }
-        } finally {
-          await session.close();
         }
-      });
+        _appendLog(
+          '[scan] Fertig. Abweichende Ergebniswerte sind die Kandidaten.',
+        );
+      } finally {
+        await sub.cancel();
+        try {
+          await ucp.setNotifyValue(false);
+        } catch (_) {}
+      }
+    } finally {
+      await session.close();
+    }
+  });
 
   /// Erster Versuch scheiterte zweimal mit GATT_NO_RESOURCES (0x80) - das
   /// ist ein Fehler des Android-Stacks, keine Ablehnung des Geraets.
   /// Deshalb dieselbe Schreiboperation in vier Varianten: mit und ohne
   /// vorheriges Entsperren, jeweils mit und ohne Antwort.
   Future<void> _runSetClock() => _guarded(() async {
-        final key = await _syncService.keyStore.load();
+    final key = await _syncService.keyStore.load();
 
-        Future<void> attempt({
-          required bool unlock,
-          required bool withoutResponse,
-        }) async {
-          final name = '${unlock ? "entsperrt" : "roh"}/'
-              '${withoutResponse ? "ohne Antwort" : "mit Antwort"}';
-          final session = await OmronSession.open(log: (_) {});
-          try {
-            if (unlock) {
-              if (key == null) {
-                _appendLog('[clock] $name: kein Key gespeichert, uebersprungen.');
-                return;
-              }
-              await session.unlock(key);
-            }
-            final ct = _findChar(session.device, _cts, _ctsCurrentTime);
-            if (ct == null) {
-              _appendLog('[clock] Characteristic nicht gefunden.');
-              return;
-            }
-
-            final now = DateTime.now();
-            final value = Uint8List.fromList([
-              now.year & 0xff, (now.year >> 8) & 0xff,
-              now.month, now.day, now.hour, now.minute, now.second,
-              now.weekday, // 1 = Montag, wie in der Norm
-              0x00, // Sekundenbruchteil
-              0x01, // Aenderungsgrund: manuelle Zeitaktualisierung
-            ]);
-            try {
-              await ct.write(value, withoutResponse: withoutResponse);
-              final after = Uint8List.fromList(await ct.read());
-              _appendLog(
-                '[clock] $name: angenommen, danach ${_hexBytes(after)}'
-                '${after.any((b) => b != 0) ? "  <-- GESETZT" : ""}',
-              );
-            } catch (e) {
-              _appendLog('[clock] $name: abgelehnt - $e');
-            }
-          } finally {
-            await session.close();
+    Future<void> attempt({
+      required bool unlock,
+      required bool withoutResponse,
+    }) async {
+      final name =
+          '${unlock ? "entsperrt" : "roh"}/'
+          '${withoutResponse ? "ohne Antwort" : "mit Antwort"}';
+      final session = await OmronSession.open(log: (_) {});
+      try {
+        if (unlock) {
+          if (key == null) {
+            _appendLog('[clock] $name: kein Key gespeichert, uebersprungen.');
+            return;
           }
+          await session.unlock(key);
+        }
+        final ct = _findChar(session.device, _cts, _ctsCurrentTime);
+        if (ct == null) {
+          _appendLog('[clock] Characteristic nicht gefunden.');
+          return;
         }
 
-        _appendLog('[clock] vier Varianten, Taste zwischendurch druecken...');
-        for (final unlock in [false, true]) {
-          for (final wor in [false, true]) {
-            try {
-              await attempt(unlock: unlock, withoutResponse: wor);
-            } on DeviceNotFoundException {
-              _appendLog('[clock] Geraet sendet nicht mehr - Taste druecken.');
-              return;
-            }
-          }
+        final now = DateTime.now();
+        final value = Uint8List.fromList([
+          now.year & 0xff, (now.year >> 8) & 0xff,
+          now.month, now.day, now.hour, now.minute, now.second,
+          now.weekday, // 1 = Montag, wie in der Norm
+          0x00, // Sekundenbruchteil
+          0x01, // Aenderungsgrund: manuelle Zeitaktualisierung
+        ]);
+        try {
+          await ct.write(value, withoutResponse: withoutResponse);
+          final after = Uint8List.fromList(await ct.read());
+          _appendLog(
+            '[clock] $name: angenommen, danach ${_hexBytes(after)}'
+            '${after.any((b) => b != 0) ? "  <-- GESETZT" : ""}',
+          );
+        } catch (e) {
+          _appendLog('[clock] $name: abgelehnt - $e');
         }
-        _appendLog('[clock] Fertig.');
-      });
+      } finally {
+        await session.close();
+      }
+    }
+
+    _appendLog('[clock] vier Varianten, Taste zwischendurch druecken...');
+    for (final unlock in [false, true]) {
+      for (final wor in [false, true]) {
+        try {
+          await attempt(unlock: unlock, withoutResponse: wor);
+        } on DeviceNotFoundException {
+          _appendLog('[clock] Geraet sendet nicht mehr - Taste druecken.');
+          return;
+        }
+      }
+    }
+    _appendLog('[clock] Fertig.');
+  });
 
   /// Hot-Reload-Helfer fuer den Spike: ein haengender Durchlauf (Geraet
   /// trennt, kein Timeout) liess _busy sonst dauerhaft auf true.

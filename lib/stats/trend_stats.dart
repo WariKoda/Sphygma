@@ -63,12 +63,16 @@ class TrendStats {
   static TrendStats compute(List<Reading> readings, {required DateTime now}) {
     final since = now.subtract(const Duration(days: 7));
     final recent = readings
-        .where((r) => !r.measuredAt.isBefore(since) && !r.measuredAt.isAfter(now))
+        .where(
+          (r) => !r.measuredAt.isBefore(since) && !r.measuredAt.isAfter(now),
+        )
         .toList();
     return TrendStats._(
       last7Days: Average.of(recent),
       morning: Average.of(recent.where((r) => r.measuredAt.hour < 12).toList()),
-      evening: Average.of(recent.where((r) => r.measuredAt.hour >= 18).toList()),
+      evening: Average.of(
+        recent.where((r) => r.measuredAt.hour >= 18).toList(),
+      ),
     );
   }
 }

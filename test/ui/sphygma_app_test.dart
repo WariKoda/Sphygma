@@ -5,11 +5,11 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sphygma/app/app_controller.dart';
-import 'package:sphygma/app/concept.dart';
 import 'package:sphygma/ble/pairing_key_store.dart';
 import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/db/measurement_repository.dart';
-import 'package:sphygma/db/occasion_repository.dart';
+import 'package:sphygma/db/measurement_metadata_repository.dart';
+import 'package:sphygma/db/phase_repository.dart';
 import 'package:sphygma/db/settings_repository.dart';
 import 'package:sphygma/sync/export_service.dart';
 import 'package:sphygma/sync/health_sink.dart';
@@ -64,7 +64,8 @@ void main() {
       settings: SettingsRepository(db),
       keyStore: keyStore,
       repository: repository,
-      occasionRepository: OccasionRepository(db),
+      metadataRepository: MeasurementMetadataRepository(db),
+      phaseRepository: PhaseRepository(db),
       syncService: SyncService(keyStore: keyStore, repository: repository),
       exportService: ExportService(repository: repository, sink: _NoopSink()),
       statusStream: () => const Stream.empty(),
@@ -99,9 +100,7 @@ void main() {
   });
 
   testWidgets('die gewählte Gestaltung liegt über dem Baum', (tester) async {
-    await tester.runAsync(
-      () => controller.setThemeVariant(ThemeVariant.diary),
-    );
+    await tester.runAsync(() => controller.setThemeVariant(ThemeVariant.diary));
     await tester.pumpWidget(SphygmaApp(controller: controller));
     await tester.pumpAndSettle();
 
@@ -122,12 +121,9 @@ void main() {
     expect(SphygmaTheme.of(context).name, themeFor(ThemeVariant.material).name);
   });
 
-  testWidgets('die Technik bleibt in jedem Konzept erreichbar', (tester) async {
-    // Seit dem 08.09.2026 gibt es keinen Reiter „Gerät" mehr: Abgleich,
-    // Übertragung, Kopplung und die Wahl von Konzept und Gestaltung stehen
-    // gemeinsam hinter dem Zahnrad. Fehlte es in einem Konzept, käme man
-    // weder an das Gerät noch aus dem Konzept heraus.
-    await tester.runAsync(() => controller.setConcept(AppConcept.phase));
+  testWidgets('die Technik bleibt im gemeinsamen Einstieg erreichbar', (
+    tester,
+  ) async {
     await tester.pumpWidget(SphygmaApp(controller: controller));
     await tester.pumpAndSettle();
 
@@ -144,34 +140,23 @@ void main() {
 
     // Ein Export ohne offene Messungen meldet "0 Messungen" - eine
     // Meldung ohne Geraet und ohne Fehler.
-    await controller.exportAll();
+    await tester.runAsync(() => controller.exportAll());
     await tester.pumpAndSettle();
 
     expect(find.byType(SnackBar), findsOneWidget);
   });
 
-  testWidgets('jedes Konzept trägt den Zugang zur Wahl an derselben Stelle', (
+  testWidgets('Einstellungen und Gestaltung bleiben erreichbar', (
     tester,
   ) async {
     _hohesFenster(tester);
-    // Die Konzepte schließen einander aus — ein Zahnrad je Hülle sind
-    // deshalb nicht drei Zugänge, sondern einer. Fehlte er in einem, käme
-    // man aus diesem Konzept nicht mehr heraus.
-    for (final k in allConcepts) {
-      await tester.runAsync(() => controller.setConcept(k));
-      await tester.pumpWidget(SphygmaApp(controller: controller));
-      await tester.pumpAndSettle();
-
-      expect(find.byIcon(Icons.settings), findsOneWidget, reason: k.name);
-
-      await tester.tap(find.byIcon(Icons.settings));
-      await tester.pumpAndSettle();
-      expect(find.text('KONZEPT'), findsOneWidget, reason: k.name);
-      expect(find.text('GESTALTUNG'), findsOneWidget, reason: k.name);
-
-      await tester.pageBack();
-      await tester.pumpAndSettle();
-    }
+    await tester.pumpWidget(SphygmaApp(controller: controller));
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.settings), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.settings));
+    await tester.pumpAndSettle();
+    expect(find.text('GESTALTUNG'), findsOneWidget);
+    expect(find.text('KONZEPT'), findsNothing);
   });
 
   testWidgets('ein Gestaltungswechsel wirkt sofort, auch im offenen Blatt', (
@@ -187,7 +172,7 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.settings));
     await tester.pumpAndSettle();
-    expect(find.text('KONZEPT'), findsOneWidget);
+    expect(find.text('GESTALTUNG'), findsOneWidget);
 
     double radiusImBlatt() => tester
         .widgetList<Container>(find.byType(Container))

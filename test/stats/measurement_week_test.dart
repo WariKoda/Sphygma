@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/stats/measurement_week.dart';
 import 'package:sphygma/stats/time_of_day_band.dart';
+import 'package:sphygma/stats/measurement_windows.dart';
 
 Measurement _m(int seq, DateTime at, {int sys = 128, int dia = 84}) =>
     Measurement(
@@ -165,7 +166,7 @@ void main() {
   });
 
   group('Die Teilung morgens/abends ist einstellbar', () {
-    test('ein verschobener Schnitt ordnet anders zu', () {
+    test('verschobene Fenster ordnen anders zu', () {
       final ms = [
         _m(1, _montag.add(const Duration(hours: 14)), sys: 140),
         _m(2, _montag.add(const Duration(hours: 16)), sys: 120),
@@ -174,7 +175,15 @@ void main() {
       final normal = buildWeeks(ms).single;
       expect(normal.morningAverage, isNull, reason: '14 Uhr ist nachmittags');
 
-      final spaet = buildWeeks(ms, schnitt: TimeOfDayMinutes(15, 0)).single;
+      final spaet = buildWeeks(
+        ms,
+        windows: MeasurementWindows(
+          morningStart: 13 * 60,
+          morningEnd: 15 * 60,
+          eveningStart: 18 * 60,
+          eveningEnd: 23 * 60,
+        ),
+      ).single;
       expect(spaet.morningAverage!.systolic, 140);
     });
   });

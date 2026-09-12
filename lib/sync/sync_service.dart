@@ -10,8 +10,7 @@ import '../protocol/readout.dart';
 /// Wird geworfen, wenn noch kein Pairing-Key existiert.
 class NotPairedException implements Exception {
   @override
-  String toString() =>
-      'NotPairedException: noch nicht mit dem Geraet gepairt.';
+  String toString() => 'NotPairedException: noch nicht mit dem Geraet gepairt.';
 }
 
 class SyncResult {
@@ -50,10 +49,7 @@ class SyncService {
       final transport = await session.unlock(key);
       final records = await readAllRecords(transport);
       final inserted = await repository.importAll(records);
-      return SyncResult(
-        readFromDevice: records.length,
-        newlyStored: inserted,
-      );
+      return SyncResult(readFromDevice: records.length, newlyStored: inserted);
     } finally {
       await session.close();
     }

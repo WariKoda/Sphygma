@@ -5,6 +5,16 @@ import 'package:drift/drift.dart';
 import '../protocol/readout.dart';
 import 'app_database.dart';
 
+/// Der bestätigte oder noch ungewisse Zustand der externen Gesundheitsakte.
+/// Ohne Eintrag wurde für diese Messung noch kein Export versucht.
+enum MeasurementExportState {
+  legacyUnknown,
+  pendingWrite,
+  exported,
+  pendingRetraction,
+  retracted,
+}
+
 class MeasurementRepository {
   MeasurementRepository(this._db);
 
@@ -91,62 +101,123 @@ class MeasurementRepository {
   /// vergessen kann: Jede Abfrage, die Messungen **zum Anzeigen oder
   /// Übertragen** liefert, filtert sie mit.
   Future<int?> intakeFloor(int userSlot) async {
-    final row = await (_db.select(_db.appSettings)
-          ..where((s) => s.key.equals(intakeFloorKey(userSlot))))
-        .getSingleOrNull();
+    final row = await (_db.select(
+      _db.appSettings,
+    )..where((s) => s.key.equals(intakeFloorKey(userSlot)))).getSingleOrNull();
     return row == null ? null : int.parse(row.value);
   }
 
   /// Der Einstellungsschlüssel der Aufnahmegrenze eines Speicherplatzes.
   static String intakeFloorKey(int userSlot) => 'intake_floor_$userSlot';
 
-  static String _autoExportMarkKey(int userSlot) => 'auto_export_mark_$userSlot';
-
-  /// Die höchste Messungsnummer, die je **automatisch** übertragen wurde.
-  ///
-  /// Der automatische Export nimmt nur, was darüber liegt. Das ist die
-  /// Bedeutung von „neue Messungen": höher als alles, was schon von selbst
-  /// hinausging.
-  ///
-  /// Der Grund ist ein Fund aus dem Gegenblick: Zieht der Nutzer eine
-  /// Messung aus Health Connect zurück, wird ihre Exportmarkierung gelöscht —
-  /// sie gilt danach wieder als offen. Ohne diese Marke schickte der nächste
-  /// Abgleich sie ungefragt erneut hinaus, und das Zurückziehen wäre
-  /// wirkungslos. Von Hand übertragen lässt sie sich weiterhin.
-  Future<int?> autoExportMark(int userSlot) async {
-    final row = await (_db.select(_db.appSettings)
-          ..where((s) => s.key.equals(_autoExportMarkKey(userSlot))))
-        .getSingleOrNull();
-    return row == null ? null : int.parse(row.value);
+  /// Noch offene Writes ohne ausdrückliche Rückzugsentscheidung.
+  Future<List<Measurement>> pendingAutoExport(int userSlot) async {
+    final pending = await pendingExport(userSlot);
+    final states = await exportStatesForSlot(userSlot);
+    return pending.where((m) {
+      final state = states[m.id];
+      return state != MeasurementExportState.legacyUnknown &&
+          state != MeasurementExportState.pendingRetraction &&
+          state != MeasurementExportState.retracted;
+    }).toList();
   }
 
-  Future<void> setAutoExportMark(int userSlot, int sequence) async {
+  /// Schlüssel sind lokale Messungs-IDs, auch für ausgeblendete Messungen.
+  Future<Map<int, MeasurementExportState>> exportStatesForSlot(
+    int userSlot,
+  ) async {
+    final measurements = await (_db.select(
+      _db.measurements,
+    )..where((m) => m.userSlot.equals(userSlot))).get();
+    final states = await (_db.select(
+      _db.measurementExports,
+    )..where((e) => e.measurementId.isIn(measurements.map((m) => m.id)))).get();
+    final byId = {for (final state in states) state.measurementId: state};
+    return {
+      for (final m in measurements)
+        if (byId[m.id] case final state?)
+          m.id: state.legacyUnknown
+              ? MeasurementExportState.legacyUnknown
+              : state.withdrawn
+              ? (state.mayExist
+                    ? MeasurementExportState.pendingRetraction
+                    : MeasurementExportState.retracted)
+              : (m.exportedAt == null
+                    ? MeasurementExportState.pendingWrite
+                    : MeasurementExportState.exported)
+        else if (m.exportedAt != null)
+          m.id: MeasurementExportState.exported,
+    };
+  }
+
+  /// Auch ein Write ohne Erfolgsantwort kann extern Daten hinterlassen haben.
+  /// Die Aufnahmegrenze darf deren Rücknahme nicht verhindern.
+  Future<List<Measurement>> retractable(int userSlot) async {
+    final states = await exportStatesForSlot(userSlot);
+    final ids = states.entries
+        .where((e) => e.value != MeasurementExportState.retracted)
+        .map((e) => e.key);
+    return (_db.select(_db.measurements)
+          ..where((m) => m.userSlot.equals(userSlot) & m.id.isIn(ids))
+          ..orderBy([
+            (m) => OrderingTerm.asc(m.measuredAt),
+            (m) => OrderingTerm.asc(m.deviceSequence),
+          ]))
+        .get();
+  }
+
+  /// Vor dem externen Write persistieren. Ein ausdrücklicher neuer Export
+  /// hebt den Rückzug auf; fehlende Bestätigung bleibt als Retry sichtbar.
+  Future<void> beginExport(int id) => _db.transaction(() async {
+    await _requireMeasurement(id);
     await _db
-        .into(_db.appSettings)
+        .into(_db.measurementExports)
         .insert(
-          AppSettingsCompanion.insert(
-            key: _autoExportMarkKey(userSlot),
-            value: '$sequence',
+          MeasurementExportsCompanion.insert(
+            measurementId: Value(id),
+            mayExist: true,
+            withdrawn: false,
           ),
           mode: InsertMode.insertOrReplace,
         );
-  }
+    await (_db.update(_db.measurements)..where((m) => m.id.equals(id))).write(
+      const MeasurementsCompanion(exportedAt: Value(null)),
+    );
+  });
 
-  /// Offene Messungen **oberhalb** der Marke des automatischen Exports.
-  Future<List<Measurement>> pendingAutoExport(int userSlot) async {
-    final offen = await pendingExport(userSlot);
-    final marke = await autoExportMark(userSlot);
-    if (marke == null) return offen;
-    return offen.where((m) => m.deviceSequence > marke).toList();
+  /// Die Entscheidung gilt für den ganzen angeforderten Rückzug, auch wenn
+  /// bereits das erste Delete scheitert. Kein späterer Autoexport darf sie
+  /// durch einen erneuten Write überholen.
+  Future<void> beginRetraction(List<int> ids) => _db.transaction(() async {
+    for (final id in ids) {
+      await _requireMeasurement(id);
+      await _db
+          .into(_db.measurementExports)
+          .insert(
+            MeasurementExportsCompanion.insert(
+              measurementId: Value(id),
+              mayExist: true,
+              withdrawn: true,
+            ),
+            mode: InsertMode.insertOrReplace,
+          );
+    }
+  });
+
+  Future<void> _requireMeasurement(int id) async {
+    final row = await (_db.select(
+      _db.measurements,
+    )..where((m) => m.id.equals(id))).getSingleOrNull();
+    if (row == null) throw StateError('Messung $id ist nicht vorhanden.');
   }
 
   /// Setzt die Aufnahmegrenze. Null hebt sie auf — dann ist wieder alles
   /// sichtbar, was auf dem Gerät steht.
   Future<void> setIntakeFloor(int userSlot, int? sequence) async {
     if (sequence == null) {
-      await (_db.delete(_db.appSettings)
-            ..where((s) => s.key.equals(intakeFloorKey(userSlot))))
-          .go();
+      await (_db.delete(
+        _db.appSettings,
+      )..where((s) => s.key.equals(intakeFloorKey(userSlot)))).go();
       return;
     }
     await _db
@@ -206,7 +277,8 @@ class MeasurementRepository {
       ..where(
         (m) => floor == null
             ? m.userSlot.equals(userSlot) & m.exportedAt.isNull()
-            : m.userSlot.equals(userSlot) & m.exportedAt.isNull() &
+            : m.userSlot.equals(userSlot) &
+                  m.exportedAt.isNull() &
                   m.deviceSequence.isBiggerOrEqualValue(floor),
       )
       ..orderBy([
@@ -247,6 +319,17 @@ class MeasurementRepository {
   Future<void> markUnexported(List<int> ids) {
     return _db.transaction(() async {
       for (final id in ids) {
+        await _requireMeasurement(id);
+        await _db
+            .into(_db.measurementExports)
+            .insert(
+              MeasurementExportsCompanion.insert(
+                measurementId: Value(id),
+                mayExist: false,
+                withdrawn: true,
+              ),
+              mode: InsertMode.insertOrReplace,
+            );
         await (_db.update(_db.measurements)..where((m) => m.id.equals(id)))
             .write(const MeasurementsCompanion(exportedAt: Value(null)));
       }
@@ -256,6 +339,17 @@ class MeasurementRepository {
   Future<void> markExported(List<int> ids, DateTime at) {
     return _db.transaction(() async {
       for (final id in ids) {
+        await _requireMeasurement(id);
+        await _db
+            .into(_db.measurementExports)
+            .insert(
+              MeasurementExportsCompanion.insert(
+                measurementId: Value(id),
+                mayExist: true,
+                withdrawn: false,
+              ),
+              mode: InsertMode.insertOrReplace,
+            );
         await (_db.update(_db.measurements)..where((m) => m.id.equals(id)))
             .write(MeasurementsCompanion(exportedAt: Value(at)));
       }

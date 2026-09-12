@@ -74,7 +74,10 @@ class OmronAdvertisedStatus {
   /// Ein **hoeherer** eigener Stand meldet bewusst nichts Neues: Das
   /// passiert nach einem Geraetetausch, und ungefragt zu synchronisieren
   /// waere dort falsch.
-  bool hasNewMeasurements({required int userSlot, required int? knownSequence}) {
+  bool hasNewMeasurements({
+    required int userSlot,
+    required int? knownSequence,
+  }) {
     final onDevice = highestSequence(userSlot);
     if (onDevice == 0) return false;
     return knownSequence == null || onDevice > knownSequence;

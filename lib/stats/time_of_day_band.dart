@@ -1,17 +1,8 @@
-// Tageszeit als Ordnungsgröße — gemeinsame Grundlage zweier Ansichten.
-//
-// Das Wochenraster auf „Heute" braucht die grobe Teilung morgens/abends, um
-// die vierzehn Felder einer Messwoche zu belegen. Der Verlauf braucht die
-// feine für seine fünf Tagesabschnitte. Beide kommen aus derselben Quelle;
-// sonst driften sie auseinander, sobald jemand eine Grenze verschiebt.
-//
-// Die Grenzen sind **hier** frei wählbar: Jede Rechnung nimmt ihr Raster als
-// Parameter. Bis in die Einstellungen geführt ist das nicht — die App ruft
-// überall die beiden festen Raster auf. Wer im Schichtdienst arbeitet, hat
-// also weiterhin den Morgen dieser Datei und nicht seinen eigenen
-// (docs/design/umsetzung-konzepte.md, „Der Abgleich").
+// Tagesabschnitte für den Verlauf. Konfigurierbare Morgen-/Abendfenster
+// haben Vorrang; übrige Messungen behalten einen anderen Tagesabschnitt.
 import '../db/app_database.dart';
 import 'trend_stats.dart';
+import 'measurement_windows.dart';
 
 /// Ein Zeitpunkt innerhalb eines Tages, ohne Datum.
 ///
@@ -24,7 +15,11 @@ class TimeOfDayMinutes implements Comparable<TimeOfDayMinutes> {
       throw ArgumentError.value(hour, 'hour', 'muss zwischen 0 und 23 liegen');
     }
     if (minute < 0 || minute > 59) {
-      throw ArgumentError.value(minute, 'minute', 'muss zwischen 0 und 59 liegen');
+      throw ArgumentError.value(
+        minute,
+        'minute',
+        'muss zwischen 0 und 59 liegen',
+      );
     }
   }
 
@@ -87,7 +82,7 @@ class BandGrid {
   /// geleerte oder umsortierte Liste würde die Prüfung wertlos machen, und
   /// weil [fein] und [grob] statisch sind, wäre der Schaden global.
   BandGrid(List<BandBoundary> boundaries)
-      : boundaries = List.unmodifiable(boundaries) {
+    : boundaries = List.unmodifiable(boundaries) {
     if (this.boundaries.isEmpty) {
       throw ArgumentError.value(
         boundaries,
@@ -179,8 +174,32 @@ Map<TimeBand, Average> averagesByBand(
   List<Measurement> measurements,
   BandGrid grid,
 ) {
+  return _averages(groupByBand(measurements, grid));
+}
+
+Map<TimeBand, Average> averagesByWindows(
+  List<Measurement> measurements,
+  MeasurementWindows windows,
+) {
+  final groups = <TimeBand, List<Measurement>>{};
+  for (final m in measurements) {
+    final band = windows.isMorning(m.measuredAt)
+        ? TimeBand.morgens
+        : windows.isEvening(m.measuredAt)
+        ? TimeBand.abends
+        : switch (BandGrid.fein.bandAt(TimeOfDayMinutes.of(m.measuredAt))) {
+            TimeBand.morgens => TimeBand.vormittags,
+            TimeBand.abends => TimeBand.nachmittags,
+            final other => other,
+          };
+    groups.putIfAbsent(band, () => []).add(m);
+  }
+  return _averages(groups);
+}
+
+Map<TimeBand, Average> _averages(Map<TimeBand, List<Measurement>> groups) {
   final out = <TimeBand, Average>{};
-  groupByBand(measurements, grid).forEach((band, ms) {
+  groups.forEach((band, ms) {
     final mittel = Average.of([
       for (final m in ms)
         Reading(

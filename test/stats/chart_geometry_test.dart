@@ -4,13 +4,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/stats/chart_geometry.dart';
 
-Measurement _m(int sys, int dia, DateTime at) => Measurement(
-  id: at.millisecondsSinceEpoch,
+Measurement _m(
+  int sys,
+  int dia,
+  DateTime at, {
+  int pulse = 70,
+  int? id,
+  int? sequence,
+}) => Measurement(
+  id: id ?? at.millisecondsSinceEpoch,
   userSlot: 1,
-  deviceSequence: at.millisecondsSinceEpoch ~/ 1000,
+  deviceSequence: sequence ?? at.millisecondsSinceEpoch ~/ 1000,
   systolic: sys,
   diastolic: dia,
-  pulse: 70,
+  pulse: pulse,
   measuredAt: at,
   movement: false,
   arrhythmia: false,
@@ -37,23 +44,24 @@ void main() {
     expect(g.diastolicPoints[0].dy, greaterThan(g.systolicPoints[0].dy));
   });
 
-  test('Punkte verteilen sich ueber die volle Breite', () {
+  test('Punkte folgen den echten Zeitabstaenden', () {
     final g = ChartGeometry.fit(
       measurements: [
         _m(120, 80, t0),
-        _m(125, 82, t0.add(const Duration(days: 1))),
-        _m(130, 85, t0.add(const Duration(days: 2))),
+        _m(125, 82, t0.add(const Duration(minutes: 5))),
+        _m(130, 85, t0.add(const Duration(hours: 2))),
       ],
-      width: 200,
+      width: 120,
       height: 100,
     );
 
     expect(g.systolicPoints.first.dx, 0);
-    expect(g.systolicPoints.last.dx, 200);
+    expect(g.systolicPoints[1].dx, 5);
+    expect(g.systolicPoints.last.dx, 120);
     expect(g.systolicPoints, hasLength(3));
   });
 
-  test('eine einzelne Messung sitzt am linken Rand, ohne Division durch 0', () {
+  test('eine einzelne Messung sitzt mittig, ohne Division durch 0', () {
     final g = ChartGeometry.fit(
       measurements: [_m(120, 80, t0)],
       width: 200,
@@ -61,8 +69,42 @@ void main() {
     );
 
     expect(g.systolicPoints, hasLength(1));
-    expect(g.systolicPoints.first.dx, 0);
+    expect(g.systolicPoints.first.dx, 100);
     expect(g.systolicPoints.first.dy.isFinite, isTrue);
+  });
+
+  test(
+    'gleiche Zeiten werden nach Gerätenummer sortiert und liegen mittig',
+    () {
+      final g = ChartGeometry.fit(
+        measurements: [
+          _m(130, 85, t0, id: 2, sequence: 12),
+          _m(120, 80, t0, id: 1, sequence: 11),
+        ],
+        width: 120,
+        height: 100,
+      );
+
+      expect(g.measurementIds, [1, 2]);
+      expect(g.systolicPoints.map((point) => point.dx), [60, 60]);
+      expect(g.systolicPoints.every((point) => point.dx.isFinite), isTrue);
+    },
+  );
+
+  test('Puls wird separat skaliert und zeichnet keine Blutdruckschwelle', () {
+    final g = ChartGeometry.fit(
+      measurements: [
+        _m(120, 80, t0, pulse: 72),
+        _m(140, 90, t0.add(const Duration(hours: 1)), pulse: 72),
+      ],
+      width: 120,
+      height: 100,
+      metric: ChartMetric.pulse,
+    );
+
+    expect(g.pulsePoints, hasLength(2));
+    expect(g.pulsePoints.every((point) => point.dy.isFinite), isTrue);
+    expect(g.thresholdY, isNull);
   });
 
   test('gleiche Werte ergeben endliche Punkte statt Division durch 0', () {

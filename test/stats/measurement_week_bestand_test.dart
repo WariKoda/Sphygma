@@ -143,7 +143,7 @@ void main() {
   test('bildet zehn Wochen, davon neun aus 2026', () {
     // Die drei falsch datierten Messungen von 2023 bilden eine eigene Woche.
     // Sie fallen nicht heraus, sondern stehen dort, wo ihr Datum sie hinstellt
-    // — sichtbar als Woche mit einem einzigen belegten Feld. Sphygma
+    // — sichtbar in der Woche, außerhalb der Morgen-/Abendfenster. Sphygma
     // verschiebt keine Zeitstempel, auch nicht, damit die Wochen hübscher
     // aussehen.
     final wochen = buildWeeks(bestand);
@@ -152,7 +152,13 @@ void main() {
     expect(wochen.where((w) => w.beginsAt.year == 2026), hasLength(9));
 
     final alte = wochen.singleWhere((w) => w.beginsAt.year == 2023);
-    expect(alte.filledFields, 1, reason: 'drei Messungen in einer Tageshälfte');
+    expect(
+      alte.filledFields,
+      0,
+      reason: '11 Uhr liegt außerhalb beider Fenster',
+    );
+    expect(alte.measurements, hasLength(3));
+    expect(alte.averageWithFirstDay, isNotNull);
     expect(alte.isComplete, isFalse);
   });
 

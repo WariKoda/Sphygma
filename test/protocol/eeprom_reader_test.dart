@@ -103,6 +103,20 @@ void main() {
       },
     );
 
+    for (final length in [0, 2, 6]) {
+      test('verwirft $length statt angeforderter 4 Nutzbytes', () async {
+        final transport = FakeBleTransport([
+          _readResponse(address: 0x0260, data: List.filled(length, 0xff)),
+        ]);
+        await expectLater(
+          EepromReader(transport)
+              .readRange(startAddress: 0x0260, totalLength: 4),
+          throwsA(isA<ProtocolException>()),
+        );
+        expect(transport.sentCommands, hasLength(1));
+      });
+    }
+
     test('wirft ProtocolException bei unerwartetem Antworttyp', () async {
       // 0x81c0 (Schreib-Bestaetigung) statt 0x8100 (Lese-Antwort).
       final header = [8, 0x81, 0xc0, 0x00, 0x00, 0x00, 0x00];

@@ -18,7 +18,8 @@ import 'package:sphygma/ble/omron_advertising.dart';
 import 'package:sphygma/ble/pairing_key_store.dart';
 import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/db/measurement_repository.dart';
-import 'package:sphygma/db/occasion_repository.dart';
+import 'package:sphygma/db/measurement_metadata_repository.dart';
+import 'package:sphygma/db/phase_repository.dart';
 import 'package:sphygma/db/settings_repository.dart';
 import 'package:sphygma/sync/export_service.dart';
 import 'package:sphygma/sync/health_sink.dart';
@@ -47,7 +48,8 @@ void main() {
       settings: SettingsRepository(db),
       keyStore: keyStore,
       repository: repository,
-      occasionRepository: OccasionRepository(db),
+      metadataRepository: MeasurementMetadataRepository(db),
+      phaseRepository: PhaseRepository(db),
       syncService: SyncService(keyStore: keyStore, repository: repository),
       exportService: ExportService(repository: repository, sink: _NoopSink()),
       statusStream: () {
@@ -57,6 +59,7 @@ void main() {
     );
     addTearDown(controller.dispose);
 
+    await SettingsRepository(db).setRawSetting('auto_sync', 'true');
     await controller.init();
     await controller.setUserSlot(1);
     expect(abos, 1, reason: 'beim Start wird einmal gelauscht');
@@ -87,7 +90,8 @@ void main() {
       settings: SettingsRepository(db),
       keyStore: InMemoryPairingKeyStore(),
       repository: repository,
-      occasionRepository: OccasionRepository(db),
+      metadataRepository: MeasurementMetadataRepository(db),
+      phaseRepository: PhaseRepository(db),
       syncService: SyncService(
         keyStore: InMemoryPairingKeyStore(),
         repository: repository,
@@ -100,6 +104,7 @@ void main() {
     );
     addTearDown(controller.dispose);
 
+    await SettingsRepository(db).setRawSetting('auto_sync', 'true');
     await controller.init();
     await controller.sync().catchError((_) {});
 
@@ -129,7 +134,8 @@ void main() {
       settings: SettingsRepository(db),
       keyStore: keyStore,
       repository: repository,
-      occasionRepository: OccasionRepository(db),
+      metadataRepository: MeasurementMetadataRepository(db),
+      phaseRepository: PhaseRepository(db),
       syncService: SyncService(keyStore: keyStore, repository: repository),
       exportService: ExportService(repository: repository, sink: _NoopSink()),
       statusStream: () {
@@ -151,6 +157,7 @@ void main() {
     );
     addTearDown(controller.dispose);
 
+    await SettingsRepository(db).setRawSetting('auto_sync', 'true');
     await controller.init();
     await controller.setUserSlot(1);
     await controller.sync().catchError((_) {});
@@ -163,5 +170,58 @@ void main() {
           'die tatsächliche Reihenfolge war $ablauf — endet das alte Abo erst '
           'nach dem neuen Start, stoppt es den neuen Scan',
     );
+  });
+  test('überlappende Neustarts warten auf das Ende des alten Scans', () async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    final repository = MeasurementRepository(db);
+    final keys = InMemoryPairingKeyStore();
+    await keys.save(Uint8List(16));
+    await SettingsRepository(db).setRawSetting('auto_sync', 'true');
+    final release = Completer<void>();
+    final events = <String>[];
+    final streams = <StreamController<OmronAdvertisedStatus>>[];
+    final c = AppController(
+      settings: SettingsRepository(db),
+      keyStore: keys,
+      repository: repository,
+      metadataRepository: MeasurementMetadataRepository(db),
+      phaseRepository: PhaseRepository(db),
+      syncService: SyncService(keyStore: keys, repository: repository),
+      exportService: ExportService(repository: repository, sink: _NoopSink()),
+      statusStream: () {
+        events.add('start');
+        final stream = StreamController<OmronAdvertisedStatus>(
+          onCancel: () async {
+            await release.future;
+            events.add('stop');
+          },
+        );
+        streams.add(stream);
+        return stream.stream;
+      },
+    );
+    addTearDown(() async {
+      if (!release.isCompleted) release.complete();
+      c.dispose();
+      await pumpEventQueue();
+      for (final stream in streams) {
+        await stream.close();
+      }
+    });
+    await c.init();
+    await c.setUserSlot(1);
+    await c.exportAll();
+    final second = c.exportAll();
+    await pumpEventQueue();
+    final beforeRelease = List<String>.of(events);
+    release.complete();
+    await second;
+    await pumpEventQueue();
+    expect(beforeRelease, ['start']);
+    for (var i = 1; i < events.length; i++) {
+      expect(events[i], isNot(events[i - 1]), reason: '$events');
+    }
+    expect(events.last, 'start');
   });
 }

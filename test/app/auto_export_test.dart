@@ -7,7 +7,8 @@ import 'package:sphygma/app/app_controller.dart';
 import 'package:sphygma/ble/pairing_key_store.dart';
 import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/db/measurement_repository.dart';
-import 'package:sphygma/db/occasion_repository.dart';
+import 'package:sphygma/db/measurement_metadata_repository.dart';
+import 'package:sphygma/db/phase_repository.dart';
 import 'package:sphygma/db/settings_repository.dart';
 import 'package:sphygma/protocol/readout.dart';
 import 'package:sphygma/protocol/record.dart';
@@ -88,7 +89,8 @@ Future<AppController> _bauen(AppDatabase db, HealthSink senke) async {
     settings: SettingsRepository(db),
     keyStore: keyStore,
     repository: repository,
-    occasionRepository: OccasionRepository(db),
+    metadataRepository: MeasurementMetadataRepository(db),
+    phaseRepository: PhaseRepository(db),
     syncService: SyncService(keyStore: keyStore, repository: repository),
     exportService: ExportService(repository: repository, sink: senke),
     statusStream: () => const Stream.empty(),
@@ -161,41 +163,49 @@ void main() {
     expect(c.autoExportProblem, isNull);
   });
 
-  test('beim ersten Koppeln wird vor der Übernahmewahl nichts übertragen',
-      () async {
-    // Der schwerste der drei Befunde: Beim Koppeln läuft der Abgleich, bevor
-    // der Nutzer entschieden hat, was übernommen wird. Ohne diese Bremse
-    // gingen die Messungen eines Vorbesitzers in die Gesundheitsakte, bevor
-    // die Frage überhaupt gestellt wurde (Codex-Gegenblick 09.09.2026).
-    final senke = _ZaehlendeSenke();
-    final c = await _bauen(db, senke);
-    addTearDown(c.dispose);
-    await MeasurementRepository(db).importAll([_rec(1), _rec(2)]);
-    await c.refreshForTest();
+  test(
+    'beim ersten Koppeln wird vor der Übernahmewahl nichts übertragen',
+    () async {
+      // Der schwerste der drei Befunde: Beim Koppeln läuft der Abgleich, bevor
+      // der Nutzer entschieden hat, was übernommen wird. Ohne diese Bremse
+      // gingen die Messungen eines Vorbesitzers in die Gesundheitsakte, bevor
+      // die Frage überhaupt gestellt wurde (Codex-Gegenblick 09.09.2026).
+      final senke = _ZaehlendeSenke();
+      final c = await _bauen(db, senke);
+      addTearDown(c.dispose);
+      await MeasurementRepository(db).importAll([_rec(1), _rec(2)]);
+      await c.refreshForTest();
 
-    // Ein Abgleich ohne Gerät scheitert — geprüft wird, dass der Export
-    // dabei gar nicht erst angestoßen wird.
-    await c.sync(autoExport: false).catchError((_) {});
+      // Ein Abgleich ohne Gerät scheitert — geprüft wird, dass der Export
+      // dabei gar nicht erst angestoßen wird.
+      await c.sync(autoExport: false).catchError((_) {});
 
-    expect(senke.geschrieben, 0);
-  });
+      expect(senke.geschrieben, 0);
+    },
+  );
 
-  test('ohne Schreibrechte öffnet der automatische Weg keinen Dialog',
-      () async {
-    // Ein Berechtigungsdialog, der von selbst aufgeht, während der Nutzer
-    // etwas anderes tut, ist eine Zumutung — und käme im ungünstigsten Fall
-    // nach jeder Messung.
-    final senke = _OhneRechte();
-    final c = await _bauen(db, senke);
-    addTearDown(c.dispose);
-    await MeasurementRepository(db).importAll([_rec(1)]);
-    await c.refreshForTest();
+  test(
+    'ohne Schreibrechte öffnet der automatische Weg keinen Dialog',
+    () async {
+      // Ein Berechtigungsdialog, der von selbst aufgeht, während der Nutzer
+      // etwas anderes tut, ist eine Zumutung — und käme im ungünstigsten Fall
+      // nach jeder Messung.
+      final senke = _OhneRechte();
+      final c = await _bauen(db, senke);
+      addTearDown(c.dispose);
+      await MeasurementRepository(db).importAll([_rec(1)]);
+      await c.refreshForTest();
 
-    await c.autoExportForTest();
+      await c.autoExportForTest();
 
-    expect(senke.gefragt, isFalse, reason: 'es wurde nicht zu schreiben versucht');
-    expect(c.autoExportProblem, isNotNull, reason: 'aber der Grund steht da');
-  });
+      expect(
+        senke.gefragt,
+        isFalse,
+        reason: 'es wurde nicht zu schreiben versucht',
+      );
+      expect(c.autoExportProblem, isNotNull, reason: 'aber der Grund steht da');
+    },
+  );
 
   test('zurückgezogene Werte gehen nicht von selbst wieder hinaus', () async {
     // `retractOne` löscht die Exportmarkierung — die Messung gilt danach
@@ -240,25 +250,27 @@ void main() {
     expect(senke.geschrieben, 2, reason: 'einmal von selbst, einmal von Hand');
   });
 
-  test('fehlendes Health Connect wird nicht als fehlende Rechte gemeldet',
-      () async {
-    // „Erteile die Berechtigung" hilft nicht, wenn Health Connect gar nicht
-    // installiert ist — die Meldung schickte den Nutzer auf einen Weg, an
-    // dessen Ende nichts steht (Codex-Gegenblick 09.09.2026).
-    final senke = _OhneHealthConnect();
-    final c = await _bauen(db, senke);
-    addTearDown(c.dispose);
-    await MeasurementRepository(db).importAll([_rec(1)]);
-    await c.refreshForTest();
+  test(
+    'fehlendes Health Connect wird nicht als fehlende Rechte gemeldet',
+    () async {
+      // „Erteile die Berechtigung" hilft nicht, wenn Health Connect gar nicht
+      // installiert ist — die Meldung schickte den Nutzer auf einen Weg, an
+      // dessen Ende nichts steht (Codex-Gegenblick 09.09.2026).
+      final senke = _OhneHealthConnect();
+      final c = await _bauen(db, senke);
+      addTearDown(c.dispose);
+      await MeasurementRepository(db).importAll([_rec(1)]);
+      await c.refreshForTest();
 
-    await c.autoExportForTest();
+      await c.autoExportForTest();
 
-    expect(senke.gefragt, isFalse);
-    expect(c.autoExportProblem, contains('nicht verfügbar'));
-    expect(
-      c.autoExportProblem,
-      isNot(contains('von Hand')),
-      reason: 'von Hand übertragen hilft hier nicht',
-    );
-  });
+      expect(senke.gefragt, isFalse);
+      expect(c.autoExportProblem, contains('nicht verfügbar'));
+      expect(
+        c.autoExportProblem,
+        isNot(contains('von Hand')),
+        reason: 'von Hand übertragen hilft hier nicht',
+      );
+    },
+  );
 }

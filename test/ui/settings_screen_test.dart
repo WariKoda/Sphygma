@@ -4,11 +4,11 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sphygma/app/app_controller.dart';
-import 'package:sphygma/app/concept.dart';
 import 'package:sphygma/ble/pairing_key_store.dart';
 import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/db/measurement_repository.dart';
-import 'package:sphygma/db/occasion_repository.dart';
+import 'package:sphygma/db/measurement_metadata_repository.dart';
+import 'package:sphygma/db/phase_repository.dart';
 import 'package:sphygma/db/settings_repository.dart';
 import 'package:sphygma/protocol/readout.dart';
 import 'package:sphygma/protocol/record.dart';
@@ -55,7 +55,8 @@ void main() {
       settings: SettingsRepository(db),
       keyStore: keyStore,
       repository: repository,
-      occasionRepository: OccasionRepository(db),
+      metadataRepository: MeasurementMetadataRepository(db),
+      phaseRepository: PhaseRepository(db),
       syncService: SyncService(keyStore: keyStore, repository: repository),
       exportService: ExportService(
         repository: repository,
@@ -106,29 +107,25 @@ void main() {
     }
   });
 
-  testWidgets('Konzept und Gestaltung stehen beide zur Wahl', (tester) async {
+  testWidgets('Phasen und Gestaltung stehen zur Wahl', (tester) async {
     await boot();
 
     await pumpWith(tester, ThemeVariant.instrument);
 
-    // Zwei freie Achsen: Ordnung und Aussehen.
-    // SectionHeader setzt den Titel in Großbuchstaben.
-    expect(find.text('KONZEPT'), findsOneWidget);
+    expect(find.text('PHASEN'), findsOneWidget);
     expect(find.text('GESTALTUNG'), findsOneWidget);
-    for (final k in allConcepts) {
-      expect(find.text(k.label), findsOneWidget, reason: k.name);
-    }
+    expect(find.text('Phasen verwenden'), findsOneWidget);
   });
 
-  testWidgets('das Konzept lässt sich umschalten', (tester) async {
+  testWidgets('Phasen lassen sich einschalten', (tester) async {
     await boot();
 
     await pumpWith(tester, ThemeVariant.instrument);
-    await tester.ensureVisible(find.text('Phase'));
-    await tester.tap(find.text('Phase'));
+    await tester.ensureVisible(find.text('Phasen verwenden'));
+    await tester.tap(find.text('Phasen verwenden'));
     await tester.pumpAndSettle();
 
-    expect(controller.concept, AppConcept.phase);
+    expect(controller.phasesEnabled, isTrue);
   });
 
   testWidgets('die Form lässt sich umschalten', (tester) async {
@@ -173,16 +170,15 @@ void main() {
     );
   });
 
-  testWidgets('sagt, dass ein Konzeptwechsel keine Messung anfasst', (
+  testWidgets('erklärt Phasen als Zuordnung statt Änderung der Messung', (
     tester,
   ) async {
     await boot();
 
     await pumpWith(tester, ThemeVariant.instrument);
 
-    // Der Wechsel darf sich nicht anfühlen wie ein Datenverlust.
     expect(
-      find.textContaining('Keine Messung wird dabei kopiert'),
+      find.textContaining('Phasen ordnen plausible Messzeiten'),
       findsOneWidget,
     );
   });
@@ -270,7 +266,7 @@ void main() {
       'HEALTH CONNECT',
       'GERÄT',
       'ANSICHT',
-      'KONZEPT',
+      'PHASEN',
       'GESTALTUNG',
     ];
     for (var i = 1; i < reihe.length; i++) {
@@ -374,5 +370,23 @@ void main() {
       ),
     );
     expect(label.style?.color, t.muted);
+  });
+  testWidgets('Autosync ist anfangs aus und über den Schalter einschaltbar', (
+    tester,
+  ) async {
+    await boot();
+    await pumpWith(tester, ThemeVariant.instrument);
+    final toggle = find.widgetWithText(
+      SwitchListTile,
+      'Messungen automatisch abgleichen',
+    );
+    expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(controller.autoSyncEnabled, isTrue);
+    expect(await SettingsRepository(db).autoSync(), isTrue);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(controller.autoSyncEnabled, isFalse);
   });
 }

@@ -2,18 +2,17 @@
 import 'package:flutter/material.dart';
 
 import '../app/app_controller.dart';
-import '../app/feature_flags.dart';
 import '../db/app_database.dart';
-import '../stats/esc_classification.dart';
 import 'theme/sphygma_theme.dart';
-import 'widgets/classification_scale.dart';
 import 'widgets/notice_card.dart';
-import 'widgets/reading_headline.dart';
 import 'widgets/reading_panel.dart';
 import 'measurement_sheet.dart';
+import 'history_screen.dart' show MeasurementRow;
+import 'widgets/today_vitals.dart';
 import 'widgets/at_day_change.dart';
 import 'widgets/surface_panel.dart';
 import 'widgets/this_week_panel.dart';
+import 'plan/plan_today_card.dart';
 
 /// Die Schritte aus dem Handbuch HEM-6232T-E. Die Uhr laesst sich nicht
 /// per Bluetooth stellen (docs/protocol/hem-6232t.md §8.7), also bleibt
@@ -33,9 +32,11 @@ class TodayScreen extends StatelessWidget {
     super.key,
     required this.controller,
     this.clock = DateTime.now,
+    this.onOpenPlan,
   });
 
   final AppController controller;
+  final VoidCallback? onOpenPlan;
 
   /// Die Uhr wird bei jedem Aufbau gelesen: Die laufende Woche wechselt am
   /// Montag, und eine über Nacht offene App zeigte sonst weiter die alte.
@@ -46,89 +47,90 @@ class TodayScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
     final latest = controller.latest;
-
-    return Container(
-      color: t.surface,
-      child: ListView(
-        padding: t.listPadding,
-        children: [
-          // ReadingPanel statt SurfacePanel: Die Form „Band" färbt diese
-          // Fläche mit der Einordnung. Der Bildschirm entscheidet das nicht,
-          // er reicht nur die Werte durch.
-          ReadingPanel(
-            systolic: latest?.systolic,
-            diastolic: latest?.diastolic,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (latest == null)
-                  _EmptyState(paired: controller.paired)
-                else ...[
-                  ReadingHeadline(
-                    systolic: latest.systolic,
-                    diastolic: latest.diastolic,
-                    pulse: latest.pulse,
-                    measuredAt: latest.measuredAt,
-                  ),
-                  if (escClassificationEnabled) ...[
-                    SizedBox(height: t.gapLarge),
-                    ClassificationScale(
-                      category: classifyOffice(
-                        systolic: latest.systolic,
-                        diastolic: latest.diastolic,
-                      ),
+    return AtDayChange(
+      clock: clock,
+      builder: (context, now) => Container(
+        color: t.surface,
+        child: ListView(
+          padding: t.listPadding,
+          children: [
+            ..._notices(),
+            if (latest == null)
+              ReadingPanel(
+                systolic: null,
+                diastolic: null,
+                child: _EmptyState(paired: controller.paired),
+              )
+            else
+              TodayVitals(
+                latest: latest,
+                windows: controller.measurementWindows,
+                measurements: controller.measurements,
+                now: now,
+                onOpenLatest: () => showMeasurementSheet(
+                  context,
+                  controller: controller,
+                  measurementId: latest.id,
+                ),
+                onOpenToday: () => Navigator.of(context).push<void>(
+                  MaterialPageRoute(
+                    builder: (_) => _TodayMeasurements(
+                      controller: controller,
+                      day: now,
+                      userSlot: controller.userSlot,
                     ),
-                  ],
-                ],
-              ],
-            ),
-          ),
-          ..._notices(),
-          // Abschaltbar: Wer nicht nach Wochenplan misst, sieht im Raster
-          // vor allem leere Felder. Die Einstellung steht hinter dem
-          // Zahnrad unter „Ansicht".
-          if (controller.measurements.isNotEmpty && controller.weekPanelVisible)
-            SurfacePanel(
-              // Der Wecker gehört hierher, nicht in den Bildschirm: Ohne ihn
-              // bliebe „Heute fehlt noch…" über Mitternacht beim gestrigen
-              // Tag stehen, und am Montag stünde die Vorwoche als „diese
-              // Woche" da.
-              child: AtDayChange(
-                clock: clock,
-                builder: (context, jetzt) => ThisWeekPanel(
+                  ),
+                ),
+              ),
+            if (controller.planController case final plan?)
+              PlanTodayCard(planController: plan, onOpenPlan: onOpenPlan),
+            if (controller.measurements.isNotEmpty &&
+                controller.weekPanelVisible)
+              SurfacePanel(
+                child: ThisWeekPanel(
+                  windows: controller.measurementWindows,
                   measurements: controller.measurements,
-                  now: jetzt,
-                  onFieldTap: (feld) {
-                    if (feld.measurements.isEmpty) return;
+                  now: now,
+                  onFieldTap: (field) {
+                    if (field.measurements.isEmpty) return;
                     showMeasurementSheet(
                       context,
                       controller: controller,
-                      measurementId: feld.measurements.first.id,
+                      measurementId: field.measurements.first.id,
                     );
                   },
                 ),
               ),
-            ),
-          if (controller.measurements.length > 1)
-            SurfacePanel(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'LETZTE TAGE',
-                    style: TextStyle(
-                      fontSize: 10,
-                      letterSpacing: 1.6,
-                      color: t.muted,
+            if (controller.recentMeasurementsVisible &&
+                controller.measurements.length > 1)
+              SurfacePanel(
+                key: const ValueKey('recent-measurements'),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'LETZTE MESSUNGEN',
+                      style: TextStyle(
+                        fontSize: 10,
+                        letterSpacing: 1.6,
+                        color: t.muted,
+                      ),
                     ),
-                  ),
-                  for (final m
-                      in controller.measurements.skip(1).take(_recentCount))
-                    _RecentRow(measurement: m),
-                ],
+                    for (final m
+                        in controller.measurements.skip(1).take(_recentCount))
+                      _RecentRow(
+                        measurement: m,
+                        onTap: () => showMeasurementSheet(
+                          context,
+                          controller: controller,
+                          measurementId: m.id,
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -149,13 +151,6 @@ class TodayScreen extends StatelessWidget {
             'Die neueste Messung trägt ein unplausibles Datum. '
             'Sphygma kann die Uhr nicht stellen, das geht nur am Gerät.',
         details: clockInstructions,
-      ),
-    if (controller.paired && !controller.autoSyncActive)
-      const NoticeCard(
-        title: 'Kein automatischer Abgleich',
-        message:
-            'Neue Messungen werden nicht von selbst geholt. '
-            'Oben rechts über das Zahnrad lässt er sich von Hand auslösen.',
       ),
   ];
 }
@@ -185,7 +180,7 @@ class _EmptyState extends StatelessWidget {
           SizedBox(height: t.gapSmall),
           Text(
             paired
-                ? 'Miss am Gerät - Sphygma holt die Messung von selbst.'
+                ? 'Miss am Gerät. Über das Zahnrad kannst du die Messungen abgleichen.'
                 : 'Zuerst koppeln — oben rechts über das Zahnrad.',
             style: TextStyle(fontSize: 13, color: t.muted),
           ),
@@ -196,9 +191,10 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _RecentRow extends StatelessWidget {
-  const _RecentRow({required this.measurement});
+  const _RecentRow({required this.measurement, required this.onTap});
 
   final Measurement measurement;
+  final VoidCallback onTap;
 
   static String _two(int n) => n.toString().padLeft(2, '0');
 
@@ -207,26 +203,80 @@ class _RecentRow extends StatelessWidget {
     final t = SphygmaTheme.of(context);
     final m = measurement;
 
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: t.rowSpacing(t.gapSmall + 2)),
-      decoration: t.rowDivider,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            '${m.systolic}/${m.diastolic} · ${m.pulse}',
-            style: TextStyle(
-              fontSize: 13,
-              color: t.onSurface,
-              fontFeatures: const [FontFeature.tabularFigures()],
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: t.rowSpacing(t.gapSmall + 2)),
+        decoration: t.rowDivider,
+        child: Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          spacing: t.gapSmall,
+          runSpacing: t.gapSmall / 2,
+          children: [
+            Text(
+              '${m.systolic}/${m.diastolic} · ${m.pulse}',
+              style: TextStyle(
+                fontSize: 13,
+                color: t.onSurface,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
-          ),
-          Text(
-            '${_two(m.measuredAt.day)}.${_two(m.measuredAt.month)}. '
-            '${_two(m.measuredAt.hour)}:${_two(m.measuredAt.minute)}',
-            style: TextStyle(fontSize: 12, color: t.muted),
-          ),
-        ],
+            Text(
+              '${_two(m.measuredAt.day)}.${_two(m.measuredAt.month)}. '
+              '${_two(m.measuredAt.hour)}:${_two(m.measuredAt.minute)}',
+              style: TextStyle(fontSize: 12, color: t.muted),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TodayMeasurements extends StatelessWidget {
+  const _TodayMeasurements({
+    required this.controller,
+    required this.day,
+    required this.userSlot,
+  });
+  final AppController controller;
+  final DateTime day;
+  final int? userSlot;
+
+  @override
+  Widget build(BuildContext context) {
+    final date =
+        '${day.day.toString().padLeft(2, '0')}.${day.month.toString().padLeft(2, '0')}.${day.year}';
+    return Scaffold(
+      appBar: AppBar(title: Text('Messungen vom $date')),
+      body: ListenableBuilder(
+        listenable: controller,
+        builder: (context, _) {
+          if (controller.userSlot != userSlot) {
+            return const Center(
+              child: Text(
+                'Der Speicherplatz hat sich geändert. Bitte die Tagesliste erneut öffnen.',
+              ),
+            );
+          }
+          final readings = controller.measurements
+              .where(
+                (m) =>
+                    m.measuredAt.year == day.year &&
+                    m.measuredAt.month == day.month &&
+                    m.measuredAt.day == day.day,
+              )
+              .toList();
+          return ListView(
+            padding: SphygmaTheme.of(context).listPadding,
+            children: [
+              if (readings.isEmpty)
+                const Text('Keine Messungen für diesen Tag.'),
+              for (final m in readings)
+                MeasurementRow(controller: controller, measurement: m),
+            ],
+          );
+        },
       ),
     );
   }

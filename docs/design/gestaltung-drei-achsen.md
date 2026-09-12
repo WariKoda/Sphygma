@@ -403,3 +403,16 @@ Schirm wären fünf Karten kein Überblick mehr, sondern ein Streifen.
 Die Rechnung ist grob und **absichtlich in die sichere Richtung**: Wer zu früh
 auf Zeilen fällt, verliert eine Anordnung; wer zu spät fällt, zerbricht die
 Zahlen.
+
+## Gemeinsame Informationsstruktur — 11.09.2026
+
+Heute und Verlauf verwenden dieselben Messungsdetails in jeder Charakteristik.
+Blutdruck und Puls behalten ihre Bedeutung und Reihenfolge; Tags, Bemerkungen und
+Phasen sind ergänzende Informationen an der Einzelmessung. Form, Palette und
+Schrift ändern keine Filterregeln oder Terminzuordnungen.
+
+Die gemeinsame Heute-Zusammenfassung zeigt Messungsanzahl und Werte. Wochenraster
+und letzte Tage lassen sich unabhängig ausblenden. Der Verlauf kombiniert Liste,
+Blutdruck- und Pulskurve mit derselben gefilterten Auswahl; ein Kurvenpunkt öffnet
+die entsprechende Messung. Der optionale Messplan nutzt dieselben Oberflächen-
+und Schriftbausteine. Große Systemschrift bleibt Bestandteil der Widgetprüfungen.

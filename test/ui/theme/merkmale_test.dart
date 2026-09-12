@@ -15,26 +15,18 @@ void main() {
     Iterable<Characteristic> mit(bool Function(Characteristic) hat) =>
         Characteristic.values.where(hat);
 
-    expect(
-      mit((c) => c.readingLayout == ReadingLayout.bloecke),
-      [Characteristic.raster],
-      reason: 'getrennte SYS/DIA-Blöcke gehören zu Raster',
-    );
-    expect(
-      mit((c) => c.zoneDisplay == ZoneDisplay.flaeche),
-      [Characteristic.band],
-      reason: 'die eingefärbte Kopffläche gehört zu Band',
-    );
-    expect(
-      mit((c) => c.statsLayout == StatsLayout.karten),
-      [Characteristic.tagebuch],
-      reason: 'Kennzahlen als Karten gehören zu Tagebuch',
-    );
-    expect(
-      mit((c) => c.selectionStyle == SelectionStyle.chips),
-      [Characteristic.material],
-      reason: 'Chips gehören zu Material',
-    );
+    expect(mit((c) => c.readingLayout == ReadingLayout.bloecke), [
+      Characteristic.raster,
+    ], reason: 'getrennte SYS/DIA-Blöcke gehören zu Raster');
+    expect(mit((c) => c.zoneDisplay == ZoneDisplay.flaeche), [
+      Characteristic.band,
+    ], reason: 'die eingefärbte Kopffläche gehört zu Band');
+    expect(mit((c) => c.statsLayout == StatsLayout.karten), [
+      Characteristic.tagebuch,
+    ], reason: 'Kennzahlen als Karten gehören zu Tagebuch');
+    expect(mit((c) => c.selectionStyle == SelectionStyle.chips), [
+      Characteristic.material,
+    ], reason: 'Chips gehören zu Material');
   });
 
   test('jede Form unterscheidet sich von jeder anderen im Aufbau', () {
@@ -130,7 +122,8 @@ void main() {
     expect(
       karten(),
       0,
-      reason: 'vier Karten auf 360 Pixeln bei doppelter Schrift wären '
+      reason:
+          'vier Karten auf 360 Pixeln bei doppelter Schrift wären '
           'schmaler als ihr Inhalt — dann sind Zeilen richtig',
     );
 

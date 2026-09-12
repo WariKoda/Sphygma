@@ -83,6 +83,10 @@ Future<void> writeNewPairingKey({
   final responses = FrameMailbox<Uint8List>();
   final subscription = unlockCharacteristic.onValueReceived.listen(
     (bytes) => responses.deliver(Uint8List.fromList(bytes)),
+    onError: responses.fail,
+    onDone: () => responses.fail(
+      ProtocolException('Pairing-Antwortkanal wurde geschlossen.'),
+    ),
   );
 
   try {
@@ -152,6 +156,10 @@ Future<void> unlockWithPairingKey({
   final responses = FrameMailbox<Uint8List>();
   final subscription = unlockCharacteristic.onValueReceived.listen(
     (bytes) => responses.deliver(Uint8List.fromList(bytes)),
+    onError: responses.fail,
+    onDone: () => responses.fail(
+      ProtocolException('Unlock-Antwortkanal wurde geschlossen.'),
+    ),
   );
 
   try {

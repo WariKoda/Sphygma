@@ -41,9 +41,11 @@ Future<List<SlotRecord>> readAllRecords(BleTransport transport) async {
   final result = <SlotRecord>[];
   const recordSize = Hem6232tDevice.recordByteSize;
 
-  for (var slotIndex = 0;
-      slotIndex < Hem6232tDevice.userStartAddresses.length;
-      slotIndex++) {
+  for (
+    var slotIndex = 0;
+    slotIndex < Hem6232tDevice.userStartAddresses.length;
+    slotIndex++
+  ) {
     final bytes = await reader.readRange(
       startAddress: Hem6232tDevice.userStartAddresses[slotIndex],
       totalLength: Hem6232tDevice.recordsPerUser * recordSize,

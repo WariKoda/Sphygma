@@ -12,10 +12,25 @@ import 'dart:collection';
 class FrameMailbox<T> {
   final Queue<T> _buffered = Queue<T>();
   Completer<T>? _waiting;
+  Object? _failure;
+  StackTrace? _failureStack;
+
+  /// Ein Transportfehler beendet die Sitzung auch dann, wenn der Aufrufer
+  /// noch auf seinen Write wartet und erst danach die Antwort abholt.
+  void fail(Object error, [StackTrace? stackTrace]) {
+    if (_failure != null) return;
+    _failure = error;
+    _failureStack = stackTrace;
+    _buffered.clear();
+    final waiting = _waiting;
+    _waiting = null;
+    waiting?.completeError(error, stackTrace);
+  }
 
   /// Uebergibt ein Element. Weckt einen wartenden [next]-Aufruf, falls
   /// einer ansteht, sonst wird das Element gepuffert.
   void deliver(T value) {
+    if (_failure != null) return;
     final waiting = _waiting;
     if (waiting != null) {
       _waiting = null;
@@ -28,6 +43,8 @@ class FrameMailbox<T> {
   /// Liefert das naechste Element - sofort, falls bereits gepuffert,
   /// sonst sobald [deliver] aufgerufen wird.
   Future<T> next() {
+    final failure = _failure;
+    if (failure != null) return Future.error(failure, _failureStack);
     if (_buffered.isNotEmpty) {
       return Future.value(_buffered.removeFirst());
     }
