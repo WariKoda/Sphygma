@@ -9,9 +9,13 @@
 // Hypertonie ab 135/85 mmHg). Die Kategorie richtet sich nach dem
 // hoeheren der beiden Werte.
 
-enum EscCategory { optimal, normal, highNormal, grade1, grade2, grade3 }
+import 'low_blood_pressure.dart';
+
+// low ergänzt die Anzeige; es gehört nicht zur ESC/ESH-2018-Tabelle.
+enum EscCategory { low, optimal, normal, highNormal, grade1, grade2, grade3 }
 
 EscCategory classifyOffice({required int systolic, required int diastolic}) {
+  final low = lowBloodPressure(systolic: systolic, diastolic: diastolic);
   final bySystolic = switch (systolic) {
     >= 180 => EscCategory.grade3,
     >= 160 => EscCategory.grade2,
@@ -28,7 +32,15 @@ EscCategory classifyOffice({required int systolic, required int diastolic}) {
     >= 80 => EscCategory.normal,
     _ => EscCategory.optimal,
   };
-  return bySystolic.index >= byDiastolic.index ? bySystolic : byDiastolic;
+  final office = bySystolic.index >= byDiastolic.index
+      ? bySystolic
+      : byDiastolic;
+  // Bei gemischten Werten bleibt die obere Kategorie sichtbar; den separaten
+  // Niedrighinweis zeigt die Skala zusätzlich an.
+  return low != LowBloodPressure.none &&
+          office.index < EscCategory.highNormal.index
+      ? EscCategory.low
+      : office;
 }
 
 /// Heimblutdruck-Schwelle der Leitlinie (Tabelle 9): >= 135 und/oder >= 85.

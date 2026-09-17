@@ -10,7 +10,6 @@ import '../app/app_controller.dart';
 import '../app/feature_flags.dart';
 import '../db/app_database.dart';
 import '../db/measurement_repository.dart';
-import '../stats/esc_classification.dart';
 import 'format.dart';
 import 'theme/sphygma_theme.dart';
 import 'widgets/classification_scale.dart';
@@ -70,6 +69,7 @@ class MeasurementSheet extends StatelessWidget {
                       children: [
                         const PanelHeader(
                           title: 'Messwert',
+                          unit: 'Blutdruck mmHg · Puls bpm',
                           icon: Icons.monitor_heart_outlined,
                         ),
                         ReadingHeadline(
@@ -80,11 +80,9 @@ class MeasurementSheet extends StatelessWidget {
                         ),
                         if (escClassificationEnabled) ...[
                           SizedBox(height: t.gapLarge),
-                          ClassificationScale(
-                            category: classifyOffice(
-                              systolic: m.systolic,
-                              diastolic: m.diastolic,
-                            ),
+                          ClassificationScale.forReading(
+                            systolic: m.systolic,
+                            diastolic: m.diastolic,
                           ),
                         ],
                         if (m.movement || m.arrhythmia) ...[

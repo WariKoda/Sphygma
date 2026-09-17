@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../app/feature_flags.dart';
 import '../../db/app_database.dart';
-import '../../stats/esc_classification.dart';
 import '../../stats/measurement_windows.dart';
 import '../theme/characteristic.dart';
 import '../theme/sphygma_theme.dart';
 import 'classification_scale.dart';
-import 'reading_headline.dart';
+import 'blood_pressure_fields.dart';
 import 'reading_panel.dart';
 import 'surface_panel.dart';
 import 'panel_header.dart';
@@ -80,7 +79,9 @@ class TodayVitals extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: TextButton(
               onPressed: onOpenToday,
-              child: Text('Alle ${today.length} Messungen ansehen'),
+              child: Text(
+                'Alle ${today.length} ${today.length == 1 ? 'Messung' : 'Messungen'} ansehen',
+              ),
             ),
           ),
       ],
@@ -129,25 +130,20 @@ class _BloodPressureSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionHead(title: 'Blutdruck', latest: latest),
-        SizedBox(height: t.gapSmall),
-        const _Kicker('LETZTE MESSUNG'),
-        SizedBox(height: t.gapSmall),
+
         if (latest == null)
           const Text('Noch keine Messung')
         else ...[
-          BloodPressureValue(
+          BloodPressureFields(
             systolic: latest!.systolic,
             diastolic: latest!.diastolic,
           ),
-          SizedBox(height: t.gapSmall / 2),
-          Text('mmHg', style: TextStyle(color: t.muted)),
+
           if (escClassificationEnabled) ...[
             SizedBox(height: t.gapLarge),
-            ClassificationScale(
-              category: classifyOffice(
-                systolic: latest!.systolic,
-                diastolic: latest!.diastolic,
-              ),
+            ClassificationScale.forReading(
+              systolic: latest!.systolic,
+              diastolic: latest!.diastolic,
             ),
           ],
         ],
@@ -156,7 +152,6 @@ class _BloodPressureSection extends StatelessWidget {
           morning: _Mean.of(morning),
           evening: _Mean.of(evening),
           value: (mean) => '${mean.systolic}/${mean.diastolic}',
-          unit: 'mmHg',
         ),
       ],
     );
@@ -179,37 +174,26 @@ class _PulseSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionHead(title: 'Puls', latest: latest),
-        SizedBox(height: t.gapSmall),
-        const _Kicker('DIESELBE MESSUNG'),
-        SizedBox(height: t.gapSmall),
+
         if (latest == null)
           const Text('Noch keine Messung')
         else
-          Wrap(
-            crossAxisAlignment: WrapCrossAlignment.end,
-            children: [
-              Text(
-                '${latest!.pulse}',
-                style: TextStyle(
-                  fontSize: t.headlineSize,
-                  height: 1,
-                  fontWeight: t.headlineWeight,
-                  color: t.onSurface,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.only(left: t.gapSmall, bottom: 2),
-                child: Text('bpm', style: TextStyle(color: t.muted)),
-              ),
-            ],
+          Text(
+            '${latest!.pulse}',
+            semanticsLabel: 'Puls ${latest!.pulse} Schläge pro Minute',
+            style: TextStyle(
+              fontSize: t.headlineSize,
+              height: 1,
+              fontWeight: t.headlineWeight,
+              color: t.onSurface,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
           ),
         SizedBox(height: t.gapLarge),
         _BandMeans(
           morning: _Mean.of(morning),
           evening: _Mean.of(evening),
           value: (mean) => '${mean.pulse}',
-          unit: 'bpm',
         ),
       ],
     );
@@ -226,6 +210,8 @@ class _SectionHead extends StatelessWidget {
     final value = latest;
     return PanelHeader(
       title: title,
+      unit: title == 'Blutdruck' ? 'mmHg' : 'bpm',
+      inlineSubtitle: true,
       icon: title == 'Blutdruck'
           ? Icons.favorite_outline
           : Icons.monitor_heart_outlined,
@@ -242,46 +228,21 @@ class _SectionHead extends StatelessWidget {
       '${_two(value.hour)}:${_two(value.minute)}';
 }
 
-class _Kicker extends StatelessWidget {
-  const _Kicker(this.value);
-  final String value;
-  @override
-  Widget build(BuildContext context) {
-    final t = SphygmaTheme.of(context);
-    return Text(
-      value,
-      style: TextStyle(fontSize: 10, letterSpacing: 1.4, color: t.muted),
-    );
-  }
-}
-
 class _BandMeans extends StatelessWidget {
   const _BandMeans({
     required this.morning,
     required this.evening,
     required this.value,
-    required this.unit,
   });
   final _Mean? morning, evening;
   final String Function(_Mean mean) value;
-  final String unit;
 
   @override
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
     final cards = [
-      _MeanCard(
-        label: 'Morgenmittelwert',
-        mean: morning,
-        value: value,
-        unit: unit,
-      ),
-      _MeanCard(
-        label: 'Abendmittelwert',
-        mean: evening,
-        value: value,
-        unit: unit,
-      ),
+      _MeanCard(label: 'Morgenmittelwert', mean: morning, value: value),
+      _MeanCard(label: 'Abendmittelwert', mean: evening, value: value),
     ];
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -290,7 +251,7 @@ class _BandMeans extends StatelessWidget {
           final painter = TextPainter(
             text: TextSpan(
               text: text,
-              style: TextStyle(
+              style: DefaultTextStyle.of(context).style.copyWith(
                 fontSize: size,
                 fontWeight: weight,
                 fontFamily: t.fontFamily,
@@ -314,7 +275,6 @@ class _BandMeans extends StatelessWidget {
               width('Noch keine Messung', 13)
             else ...[
               width(value(mean), 27, weight: t.headlineWeight),
-              width(unit, 12),
               width(count, 12),
               width(mean.timeRange, 12),
             ],
@@ -335,15 +295,19 @@ class _BandMeans extends StatelessWidget {
             constraints.maxWidth >= minimum * 2 + t.gapSmall ||
             (scaler.scale(14) <= 14 && constraints.maxWidth >= 280);
         if (sideBySide) {
-          return Row(
-            children: [
-              Expanded(child: cards.first),
-              SizedBox(width: t.gapSmall),
-              Expanded(child: cards.last),
-            ],
+          return IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: cards.first),
+                SizedBox(width: t.gapSmall),
+                Expanded(child: cards.last),
+              ],
+            ),
           );
         }
         return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             cards.first,
             SizedBox(height: t.gapSmall),
@@ -360,9 +324,8 @@ class _MeanCard extends StatelessWidget {
     required this.label,
     required this.mean,
     required this.value,
-    required this.unit,
   });
-  final String label, unit;
+  final String label;
   final _Mean? mean;
   final String Function(_Mean mean) value;
 
@@ -376,12 +339,17 @@ class _MeanCard extends StatelessWidget {
         children: [
           Text(label, style: TextStyle(fontSize: 14, color: t.muted)),
           SizedBox(height: t.gapSmall / 2),
-          if (mean == null)
+          if (mean == null) ...[
+            Text(
+              '—',
+              style: TextStyle(fontSize: 27, height: 1, color: t.onSurface),
+            ),
+            SizedBox(height: t.gapSmall / 2),
             Text(
               'Noch keine Messung',
               style: TextStyle(fontSize: 13, color: t.onSurface),
-            )
-          else ...[
+            ),
+          ] else ...[
             Text(
               value(mean!),
               style: TextStyle(
@@ -393,7 +361,6 @@ class _MeanCard extends StatelessWidget {
               ),
             ),
             SizedBox(height: t.gapSmall / 2),
-            Text(unit, style: TextStyle(fontSize: 12, color: t.muted)),
             Wrap(
               spacing: t.gapSmall,
               runSpacing: t.gapSmall / 2,

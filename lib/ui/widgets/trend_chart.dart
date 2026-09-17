@@ -83,12 +83,6 @@ class _TrendChartState extends State<TrendChart> {
           runSpacing: theme.gapSmall / 2,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Text(
-              widget.metric == ChartMetric.bloodPressure
-                  ? 'Blutdruck (mmHg)'
-                  : 'Puls (/min)',
-              style: TextStyle(fontSize: 12, color: theme.muted),
-            ),
             if (widget.metric == ChartMetric.bloodPressure) ...[
               _LegendDot(color: theme.onSurface, filled: true),
               Text(' SYS', style: TextStyle(fontSize: 11, color: theme.muted)),
@@ -111,8 +105,7 @@ class _TrendChartState extends State<TrendChart> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${geometry.minValue}–${geometry.maxValue} '
-                  '${widget.metric == ChartMetric.bloodPressure ? 'mmHg' : '/min'}',
+                  '${geometry.minValue}–${geometry.maxValue}',
                   style: TextStyle(fontSize: 10, color: theme.muted),
                 ),
                 SizedBox(

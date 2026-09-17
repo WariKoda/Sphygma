@@ -17,6 +17,7 @@ import 'package:sphygma/sync/export_service.dart';
 import 'package:sphygma/sync/health_sink.dart';
 import 'package:sphygma/sync/sync_service.dart';
 import 'package:sphygma/ui/measurement_sheet.dart';
+import 'package:sphygma/ui/widgets/panel_header.dart';
 import 'package:sphygma/ui/theme/sphygma_theme.dart';
 import 'package:sphygma/ui/theme/variants.dart';
 
@@ -142,6 +143,24 @@ void main() {
         expect(find.textContaining('545'), findsOneWidget);
         expect(tester.takeException(), isNull);
       });
+    }
+  });
+
+  testWidgets('Einheiten stehen einmal im Hauptkopf des Messwerts', (
+    tester,
+  ) async {
+    controller = await boot();
+    await repository.importAll([_rec(1, DateTime(2026, 9, 5, 8))]);
+    await pumpWith(tester, ThemeVariant.instrument, await firstId());
+    for (final unit in ['mmHg', 'bpm']) {
+      expect(find.textContaining(unit), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(PanelHeader),
+          matching: find.textContaining(unit),
+        ),
+        findsOneWidget,
+      );
     }
   });
 

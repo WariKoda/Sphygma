@@ -448,3 +448,21 @@ einschließlich Filter-/Detailzugriff, Einstellungen, Terminlisten, Zeitfenstere
 und Wochenraster-Aktionen. Gerenderte Heute-Karten aller sechs Formen wurden mit
 `beispieldaten.json` und der eingebetteten Groteskschrift visuell geprüft. Die
 Sichtprüfung ersetzt keine Prüfung auf dem Telefon.
+
+
+## Einheiten und Heute-Kacheln — 17.09.2026
+
+Hauptkarten nennen die Einheit einmal im Kopf: „Blutdruck · mmHg“ bzw.
+„Puls · bpm“. Gemischte Hauptkarten nennen „Blutdruck mmHg · Puls bpm“.
+Unterabschnitte und Mittelwerte wiederholen die Einheiten nicht. Eigenständige
+Messkarten und Tabellenköpfe tragen weiterhin ihre eigene Zuordnung.
+
+Heute zeigt systolisch und diastolisch in zwei gleich breiten Feldern, unabhängig
+von der Charakteristik. Form, Farbe und Schrift der Felder stammen aus dem Theme.
+Messdatum und Uhrzeit stehen neben dem Titel, wenn ihre tatsächliche Textbreite
+es erlaubt. Große Systemschrift darf Kopf und Werte stapeln. Die redundanten
+Kicker „Letzte Messung“ und „Dieselbe Messung“ entfallen. Nebeneinanderliegende
+Morgen-/Abendmittel sind gleich hoch, auch wenn eines noch fehlt.
+
+Die Skala ergänzt „Niedrig“ mit eigener Farbe und erreichbarer Erklärung;
+[Referenz und gemischte Werte](../research/niedriger-blutdruck.md) sind dokumentiert.

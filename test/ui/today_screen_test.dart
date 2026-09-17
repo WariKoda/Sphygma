@@ -19,7 +19,7 @@ import 'package:sphygma/ui/theme/sphygma_theme.dart';
 import 'package:sphygma/ui/theme/variants.dart';
 import 'package:sphygma/stats/measurement_week.dart';
 import 'package:sphygma/ui/today_screen.dart';
-import 'package:sphygma/ui/widgets/reading_headline.dart';
+import 'package:sphygma/ui/widgets/blood_pressure_fields.dart';
 
 class _NoopSink implements HealthSink {
   @override
@@ -209,7 +209,7 @@ void main() {
     await tester.scrollUntilVisible(find.text('Diese Woche'), 250);
     expect(find.text('Diese Woche'), findsOneWidget);
     expect(find.text('Letzte Messungen'), findsNothing);
-    expect(find.byType(BloodPressureValue), findsOneWidget);
+    expect(find.byType(BloodPressureFields), findsOneWidget);
   });
 
   testWidgets('zeigt die laufende Woche mit dem, was heute noch fehlt', (

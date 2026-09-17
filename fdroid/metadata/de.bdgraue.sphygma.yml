@@ -31,9 +31,9 @@ RepoType: git
 Repo: https://github.com/WariKoda/Sphygma
 
 Builds:
-  - versionName: 0.1.0
-    versionCode: 1
-    commit: <Tag v0.1.0 - Hash eintragen>
+  - versionName: 0.2.0
+    versionCode: 10
+    commit: <Tag v0.2.0 - Hash eintragen>
     subdir: .
     sudo:
       - sysctl fs.inotify.max_user_watches=524288 || true
@@ -52,5 +52,5 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9.]+$
-CurrentVersion: 0.1.0
-CurrentVersionCode: 1
+CurrentVersion: 0.2.0
+CurrentVersionCode: 10

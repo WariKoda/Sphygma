@@ -11,6 +11,7 @@ const _t = SphygmaTheme(
   line: Color(0xFFE4E1DB),
   accent: Color(0xFF1B1B1A),
   categoryColors: {
+    EscCategory.low: Color(0xFF638AB6),
     EscCategory.optimal: Color(0xFF7EA77E),
     EscCategory.normal: Color(0xFF7EA77E),
     EscCategory.highNormal: Color(0xFFC9B45E),
@@ -78,6 +79,7 @@ void main() {
         line: Color(0xFFDDDDDD),
         accent: Color(0xFF000000),
         categoryColors: {
+          EscCategory.low: Color(0xFF638AB6),
           EscCategory.optimal: Color(0xFF7EA77E),
           EscCategory.normal: Color(0xFF7EA77E),
           EscCategory.highNormal: Color(0xFFC9B45E),
@@ -114,6 +116,7 @@ void main() {
         line: Color(0x12FFFFFF),
         accent: Color(0xFF6C5CE7),
         categoryColors: {
+          EscCategory.low: Color(0xFF638AB6),
           EscCategory.optimal: Color(0xFF8FB89A),
           EscCategory.normal: Color(0xFF8FB89A),
           EscCategory.highNormal: Color(0xFFE2C08A),

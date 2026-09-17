@@ -4,7 +4,7 @@
 // ([SphygmaTheme.categoryColors]). Sie wird hier über den Zielbereich der
 // **Heimmessung** angesprochen, nicht über die ESC-Klassifikation: Die Farbe
 // ist eine Tonleiter, die Klassifikation ist das, was hinter dem
-// Compile-Time-Flag liegt. Wer die drei Zonen an EscCategory hängt, zieht die
+// Compile-Time-Flag liegt. Wer die Zonen an EscCategory hängt, zieht die
 // regulatorische Frage in jedes Wochenraster.
 import 'package:flutter/material.dart';
 
@@ -14,6 +14,7 @@ import 'sphygma_theme.dart';
 
 Color zoneColor(SphygmaTheme theme, TargetZone zone) {
   final stufe = switch (zone) {
+    TargetZone.niedrig => EscCategory.low,
     TargetZone.imZielbereich => EscCategory.optimal,
     TargetZone.grenzwertig => EscCategory.highNormal,
     TargetZone.darueber => EscCategory.grade1,

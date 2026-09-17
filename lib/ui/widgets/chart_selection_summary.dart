@@ -36,7 +36,7 @@ class ChartSelectionSummary extends StatelessWidget {
               icon: const Icon(Icons.chevron_left),
             ),
             Text(
-              '$date · ${measurement.systolic} / ${measurement.diastolic} mmHg · Puls ${measurement.pulse} /min',
+              '$date · ${measurement.systolic} / ${measurement.diastolic} · Puls ${measurement.pulse}',
               style: TextStyle(color: theme.onSurface),
             ),
             IconButton(

@@ -1,6 +1,5 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sphygma/db/app_database.dart';
 import 'package:sphygma/stats/measurement_windows.dart';
@@ -28,6 +27,11 @@ Measurement reading(int sequence, DateTime at, int sys, int dia, int pulse) =>
     );
 
 void main() {
+  setUpAll(() async {
+    final loader = FontLoader('Archivo')
+      ..addFont(rootBundle.load('assets/fonts/Archivo.ttf'));
+    await loader.load();
+  });
   final now = DateTime(2026, 9, 11, 21);
   final values = [
     reading(1, DateTime(2026, 9, 11, 7), 120, 80, 70),
@@ -53,6 +57,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     await tester.pumpWidget(
       MaterialApp(
+        theme: ThemeData(fontFamily: 'Archivo'),
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context)
               .copyWith(textScaler: TextScaler.linear(textScale)),
@@ -60,19 +65,74 @@ void main() {
         ),
         home: Scaffold(
           body: SingleChildScrollView(
-            child: TodayVitals(
-              measurements: measurements ?? values,
-              windows: windows,
-              latest: noLatest ? null : latestMeasurement ?? values.last,
-              now: now,
-              onOpenLatest: latest,
-              onOpenToday: today,
+            child: Padding(
+              padding: themeFor(variant).listPadding,
+              child: TodayVitals(
+                measurements: measurements ?? values,
+                windows: windows,
+                latest: noLatest ? null : latestMeasurement ?? values.last,
+                now: now,
+                onOpenLatest: latest,
+                onOpenToday: today,
+              ),
             ),
           ),
         ),
       ),
     );
   }
+
+  testWidgets(
+    'Einheiten stehen nur im Kartenkopf, Werte in getrennten Feldern',
+    (tester) async {
+      await pump(tester, variant: ThemeVariant.diary);
+      expect(find.text('mmHg'), findsOneWidget);
+      expect(find.text('bpm'), findsOneWidget);
+      expect(find.text('LETZTE MESSUNG'), findsNothing);
+      expect(find.text('DIESELBE MESSUNG'), findsNothing);
+      expect(find.text('Systolisch'), findsOneWidget);
+      expect(find.text('Diastolisch'), findsOneWidget);
+      final sys = tester.getRect(find.text('140'));
+      final dia = tester.getRect(find.text('95'));
+      expect(sys.top, dia.top);
+      expect(sys.right, lessThan(dia.left));
+    },
+  );
+
+  testWidgets('Messzeit steht bei normaler Schrift neben dem Kartenkopf', (
+    tester,
+  ) async {
+    await pump(tester, variant: ThemeVariant.diary);
+    final heading = tester.getRect(find.text('Blutdruck'));
+    final timestamp = tester.getRect(find.textContaining('10.09.2026').first);
+    expect(timestamp.left, greaterThan(heading.right));
+    expect(timestamp.top, closeTo(heading.top, 1));
+  });
+
+  testWidgets('belegtes und leeres Mittelwertfeld haben dieselbe Höhe', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      variant: ThemeVariant.diary,
+      measurements: [values.first],
+      latestMeasurement: values.first,
+    );
+    for (final key in ['latest-blood-pressure', 'latest-pulse']) {
+      final panel = find.byKey(ValueKey(key));
+      Finder card(String label) => find
+          .ancestor(
+            of: find.descendant(of: panel, matching: find.text(label)),
+            matching: find.byType(DecoratedBox),
+          )
+          .first;
+      final morning = tester.getRect(card('Morgenmittelwert'));
+      final evening = tester.getRect(card('Abendmittelwert'));
+      expect(morning.top, evening.top);
+      expect(morning.width, closeTo(evening.width, .01));
+      expect(morning.height, closeTo(evening.height, .01));
+    }
+  });
 
   testWidgets('13 Uhr bleibt in Tagesanzahl, aber nicht im Abendmittel', (
     tester,
@@ -88,7 +148,7 @@ void main() {
     expect(find.text('Noch keine Messung'), findsNWidgets(4));
     expect(find.textContaining('190'), findsOneWidget);
     expect(find.text('99'), findsOneWidget);
-    expect(find.textContaining('1 Messungen ansehen'), findsOneWidget);
+    expect(find.textContaining('1 Messung ansehen'), findsOneWidget);
     await pump(
       tester,
       variant: ThemeVariant.diary,
@@ -102,7 +162,7 @@ void main() {
       ),
     );
     expect(find.text('Noch keine Messung'), findsNWidgets(2));
-    expect(find.text('190/110'), findsNWidgets(2));
+    expect(find.text('190/110'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

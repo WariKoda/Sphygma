@@ -322,6 +322,7 @@ class MeasurementPlanScreen extends StatelessWidget {
                   children: [
                     const PanelHeader(
                       title: 'Termine heute',
+                      unit: 'Blutdruck mmHg · Puls bpm',
                       icon: Icons.schedule,
                     ),
                     for (final occurrence in plan.todayOccurrences)
@@ -352,8 +353,8 @@ class MeasurementPlanScreen extends StatelessWidget {
                                     .fulfillment[occurrence.key]]) {
                                   final measurement? =>
                                     '${formatTime(measurement.measuredAt)} Uhr · '
-                                        '${measurement.systolic}/${measurement.diastolic} mmHg · '
-                                        'Puls ${measurement.pulse} bpm',
+                                        '${measurement.systolic}/${measurement.diastolic} · '
+                                        'Puls ${measurement.pulse}',
                                   null => 'Zugeordnete Messung wird geladen…',
                                 }
                               : occurrence.timeAmbiguous
