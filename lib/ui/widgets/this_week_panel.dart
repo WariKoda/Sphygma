@@ -16,6 +16,7 @@ import '../../stats/time_of_day_band.dart';
 import '../theme/sphygma_theme.dart';
 import 'week_grid.dart';
 import 'panel_header.dart';
+import 'section_header.dart';
 import 'measurement_list_item.dart';
 
 class ThisWeekPanel extends StatelessWidget {
@@ -84,6 +85,7 @@ class ThisWeekPanel extends StatelessWidget {
         children: [
           const PanelHeader(
             title: 'Diese Woche',
+            unit: 'Blutdruck mmHg · Puls bpm',
             icon: Icons.calendar_today_outlined,
           ),
           Text(
@@ -99,12 +101,14 @@ class ThisWeekPanel extends StatelessWidget {
       children: [
         const PanelHeader(
           title: 'Diese Woche',
+          unit: 'Blutdruck mmHg · Puls bpm',
           icon: Icons.calendar_today_outlined,
         ),
         if (woche.average case final a?) ...[
           Text('Wochenmittel', style: TextStyle(fontSize: 14, color: t.muted)),
           SizedBox(height: t.gapSmall),
           MeasurementValues(
+            showUnits: false,
             systolic: a.systolic,
             diastolic: a.diastolic,
             pulse: a.pulse,
@@ -116,6 +120,7 @@ class ThisWeekPanel extends StatelessWidget {
           ),
           SizedBox(height: t.gapLarge),
         ],
+        const SectionHeader(title: 'Systolisch', leadingGap: false),
         WeekGrid(week: woche, onFieldTap: onFieldTap),
         SizedBox(height: t.gapSmall),
         Text(

@@ -6,6 +6,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sphygma/stats/esc_classification.dart';
 
 void main() {
+  test('niedrige Einzelwerte werden nicht als optimal eingeordnet', () {
+    for (final (sys, dia) in [(89, 70), (110, 59), (85, 55), (125, 55)]) {
+      expect(classifyOffice(systolic: sys, diastolic: dia).name, 'low');
+    }
+    expect(classifyOffice(systolic: 90, diastolic: 60), EscCategory.optimal);
+    expect(classifyOffice(systolic: 140, diastolic: 55), EscCategory.grade1);
+    expect(
+      classifyOffice(systolic: 130, diastolic: 55),
+      EscCategory.highNormal,
+    );
+  });
+
   group('classifyOffice (ESC/ESH 2018, Praxis)', () {
     test('optimal: <120 und <80', () {
       expect(classifyOffice(systolic: 119, diastolic: 79), EscCategory.optimal);
@@ -39,7 +51,7 @@ void main() {
 
     test('Grad 3: >=180 und/oder >=110', () {
       expect(classifyOffice(systolic: 180, diastolic: 70), EscCategory.grade3);
-      expect(classifyOffice(systolic: 110, diastolic: 110), EscCategory.grade3);
+      expect(classifyOffice(systolic: 120, diastolic: 110), EscCategory.grade3);
     });
 
     test('der hoehere Wert entscheidet', () {

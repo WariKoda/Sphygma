@@ -2,6 +2,30 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sphygma/stats/target_range.dart';
 
 void main() {
+  test(
+    'niedrige Werte haben eine eigene Zone; hohe Werte bleiben erkennbar',
+    () {
+      for (final (sys, dia) in [(89, 70), (110, 59), (85, 55)]) {
+        expect(
+          TargetRange.heim.classify(systolic: sys, diastolic: dia).name,
+          'niedrig',
+        );
+      }
+      expect(
+        TargetRange.heim.classify(systolic: 90, diastolic: 60),
+        TargetZone.imZielbereich,
+      );
+      expect(
+        TargetRange.heim.classify(systolic: 140, diastolic: 55),
+        TargetZone.darueber,
+      );
+      expect(
+        TargetRange.heim.classify(systolic: 130, diastolic: 55),
+        TargetZone.grenzwertig,
+      );
+    },
+  );
+
   group('Heimmessung mit 135/85', () {
     final z = TargetRange.heim;
 

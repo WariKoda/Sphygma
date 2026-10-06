@@ -127,7 +127,7 @@ class _OccurrenceAssignmentSheetState extends State<OccurrenceAssignmentSheet> {
                   child: ListTile(
                     contentPadding: EdgeInsets.zero,
                     title: Text(
-                      '${measurement.systolic}/${measurement.diastolic} mmHg · Puls ${measurement.pulse}',
+                      '${measurement.systolic}/${measurement.diastolic} mmHg · Puls ${measurement.pulse} bpm',
                       style: TextStyle(
                         color: theme.onSurface,
                         fontSize: 16,

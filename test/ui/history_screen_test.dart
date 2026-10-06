@@ -23,6 +23,7 @@ import 'package:sphygma/ui/measurement_sheet.dart';
 import 'package:sphygma/ui/theme/sphygma_theme.dart';
 import 'package:sphygma/ui/theme/variants.dart';
 import 'package:sphygma/ui/widgets/trend_chart.dart';
+import 'package:sphygma/ui/widgets/panel_header.dart';
 
 class _NoopSink implements HealthSink {
   @override
@@ -140,6 +141,27 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets(
+    'Entwicklung nennt Einheiten im Hauptkopf statt in Unterabschnitten',
+    (tester) async {
+      controller = await boot();
+      await repository.importAll([_rec(1, DateTime.now())]);
+      await controller.refreshForTest();
+      await pumpWith(tester, ThemeVariant.instrument);
+      for (final unit in ['mmHg', 'bpm']) {
+        expect(
+          find.descendant(
+            of: find.byType(PanelHeader),
+            matching: find.textContaining(unit),
+          ),
+          findsOneWidget,
+        );
+      }
+      expect(find.text('Blutdruck · mmHg'), findsNothing);
+      expect(find.text('Blutdruck mmHg · Puls bpm'), findsOneWidget);
+    },
+  );
 
   testWidgets('der Zeitraumwechsel wirkt auf den Steuerungsteil', (
     tester,

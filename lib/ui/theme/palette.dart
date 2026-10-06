@@ -147,6 +147,7 @@ enum Palette {
 /// oberen Ende, weil die Palette kein dunkleres Rot führt und ein
 /// erfundener Ton die Barrierefreiheit gerade aufheben würde.
 const Map<EscCategory, Color> _okabeItoScale = {
+  EscCategory.low: Color(0xFF56B4E9),
   EscCategory.optimal: Color(0xFF009E73),
   EscCategory.normal: Color(0xFF009E73),
   EscCategory.highNormal: Color(0xFFF0E442),
@@ -156,6 +157,7 @@ const Map<EscCategory, Color> _okabeItoScale = {
 };
 
 const Map<EscCategory, Color> _duskScale = {
+  EscCategory.low: Color(0xFF8CAED2),
   EscCategory.optimal: Color(0xFF8FB89A),
   EscCategory.normal: Color(0xFF8FB89A),
   EscCategory.highNormal: Color(0xFFE2C08A),
@@ -165,6 +167,7 @@ const Map<EscCategory, Color> _duskScale = {
 };
 
 const Map<EscCategory, Color> _calmScale = {
+  EscCategory.low: Color(0xFF638AB6),
   EscCategory.optimal: Color(0xFF7EA77E),
   EscCategory.normal: Color(0xFF7EA77E),
   EscCategory.highNormal: Color(0xFFC9B45E),
@@ -174,6 +177,7 @@ const Map<EscCategory, Color> _calmScale = {
 };
 
 const Map<EscCategory, Color> _vividScale = {
+  EscCategory.low: Color(0xFF407CB5),
   EscCategory.optimal: Color(0xFF3FA35F),
   EscCategory.normal: Color(0xFF3FA35F),
   EscCategory.highNormal: Color(0xFFE0A93B),

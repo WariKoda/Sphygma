@@ -112,6 +112,7 @@ class TodayScreen extends StatelessWidget {
                   children: [
                     const PanelHeader(
                       title: 'Letzte Messungen',
+                      unit: 'Blutdruck mmHg · Puls bpm',
                       icon: Icons.history,
                     ),
                     for (final m
@@ -200,6 +201,7 @@ class _RecentRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final m = measurement;
     return MeasurementListItem(
+      showUnits: false,
       measurement: m,
       timestamp:
           '${_two(m.measuredAt.day)}.${_two(m.measuredAt.month)}. '

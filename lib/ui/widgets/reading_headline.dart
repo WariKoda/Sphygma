@@ -1,14 +1,13 @@
-// Die grosse Wertdarstellung. Steht auf "Heute" und im Detail-Blatt.
+// Große Wertdarstellung im Detail-Blatt; die Hauptkarte nennt die Einheiten.
 //
-// **Der Baustein kennt die Bauform, nicht der Bildschirm.** Die Form „Raster"
-// zeigt SYS und DIA als zwei gleichwertige Blöcke statt als Bruch — der
-// Entwurf verlangt es ausdrücklich. Diese Entscheidung hier zu treffen hält
-// die Bildschirme frei: „Heute" und das Detail-Blatt rufen weiterhin
-// denselben Baustein und wissen nichts von Charakteristiken.
+// Der Baustein kennt die Bauform, nicht der Bildschirm: „Raster“ zeigt SYS
+// und DIA als gleichwertige Blöcke. So bleibt das Detail-Blatt unabhängig
+// von der gewählten Charakteristik.
 import 'package:flutter/material.dart';
 
 import '../theme/characteristic.dart';
 import '../theme/sphygma_theme.dart';
+import 'section_header.dart';
 
 class ReadingHeadline extends StatelessWidget {
   const ReadingHeadline({
@@ -42,11 +41,17 @@ class ReadingHeadline extends StatelessWidget {
           style: TextStyle(fontSize: 11, letterSpacing: 1.4, color: t.muted),
         ),
         SizedBox(height: t.gapSmall),
+        const SectionHeader(title: 'Blutdruck', leadingGap: false),
         BloodPressureValue(systolic: systolic, diastolic: diastolic),
-        SizedBox(height: t.gapSmall / 2),
+        const SectionHeader(title: 'Puls'),
         Text(
-          'mmHg · Puls $pulse',
-          style: TextStyle(fontSize: 12, color: t.muted),
+          '$pulse',
+          semanticsLabel: 'Puls $pulse Schläge pro Minute',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: t.headlineWeight,
+            color: t.onSurface,
+          ),
         ),
       ],
     );

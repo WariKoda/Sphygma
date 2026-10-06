@@ -11,12 +11,16 @@ class MeasurementListItem extends StatelessWidget {
     required this.timestamp,
     required this.onTap,
     this.compact = false,
+    this.showUnits = true,
   });
 
   final Measurement measurement;
   final String timestamp;
   final VoidCallback onTap;
   final bool compact;
+
+  /// Ohne Wiederholung, wenn die umgebende Hauptkarte die Einheiten nennt.
+  final bool showUnits;
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +109,7 @@ class MeasurementListItem extends StatelessWidget {
                     ),
                     SizedBox(height: t.gapSmall),
                     MeasurementValues(
+                      showUnits: showUnits,
                       systolic: m.systolic,
                       diastolic: m.diastolic,
                       pulse: m.pulse,
@@ -208,19 +213,25 @@ class MeasurementValues extends StatelessWidget {
     required this.diastolic,
     required this.pulse,
     this.compact = false,
+    this.showUnits = true,
   });
   final int systolic;
   final int diastolic;
   final int pulse;
   final bool compact;
 
+  /// Ohne Wiederholung, wenn die umgebende Hauptkarte die Einheiten nennt.
+  final bool showUnits;
+
   @override
   Widget build(BuildContext context) {
     final t = SphygmaTheme.of(context);
-    Widget value(String text, String label) => Column(
+    final labelStyle = TextStyle(fontSize: compact ? 11 : 12, color: t.muted);
+    Widget value(String text, {String? label}) => Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (label != null) Text(label, style: labelStyle),
         Text(
           text,
           style: TextStyle(
@@ -230,10 +241,15 @@ class MeasurementValues extends StatelessWidget {
             fontFeatures: const [FontFeature.tabularFigures()],
           ),
         ),
-        Text(
-          label,
-          style: TextStyle(fontSize: compact ? 11 : 12, color: t.muted),
-        ),
+      ],
+    );
+    Widget group(String heading, Widget child) => Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(heading, style: labelStyle),
+        SizedBox(height: t.gapSmall / 2),
+        child,
       ],
     );
     return Wrap(
@@ -241,12 +257,20 @@ class MeasurementValues extends StatelessWidget {
       runSpacing: t.gapSmall,
       crossAxisAlignment: WrapCrossAlignment.start,
       children: [
-        if (t.readingLayout == ReadingLayout.bloecke) ...[
-          value('$systolic', 'SYS · mmHg'),
-          value('$diastolic', 'DIA · mmHg'),
-        ] else
-          value('$systolic/$diastolic', 'mmHg'),
-        value('$pulse', 'Puls · bpm'),
+        group(
+          showUnits ? 'Blutdruck · mmHg' : 'Blutdruck',
+          t.readingLayout == ReadingLayout.bloecke
+              ? Wrap(
+                  spacing: t.gapSmall,
+                  runSpacing: t.gapSmall,
+                  children: [
+                    value('$systolic', label: 'SYS'),
+                    value('$diastolic', label: 'DIA'),
+                  ],
+                )
+              : value('$systolic/$diastolic'),
+        ),
+        group(showUnits ? 'Puls · bpm' : 'Puls', value('$pulse')),
       ],
     );
   }

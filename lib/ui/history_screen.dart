@@ -130,6 +130,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           children: [
                             const PanelHeader(
                               title: 'Entwicklung',
+                              unit: 'Blutdruck mmHg · Puls bpm',
                               icon: Icons.show_chart,
                             ),
                             SegmentedButton<ChartMetric>(

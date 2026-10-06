@@ -6,13 +6,17 @@
 // fälschlich zu beruhigen.
 //
 // Das ist etwas anderes als die ESC-Klassifikation in esc_classification.dart:
-// Die stuft in sechs Kategorien ein und liegt hinter einem Compile-Time-Flag,
+// Die nutzt sechs ESC/ESH-Kategorien plus die Niedrig-Kennzeichnung und liegt
+// hinter einem Compile-Time-Flag,
 // weil sie die App zum Medizinprodukt machen kann. Hier geht es nur um die
-// drei Tonstufen, mit denen die Konzepte ihre Messfelder einfärben.
+// Tonstufen, mit denen die Konzepte ihre Messfelder einfärben.
 library;
+
+import 'low_blood_pressure.dart';
 
 /// Wo ein Messwert gegenüber dem Zielbereich steht.
 enum TargetZone {
+  niedrig('Niedrig'),
   imZielbereich('Im Zielbereich'),
   grenzwertig('Grenzwertig'),
   darueber('Darüber');
@@ -107,6 +111,10 @@ class TargetRange {
     if (systolic >= systolicLimit - _grenzbereich ||
         diastolic >= diastolicLimit - _grenzbereich) {
       return TargetZone.grenzwertig;
+    }
+    if (lowBloodPressure(systolic: systolic, diastolic: diastolic) !=
+        LowBloodPressure.none) {
+      return TargetZone.niedrig;
     }
     return TargetZone.imZielbereich;
   }

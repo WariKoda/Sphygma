@@ -289,10 +289,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Zugeordnete Messung wird geladen…'), findsNothing);
       expect(
-        find.textContaining('${record.systolic}/${record.diastolic} mmHg'),
+        find.textContaining('${record.systolic}/${record.diastolic} ·'),
         findsOneWidget,
       );
-      expect(find.textContaining('Puls ${record.pulse} bpm'), findsOneWidget);
+      expect(find.textContaining('Puls ${record.pulse}'), findsOneWidget);
       expect(find.text('07:45 Uhr'), findsOneWidget);
       expect(find.text('12:00 Uhr'), findsOneWidget);
       expect(find.text('Noch keine Messung zugeordnet'), findsOneWidget);
